@@ -128,19 +128,8 @@ body {
 /* Optional self-hosted header font */
 @font-face {
   font-family: 'Roxborough CF';
-  src:
-    url('/fonts/RoxboroughCF-Regular.woff2') format('woff2'),
-    url('/fonts/RoxboroughCF-Regular.woff') format('woff');
+  src: url('./fonts/RoxboroughCF.ttf') format('ttf');
   font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Roxborough CF';
-  src:
-    url('/fonts/RoxboroughCF-Semibold.woff2') format('woff2'),
-    url('/fonts/RoxboroughCF-Semibold.woff') format('woff');
-  font-weight: 600;
   font-style: normal;
   font-display: swap;
 }

@@ -186,6 +186,8 @@ export default {
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .card h1 {
   font-size: 22px;
@@ -213,14 +215,15 @@ select {
   width: 100%;
   border: 1px solid #e5e5e5;
   border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 14px;
+  padding: 12px;
+  font-size: 16px; /* Better for mobile touch */
   outline: none;
   font-family:
     Inter,
     system-ui,
     -apple-system,
     sans-serif;
+  box-sizing: border-box;
 }
 
 /* ===== MONOCHROMATIC DROPDOWN STYLING ===== */
@@ -331,7 +334,7 @@ select::-webkit-scrollbar-thumb:hover {
 }
 .item-row {
   display: grid;
-  grid-template-columns: 1fr 86px 1fr auto;
+  grid-template-columns: 1fr 80px 1fr auto;
   gap: 8px;
   align-items: center;
 }
@@ -340,9 +343,10 @@ select::-webkit-scrollbar-thumb:hover {
   background: #fff0f0;
   color: #b61c1c;
   font-weight: 600;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border-radius: 8px;
   cursor: pointer;
+  font-size: 14px;
 }
 .btn {
   display: inline-flex;
@@ -353,12 +357,13 @@ select::-webkit-scrollbar-thumb:hover {
   background: #111;
   color: #fff;
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   font-weight: 600;
   cursor: pointer;
   margin-top: 14px;
   width: 100%;
   transition: background-color 0.2s;
+  font-size: 16px;
 }
 .btn.secondary {
   background: #333;
@@ -372,7 +377,7 @@ select::-webkit-scrollbar-thumb:hover {
 }
 
 .status-message {
-  padding: 10px;
+  padding: 12px;
   border-radius: 8px;
   margin-top: 10px;
   font-size: 14px;
@@ -389,5 +394,92 @@ select::-webkit-scrollbar-thumb:hover {
   background: #f5f5f5;
   color: #333;
   border: 1px solid #d4d4d4;
+}
+
+/* Enhanced Responsive Design */
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+  }
+
+  .card h1 {
+    font-size: 20px;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  input[type='text'],
+  input[type='date'],
+  input[type='time'],
+  input[type='number'],
+  select {
+    padding: 14px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .item-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .item-row .remove {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .btn {
+    padding: 16px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 12px;
+  }
+
+  .card h1 {
+    font-size: 18px;
+  }
+
+  input[type='text'],
+  input[type='date'],
+  input[type='time'],
+  input[type='number'],
+  select {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .items {
+    gap: 6px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .card {
+    padding: 10px;
+  }
+
+  .card h1 {
+    font-size: 16px;
+  }
+
+  label {
+    font-size: 11px;
+  }
+
+  input[type='text'],
+  input[type='date'],
+  input[type='time'],
+  input[type='number'],
+  select {
+    padding: 10px;
+    font-size: 13px;
+  }
 }
 </style>

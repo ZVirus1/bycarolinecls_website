@@ -188,10 +188,13 @@ export default {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  width: 100%;
 }
 .paper {
-  width: var(--paper-w);
-  height: var(--paper-h);
+  width: 100%;
+  max-width: var(--paper-w);
+  height: auto;
+  aspect-ratio: 794 / 1123; /* Maintain A4 ratio */
   background: #f5f5ef; /* cream page */
   border: 1px solid #ececec;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
@@ -199,7 +202,7 @@ export default {
   overflow: hidden;
 }
 .page-pad {
-  padding: 56px 68px 64px;
+  padding: 5%; /* Use percentage for responsive padding */
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -207,89 +210,83 @@ export default {
 
 .inv-title {
   font-family: 'Roxborough CF', serif;
-  font-size: 50px;
+  font-size: clamp(30px, 5vw, 50px); /* Responsive font size */
   font-weight: 500;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   text-align: right;
-  margin-top: 6px;
-  margin-bottom: 60px;
+  margin-top: 4px;
+  margin-bottom: 40px;
   color: #000;
 }
 
 .top-meta {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 18px;
+  gap: 20px;
+  margin-bottom: 16px;
 }
 .meta-box h3 {
-  font-size: 16px;
-  letter-spacing: 0.25px;
+  font-size: 14px;
+  letter-spacing: 0.2px;
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .meta-box p {
-  font-size: 13.5px;
+  font-size: 12px;
   color: #222;
   margin: 2px 0;
+  line-height: 1.3;
 }
 .meta-line {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .meta-line .k {
   font-weight: 700;
-  font-size: 16px;
-}
-
-.rule {
-  width: 50%;
-  height: 1px;
-  background: var(--rule);
-  margin: 14px 0;
+  font-size: 14px;
 }
 
 /* ===== ITEMS TABLE ===== */
 .items-table {
-  margin-top: 20px;
+  margin-top: 16px;
   width: 100%;
   border-collapse: collapse;
   border-top: 2px solid var(--rule-strong);
   border-bottom: 2px solid var(--rule-strong);
+  font-size: 13px;
 }
 .items-table thead th {
   text-align: center;
   font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.25px;
+  font-size: 13px;
+  letter-spacing: 0.2px;
   color: #111;
-  padding: 12px 0;
+  padding: 10px 0;
   vertical-align: middle;
   border-bottom: 2px solid var(--rule-strong);
 }
 .items-table tbody td {
-  padding: 12px 0;
-  font-size: 15px;
+  padding: 10px 0;
+  font-size: 13px;
   color: #222;
   vertical-align: top;
   border-bottom: 2px solid var(--rule-strong);
 }
 .items-table thead th:first-child,
 .items-table tbody td:first-child {
-  padding-left: 18px;
+  padding-left: 12px;
   text-align: left;
 }
 .qty {
-  width: 280px;
+  width: 80px;
   text-align: center;
 }
 .items-table thead th.total,
 .items-table tbody td.total {
-  width: 150px;
+  width: 100px;
   text-align: center;
-  position: relative;
-  left: -8px;
   white-space: nowrap;
 }
 
@@ -297,14 +294,16 @@ export default {
 .totals {
   margin-top: 10px;
   margin-left: auto;
-  width: 360px;
+  width: 100%;
+  max-width: 300px;
   border: none;
   border-collapse: separate;
+  font-size: 13px;
 }
 .totals tr td {
   text-align: right;
-  padding: 18px 0;
-  font-size: 15px;
+  padding: 14px 0;
+  font-size: 13px;
   border: none;
 }
 .totals tr td:first-child {
@@ -316,13 +315,13 @@ export default {
 .two-lines .sub {
   display: block;
   font-weight: 500;
-  font-size: 12px;
+  font-size: 10px;
   color: #666;
   line-height: 1.2;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 #large-balance {
-  font-size: 20px;
+  font-size: 16px;
 }
 
 /* Bottom row */
@@ -331,25 +330,110 @@ export default {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .payment {
-  font-size: 18px;
+  font-size: 14px;
+  flex: 1;
+  min-width: 200px;
 }
 .payment h4 {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: 0.6px;
-  margin: 0 0 6px;
+  letter-spacing: 0.4px;
+  margin: 0 0 4px;
 }
 .brand-logo {
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
-  min-width: 220px;
+  min-width: 120px;
 }
 .brand-logo img {
-  height: 100px;
+  height: 60px;
   object-fit: contain;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .paper {
+    max-width: 100%;
+  }
+
+  .page-pad {
+    padding: 4%;
+  }
+
+  .top-meta {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .inv-title {
+    margin-bottom: 20px;
+    font-size: 36px;
+  }
+
+  .items-table {
+    font-size: 12px;
+  }
+
+  .items-table thead th,
+  .items-table tbody td {
+    font-size: 12px;
+    padding: 8px 0;
+  }
+
+  .bottom-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .brand-logo {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-pad {
+    padding: 3%;
+  }
+
+  .inv-title {
+    font-size: 28px;
+    margin-bottom: 16px;
+  }
+
+  .meta-box h3 {
+    font-size: 12px;
+  }
+
+  .meta-box p {
+    font-size: 11px;
+  }
+
+  .items-table {
+    font-size: 11px;
+  }
+
+  .items-table thead th,
+  .items-table tbody td {
+    font-size: 11px;
+    padding: 6px 0;
+  }
+
+  .totals {
+    font-size: 12px;
+  }
+
+  .payment {
+    font-size: 12px;
+  }
+
+  .brand-logo img {
+    height: 50px;
+  }
 }
 </style>

@@ -278,11 +278,53 @@ export default {
   display: grid;
   grid-template-columns: 460px 1fr;
   gap: 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 1100px) {
+/* Enhanced Responsive Design */
+@media (max-width: 1200px) {
+  .app {
+    grid-template-columns: 400px 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app {
+    grid-template-columns: 350px 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 900px) {
   .app {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app {
+    margin: 16px auto;
+    padding: 0 12px;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app {
+    margin: 12px auto;
+    padding: 0 8px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .app {
+    margin: 8px auto;
+    padding: 0 6px;
+    gap: 10px;
   }
 }
 </style>

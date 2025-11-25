@@ -198,6 +198,16 @@ export default {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  margin-right: 8px; /* Added - matches left margin */
+}
+
+/* Update mobile responsive for grid-2 */
+@media (max-width: 768px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-right: 0; /* Reset on mobile since it's full width */
+  }
 }
 label {
   display: block;
@@ -330,14 +340,30 @@ select::-webkit-scrollbar-thumb:hover {
   margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px; /* Changed from 8px to 12px */
 }
+
 .item-row {
   display: grid;
   grid-template-columns: 1fr 80px 1fr auto;
   gap: 8px;
   align-items: center;
+  margin-bottom: 8px; /* Added space after Remove button */
 }
+
+/* Update mobile responsive */
+@media (max-width: 768px) {
+  .items {
+    gap: 10px; /* Slightly smaller gap on mobile */
+  }
+
+  .item-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 6px; /* Smaller margin on mobile */
+  }
+}
+
 .item-row .remove {
   border: 1px solid #ffd7d7;
   background: #fff0f0;

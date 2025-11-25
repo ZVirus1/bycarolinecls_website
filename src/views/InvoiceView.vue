@@ -348,14 +348,15 @@ export default {
 /* Mobile-first approach for smaller screens */
 @media (max-width: 768px) {
   .app {
-    margin: 16px auto;
-    padding: 0 12px;
+    margin: 12px auto;
+    padding: 0 8px;
     gap: 16px;
     grid-template-columns: 1fr;
   }
 
   .mobile-preview-toggle {
     display: block;
+    margin-bottom: 12px;
   }
 
   .form-section,
@@ -365,6 +366,11 @@ export default {
 
   .hidden-on-mobile {
     display: none;
+  }
+
+  .toggle-btn {
+    padding: 10px 14px; /* Slightly smaller padding */
+    font-size: 14px; /* Smaller font */
   }
 }
 

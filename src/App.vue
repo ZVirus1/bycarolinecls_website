@@ -90,7 +90,39 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 60px;
+  height: auto; /* Changed from 60px */
+  min-height: 60px; /* Added */
+  padding: 8px 0; /* Added */
+}
+
+/* Add mobile responsive styles */
+@media (max-width: 768px) {
+  .nav-header {
+    padding: 0 12px;
+  }
+
+  .nav-container {
+    min-height: 50px;
+    padding: 6px 0;
+  }
+
+  .nav-logo {
+    font-size: 16px;
+  }
+
+  .nav-logo img {
+    height: 28px;
+    width: 28px;
+  }
+
+  .nav-links {
+    gap: 12px;
+  }
+
+  .nav-link {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
 }
 
 .nav-logo {

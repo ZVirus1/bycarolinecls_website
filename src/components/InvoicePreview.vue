@@ -248,6 +248,27 @@ export default {
   position: relative;
   overflow: hidden;
   transition: transform 0.3s ease;
+  max-width: 100%; /* Added */
+  margin: 0 auto; /* Added */
+}
+
+/* Enhanced Mobile Experience */
+@media (max-width: 768px) {
+  .preview-controls {
+    display: flex;
+  }
+
+  .paper {
+    transform-origin: top center;
+    margin: 0 auto;
+    width: 100%; /* Changed from 794px */
+    height: auto; /* Changed from 1123px */
+    aspect-ratio: 794 / 1123; /* Maintain A4 ratio */
+  }
+
+  .page-pad {
+    padding: 40px 48px; /* Reduced padding for mobile */
+  }
 }
 .page-pad {
   padding: 56px 68px 64px;

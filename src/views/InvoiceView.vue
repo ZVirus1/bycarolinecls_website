@@ -1,6 +1,19 @@
 <template>
-  <div class="invoice-container">
-    <div class="form-section">
+  <div class="app">
+    <!-- Mobile Preview Toggle -->
+    <div class="mobile-preview-toggle" v-if="isMobile">
+      <button
+        class="toggle-btn"
+        :class="{ active: showPreview }"
+        @click="showPreview = !showPreview"
+      >
+        <i class="fas" :class="showPreview ? 'fa-edit' : 'fa-eye'"></i>
+        {{ showPreview ? ' Edit Form' : ' Preview' }}
+      </button>
+    </div>
+
+    <!-- ============ LEFT: FORM ============ -->
+    <div class="form-section" :class="{ 'hidden-on-mobile': isMobile && showPreview }">
       <InvoiceForm
         :form-data="formData"
         :items="items"
@@ -14,8 +27,9 @@
       />
     </div>
 
-    <div class="preview-section">
-      <h3 class="preview-title"><i class="fas fa-eye"></i> Preview</h3>
+    <!-- ============ RIGHT: PREVIEW PAPER ============ -->
+    <div class="preview-section" :class="{ 'hidden-on-mobile': isMobile && !showPreview }">
+      <div class="preview-title"><i class="fas fa-eye"></i> Preview</div>
       <InvoicePreview :form-data="formData" :items="items" />
     </div>
   </div>
@@ -68,9 +82,21 @@ export default {
       ],
       statusMessage: '',
       isStatusSuccess: true,
+      showPreview: false,
+      isMobile: false,
     }
   },
+  mounted() {
+    this.checkMobile()
+    window.addEventListener('resize', this.checkMobile)
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.checkMobile)
+  },
   methods: {
+    checkMobile() {
+      this.isMobile = window.innerWidth < 768
+    },
     updateFormData(newData) {
       if (JSON.stringify(this.formData) !== JSON.stringify({ ...this.formData, ...newData })) {
         this.formData = { ...this.formData, ...newData }
@@ -106,18 +132,7 @@ export default {
         const canvas = await html2canvas(paperEl, {
           scale: 2,
           backgroundColor: '#f5f5ef',
-          useCORS: true,
           logging: false,
-          allowTaint: true,
-          imageTimeout: 30000,
-          onclone: function (clonedDoc) {
-            const images = clonedDoc.querySelectorAll('img')
-            images.forEach((img) => {
-              if (!img.hasAttribute('crossOrigin')) {
-                img.setAttribute('crossOrigin', 'anonymous')
-              }
-            })
-          },
         })
 
         const imgData = canvas.toDataURL('image/jpeg', 0.95)
@@ -214,18 +229,7 @@ export default {
           html2canvas(paperEl, {
             scale: 2,
             backgroundColor: '#f5f5ef',
-            useCORS: true,
             logging: false,
-            allowTaint: true,
-            imageTimeout: 30000,
-            onclone: function (clonedDoc) {
-              const images = clonedDoc.querySelectorAll('img')
-              images.forEach((img) => {
-                if (!img.hasAttribute('crossOrigin')) {
-                  img.setAttribute('crossOrigin', 'anonymous')
-                }
-              })
-            },
           })
             .then((canvas) => {
               try {
@@ -294,23 +298,27 @@ export default {
 </script>
 
 <style scoped>
-.invoice-container {
+.app {
   max-width: 1250px;
   margin: 24px auto;
   padding: 0 16px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 460px 1fr;
   gap: 24px;
   width: 100%;
   box-sizing: border-box;
 }
 
+.mobile-preview-toggle {
+  display: none;
+}
+
 .preview-title {
+  display: none;
   font-size: 20px;
   font-weight: 600;
   color: #111;
   margin-bottom: 16px;
-  display: flex;
   align-items: center;
   gap: 8px;
 }
@@ -319,12 +327,86 @@ export default {
   color: #666;
 }
 
-/* Responsive design */
+.toggle-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: #111;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.toggle-btn.active {
+  background: #333;
+}
+
+.hidden-on-mobile {
+  display: none;
+}
+
+/* Enhanced Responsive Design */
+@media (max-width: 1200px) {
+  .app {
+    grid-template-columns: 400px 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app {
+    grid-template-columns: 350px 1fr;
+    gap: 16px;
+  }
+}
+
+/* Mobile-first approach for smaller screens */
 @media (max-width: 768px) {
-  .invoice-container {
+  .app {
     margin: 16px auto;
     padding: 0 12px;
     gap: 20px;
+    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-preview-toggle {
+    display: block;
+    margin-bottom: 0;
+  }
+
+  .preview-title {
+    display: flex;
+  }
+
+  .form-section,
+  .preview-section {
+    display: block;
+    width: 100%;
+  }
+
+  .hidden-on-mobile {
+    display: none;
+  }
+
+  .toggle-btn {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app {
+    margin: 12px auto;
+    padding: 0 8px;
+    gap: 16px;
   }
 
   .preview-title {
@@ -332,11 +414,11 @@ export default {
   }
 }
 
-@media (max-width: 480px) {
-  .invoice-container {
-    margin: 12px auto;
-    padding: 0 8px;
-    gap: 16px;
+@media (max-width: 360px) {
+  .app {
+    margin: 8px auto;
+    padding: 0 6px;
+    gap: 12px;
   }
 
   .preview-title {

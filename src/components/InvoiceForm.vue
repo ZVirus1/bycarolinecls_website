@@ -212,6 +212,9 @@ export default {
     gap: 8px;
     margin-right: 0; /* Reset on mobile since it's full width */
   }
+  .card {
+    margin-bottom: 0; /* Remove bottom margin since preview follows immediately */
+  }
 }
 label {
   display: block;

@@ -96,7 +96,7 @@
             </div>
           </div>
           <div class="brand-logo">
-            <img id="footerLogo" src="../assets/bycarolinecls.png" alt="CarolineCLS Logo" />
+            <img id="footerLogo" :src="footerLogo" alt="CarolineCLS Logo" />
           </div>
         </div>
       </div>
@@ -106,6 +106,7 @@
 
 <script>
 import { rupiah, dmy, longDate, escapeHtml } from '../stores/firebase.js'
+import footerLogo from '../assets/bycarolinecls.png'
 
 export default {
   name: 'InvoicePreview',
@@ -117,6 +118,7 @@ export default {
     return {
       zoom: 1,
       isMobile: false,
+      footerLogo,
     }
   },
   mounted() {
@@ -261,15 +263,81 @@ export default {
   .paper {
     transform-origin: top center;
     margin: 0 auto;
-    width: 100%; /* Changed from 794px */
-    height: auto; /* Changed from 1123px */
-    aspect-ratio: 794 / 1123; /* Maintain A4 ratio */
+    width: 100%;
+    height: auto;
+    aspect-ratio: 794 / 1123;
+    transform: scale(1) !important; /* Remove scaling on mobile */
+    max-width: 100%;
   }
 
   .page-pad {
-    padding: 40px 48px; /* Reduced padding for mobile */
+    padding: 40px 48px;
+  }
+
+  /* Ensure the preview is properly visible */
+  .paper-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  /* Adjust font sizes for better mobile readability */
+  .inv-title {
+    font-size: 40px;
+    margin-bottom: 40px;
+  }
+
+  .top-meta {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .meta-box h3 {
+    font-size: 14px;
+  }
+
+  .meta-box p {
+    font-size: 12px;
+  }
+
+  .meta-line .k {
+    font-size: 14px;
+  }
+
+  .items-table thead th,
+  .items-table tbody td {
+    font-size: 13px;
+    padding: 8px 0;
+  }
+
+  .totals {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .payment {
+    font-size: 16px;
+  }
+
+  .payment h4 {
+    font-size: 16px;
+  }
+
+  .brand-logo img {
+    height: 80px;
   }
 }
+
+/* Hide preview controls on desktop */
+@media (min-width: 769px) {
+  .preview-controls {
+    display: none;
+  }
+
+  .preview-title {
+    display: none !important;
+  }
+}
+
 .page-pad {
   padding: 56px 68px 64px;
   height: 100%;

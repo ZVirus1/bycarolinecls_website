@@ -96,7 +96,7 @@
             </div>
           </div>
           <div class="brand-logo">
-            <img id="footerLogo" src="./bycarolinecls.png" alt="CarolineCLS Logo" />
+            <img id="footerLogo" src="/bycarolinecls.png" alt="CarolineCLS Logo" />
           </div>
         </div>
       </div>

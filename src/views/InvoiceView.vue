@@ -125,21 +125,33 @@ export default {
         throw new Error('Invoice preview not found')
       }
 
-      // Give layout/fonts a moment to settle
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      // Temporarily remove shadow/border to avoid dark halo/shade in the PDF (especially on iOS)
+      const originalBoxShadow = paperEl.style.boxShadow
+      const originalBorder = paperEl.style.border
+      paperEl.style.boxShadow = 'none'
+      paperEl.style.border = 'none'
 
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready
+      try {
+        // Give layout/fonts a moment to settle
+        await new Promise((resolve) => setTimeout(resolve, 500))
+
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready
+        }
+
+        const canvas = await html2canvas(paperEl, {
+          scale: 2,
+          backgroundColor: '#f5f5ef',
+          logging: false,
+          useCORS: true,
+        })
+
+        return canvas
+      } finally {
+        // Restore original visuals for the live preview
+        paperEl.style.boxShadow = originalBoxShadow
+        paperEl.style.border = originalBorder
       }
-
-      const canvas = await html2canvas(paperEl, {
-        scale: 2,
-        backgroundColor: '#f5f5ef',
-        logging: false,
-        useCORS: true,
-      })
-
-      return canvas
     },
 
     async downloadPDF() {

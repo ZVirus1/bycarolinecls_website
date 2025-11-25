@@ -10,7 +10,7 @@
     <div
       id="paper"
       class="paper"
-      :style="{ transform: `scale(${zoom})`, transformOrigin: 'top center' }"
+      :style="{ transform: `scale(${zoom})`, transformOrigin: 'center top' }"
     >
       <div class="page-pad" id="invoicePage">
         <div class="inv-title">INVOICE</div>
@@ -140,9 +140,11 @@ export default {
       this.$nextTick(() => {
         const wrapper = this.$refs.paperWrapper
         if (!wrapper) return
-        const availableWidth = wrapper.clientWidth || window.innerWidth
-        const scale = availableWidth / 794 // 794px = A4 width in CSS
-        this.zoom = Math.min(scale, 1)
+
+        // Scale so the visual width of the invoice exactly matches the wrapper width
+        const availableWidth = (wrapper.clientWidth || window.innerWidth) - 40 // 20px padding on each side
+        const scale = Math.min(availableWidth / 794, 0.6) // Don't scale larger than 60%
+        this.zoom = Math.max(scale, 0.35) // Don't scale smaller than 35%
       })
     },
     zoomIn() {
@@ -252,7 +254,8 @@ export default {
   align-items: flex-start;
   flex-direction: column;
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
 }
 
 .paper {
@@ -260,11 +263,27 @@ export default {
   height: 1123px; /* Fixed A4 height */
   background: #f5f5ef; /* cream page */
   border: 1px solid #ececec;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
   position: relative;
   overflow: hidden;
   transition: transform 0.3s ease;
   margin: 0 auto;
+}
+
+/* Mobile: center the whole thing and avoid weird cutoff on the right */
+@media (max-width: 768px) {
+  .paper-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+    padding: 0;
+    height: fit-content;
+  }
+  .paper {
+    margin: 0;
+    transform-origin: center top;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+  }
 }
 
 .page-pad {
@@ -452,14 +471,10 @@ export default {
 }
 
 /* Mobile: show controls, keep layout but scaled */
+/* Mobile: show controls */
 @media (max-width: 768px) {
   .preview-controls {
     display: flex;
-  }
-
-  .paper-wrap {
-    width: 100%;
-    overflow-x: auto;
   }
 }
 

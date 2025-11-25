@@ -1,7 +1,19 @@
 <template>
   <div class="card paper-wrap">
-    <div id="paper" class="paper">
+    <div class="preview-controls" v-if="isMobile">
+      <button class="zoom-btn" @click="zoomOut">🔍 -</button>
+      <span class="zoom-level">{{ Math.round(zoom * 100) }}%</span>
+      <button class="zoom-btn" @click="zoomIn">🔍 +</button>
+      <button class="reset-btn" @click="resetZoom">Reset</button>
+    </div>
+
+    <div
+      id="paper"
+      class="paper"
+      :style="{ transform: `scale(${zoom})`, transformOrigin: 'top center' }"
+    >
       <div class="page-pad" id="invoicePage">
+        <!-- ... keep existing template content exactly the same ... -->
         <div class="inv-title">INVOICE</div>
 
         <div class="top-meta">
@@ -46,28 +58,30 @@
         </table>
 
         <table class="totals" id="totalsTable">
-          <tr>
-            <td>Subtotal</td>
-            <td class="total" id="vSubtotal">{{ displaySubtotal }}</td>
-          </tr>
-          <tr>
-            <td>
-              <div class="two-lines">
-                <span>Paid 50%</span>
-                <span class="sub" id="vPaidDate">{{ displayPaidDate }}</span>
-              </div>
-            </td>
-            <td class="total" id="vPaid">{{ displayPaid }}</td>
-          </tr>
-          <tr>
-            <td id="large-balance">
-              <div class="two-lines">
-                <span>Balance Due</span>
-                <span class="sub">&nbsp;</span>
-              </div>
-            </td>
-            <td class="total" id="vBalance">{{ displayBalance }}</td>
-          </tr>
+          <tbody>
+            <tr>
+              <td>Subtotal</td>
+              <td class="total" id="vSubtotal">{{ displaySubtotal }}</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="two-lines">
+                  <span>Paid 50%</span>
+                  <span class="sub" id="vPaidDate">{{ displayPaidDate }}</span>
+                </div>
+              </td>
+              <td class="total" id="vPaid">{{ displayPaid }}</td>
+            </tr>
+            <tr>
+              <td id="large-balance">
+                <div class="two-lines">
+                  <span>Balance Due</span>
+                  <span class="sub">&nbsp;</span>
+                </div>
+              </td>
+              <td class="total" id="vBalance">{{ displayBalance }}</td>
+            </tr>
+          </tbody>
         </table>
 
         <div class="bottom-row">
@@ -82,7 +96,7 @@
             </div>
           </div>
           <div class="brand-logo">
-            <img id="footerLogo" src="/bycarolinecls.png" alt="CarolineCLS Logo" />
+            <img id="footerLogo" src="./bycarolinecls.png" alt="CarolineCLS Logo" />
           </div>
         </div>
       </div>
@@ -99,7 +113,55 @@ export default {
     formData: Object,
     items: Array,
   },
+  data() {
+    return {
+      zoom: 1,
+      isMobile: false,
+    }
+  },
+  mounted() {
+    this.checkMobile()
+    window.addEventListener('resize', this.checkMobile)
+
+    // Set appropriate initial zoom for mobile
+    if (this.isMobile) {
+      this.zoom = 0.5
+    }
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.checkMobile)
+  },
+  methods: {
+    checkMobile() {
+      this.isMobile = window.innerWidth < 768
+    },
+    zoomIn() {
+      if (this.zoom < 2) {
+        this.zoom += 0.1
+      }
+    },
+    zoomOut() {
+      if (this.zoom > 0.3) {
+        this.zoom -= 0.1
+      }
+    },
+    resetZoom() {
+      this.zoom = this.isMobile ? 0.5 : 1
+    },
+    calculateSubtotal() {
+      let subtotal = 0
+      this.items.forEach((item) => {
+        if (item.description && item.description.trim()) {
+          const unit = Number(String(item.total).replace(/[^\d]/g, '')) || 0
+          const lineTotal = unit * item.quantity
+          subtotal += lineTotal
+        }
+      })
+      return subtotal
+    },
+  },
   computed: {
+    // ... keep all existing computed properties exactly the same ...
     displayName() {
       return this.formData.name || 'REDACTED-NAME'
     },
@@ -167,19 +229,6 @@ export default {
       return this.formData.accountNo || 'REDACTED-ACCOUNT-NO'
     },
   },
-  methods: {
-    calculateSubtotal() {
-      let subtotal = 0
-      this.items.forEach((item) => {
-        if (item.description && item.description.trim()) {
-          const unit = Number(String(item.total).replace(/[^\d]/g, '')) || 0
-          const lineTotal = unit * item.quantity
-          subtotal += lineTotal
-        }
-      })
-      return subtotal
-    },
-  },
 }
 </script>
 
@@ -188,105 +237,139 @@ export default {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  width: 100%;
+  flex-direction: column;
 }
 .paper {
-  width: 100%;
-  max-width: var(--paper-w);
-  height: auto;
-  aspect-ratio: 794 / 1123; /* Maintain A4 ratio */
+  width: 794px; /* Fixed A4 width */
+  height: 1123px; /* Fixed A4 height */
   background: #f5f5ef; /* cream page */
   border: 1px solid #ececec;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
   position: relative;
   overflow: hidden;
+  transition: transform 0.3s ease;
 }
 .page-pad {
-  padding: 5%; /* Use percentage for responsive padding */
+  padding: 56px 68px 64px;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
+.preview-controls {
+  display: none;
+  width: 100%;
+  padding: 12px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-btn,
+.reset-btn {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.zoom-level {
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+}
+
 .inv-title {
   font-family: 'Roxborough CF', serif;
-  font-size: clamp(30px, 5vw, 50px); /* Responsive font size */
+  font-size: 50px;
   font-weight: 500;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   text-align: right;
-  margin-top: 4px;
-  margin-bottom: 40px;
+  margin-top: 6px;
+  margin-bottom: 60px;
   color: #000;
 }
 
 .top-meta {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 16px;
+  gap: 24px;
+  margin-bottom: 18px;
 }
 .meta-box h3 {
-  font-size: 14px;
-  letter-spacing: 0.2px;
+  font-size: 16px;
+  letter-spacing: 0.25px;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 .meta-box p {
-  font-size: 12px;
+  font-size: 13.5px;
   color: #222;
   margin: 2px 0;
-  line-height: 1.3;
+  line-height: 1.4;
 }
 .meta-line {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 12px;
 }
 .meta-line .k {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 16px;
+}
+
+.rule {
+  width: 50%;
+  height: 1px;
+  background: #c6c6c6;
+  margin: 14px 0;
 }
 
 /* ===== ITEMS TABLE ===== */
 .items-table {
-  margin-top: 16px;
+  margin-top: 20px;
   width: 100%;
   border-collapse: collapse;
-  border-top: 2px solid var(--rule-strong);
-  border-bottom: 2px solid var(--rule-strong);
-  font-size: 13px;
+  border-top: 2px solid #aaaaaa;
+  border-bottom: 2px solid #aaaaaa;
 }
 .items-table thead th {
   text-align: center;
   font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.2px;
+  font-size: 15px;
+  letter-spacing: 0.25px;
   color: #111;
-  padding: 10px 0;
+  padding: 12px 0;
   vertical-align: middle;
-  border-bottom: 2px solid var(--rule-strong);
+  border-bottom: 2px solid #aaaaaa;
 }
 .items-table tbody td {
-  padding: 10px 0;
-  font-size: 13px;
+  padding: 12px 0;
+  font-size: 15px;
   color: #222;
   vertical-align: top;
-  border-bottom: 2px solid var(--rule-strong);
+  border-bottom: 2px solid #aaaaaa;
 }
 .items-table thead th:first-child,
 .items-table tbody td:first-child {
-  padding-left: 12px;
+  padding-left: 18px;
   text-align: left;
 }
 .qty {
-  width: 80px;
+  width: 280px;
   text-align: center;
 }
 .items-table thead th.total,
 .items-table tbody td.total {
-  width: 100px;
+  width: 150px;
   text-align: center;
+  position: relative;
+  left: -8px;
   white-space: nowrap;
 }
 
@@ -294,16 +377,14 @@ export default {
 .totals {
   margin-top: 10px;
   margin-left: auto;
-  width: 100%;
-  max-width: 300px;
+  width: 360px;
   border: none;
   border-collapse: separate;
-  font-size: 13px;
 }
 .totals tr td {
   text-align: right;
-  padding: 14px 0;
-  font-size: 13px;
+  padding: 18px 0;
+  font-size: 15px;
   border: none;
 }
 .totals tr td:first-child {
@@ -315,13 +396,13 @@ export default {
 .two-lines .sub {
   display: block;
   font-weight: 500;
-  font-size: 10px;
+  font-size: 12px;
   color: #666;
   line-height: 1.2;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 #large-balance {
-  font-size: 16px;
+  font-size: 20px;
 }
 
 /* Bottom row */
@@ -330,110 +411,44 @@ export default {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 16px;
 }
 .payment {
-  font-size: 14px;
-  flex: 1;
-  min-width: 200px;
+  font-size: 18px;
 }
 .payment h4 {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: 0.4px;
-  margin: 0 0 4px;
+  letter-spacing: 0.6px;
+  margin: 0 0 6px;
 }
 .brand-logo {
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
-  min-width: 120px;
+  min-width: 220px;
 }
 .brand-logo img {
-  height: 60px;
+  height: 100px;
   object-fit: contain;
 }
 
-/* Responsive Design */
+/* Enhanced Mobile Experience */
 @media (max-width: 768px) {
+  .preview-controls {
+    display: flex;
+  }
+
   .paper {
-    max-width: 100%;
-  }
-
-  .page-pad {
-    padding: 4%;
-  }
-
-  .top-meta {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .inv-title {
-    margin-bottom: 20px;
-    font-size: 36px;
-  }
-
-  .items-table {
-    font-size: 12px;
-  }
-
-  .items-table thead th,
-  .items-table tbody td {
-    font-size: 12px;
-    padding: 8px 0;
-  }
-
-  .bottom-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .brand-logo {
-    align-self: flex-end;
+    transform-origin: top center;
+    margin: 0 auto;
   }
 }
 
-@media (max-width: 480px) {
-  .page-pad {
-    padding: 3%;
-  }
-
-  .inv-title {
-    font-size: 28px;
-    margin-bottom: 16px;
-  }
-
-  .meta-box h3 {
-    font-size: 12px;
-  }
-
-  .meta-box p {
-    font-size: 11px;
-  }
-
-  .items-table {
-    font-size: 11px;
-  }
-
-  .items-table thead th,
-  .items-table tbody td {
-    font-size: 11px;
-    padding: 6px 0;
-  }
-
-  .totals {
-    font-size: 12px;
-  }
-
-  .payment {
-    font-size: 12px;
-  }
-
-  .brand-logo img {
-    height: 50px;
+/* Hide preview controls on desktop */
+@media (min-width: 769px) {
+  .preview-controls {
+    display: none;
   }
 }
 </style>

@@ -1,20 +1,35 @@
 <template>
   <div class="app">
+    <!-- Mobile Preview Toggle -->
+    <div class="mobile-preview-toggle" v-if="isMobile">
+      <button
+        class="toggle-btn"
+        :class="{ active: showPreview }"
+        @click="showPreview = !showPreview"
+      >
+        {{ showPreview ? '📝 Edit Form' : '👁️ Preview' }}
+      </button>
+    </div>
+
     <!-- ============ LEFT: FORM ============ -->
-    <InvoiceForm
-      :form-data="formData"
-      :items="items"
-      :status-message="statusMessage"
-      :is-status-success="isStatusSuccess"
-      @update:form-data="updateFormData"
-      @update:items="updateItems"
-      @add-item="addItem"
-      @download-pdf="downloadPDF"
-      @save-to-cloud="saveToCloud"
-    />
+    <div class="form-section" :class="{ 'hidden-on-mobile': isMobile && showPreview }">
+      <InvoiceForm
+        :form-data="formData"
+        :items="items"
+        :status-message="statusMessage"
+        :is-status-success="isStatusSuccess"
+        @update:form-data="updateFormData"
+        @update:items="updateItems"
+        @add-item="addItem"
+        @download-pdf="downloadPDF"
+        @save-to-cloud="saveToCloud"
+      />
+    </div>
 
     <!-- ============ RIGHT: PREVIEW PAPER ============ -->
-    <InvoicePreview :form-data="formData" :items="items" />
+    <div class="preview-section" :class="{ 'hidden-on-mobile': isMobile && !showPreview }">
+      <InvoicePreview :form-data="formData" :items="items" />
+    </div>
   </div>
 </template>
 
@@ -64,17 +79,27 @@ export default {
       ],
       statusMessage: '',
       isStatusSuccess: true,
+      showPreview: false,
+      isMobile: false,
     }
   },
+  mounted() {
+    this.checkMobile()
+    window.addEventListener('resize', this.checkMobile)
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.checkMobile)
+  },
   methods: {
+    checkMobile() {
+      this.isMobile = window.innerWidth < 768
+    },
     updateFormData(newData) {
-      // Only update if there are actual changes to prevent recursion
       if (JSON.stringify(this.formData) !== JSON.stringify({ ...this.formData, ...newData })) {
         this.formData = { ...this.formData, ...newData }
       }
     },
     updateItems(newItems) {
-      // Only update if there are actual changes to prevent recursion
       if (JSON.stringify(this.items) !== JSON.stringify(newItems)) {
         this.items = [...newItems]
       }
@@ -122,14 +147,12 @@ export default {
       try {
         this.showStatus('Generating PDF and saving to cloud...', true)
 
-        // Generate PDF first
         const pdfBlob = await this.generatePDFBlob()
 
         if (!pdfBlob) {
           throw new Error('Failed to generate PDF')
         }
 
-        // Prepare appointment data
         const appointmentData = {
           clientName: this.formData.name || 'REDACTED-NAME',
           phone: this.formData.phone || 'REDACTED-PHONE',
@@ -149,13 +172,11 @@ export default {
           createdAt: new Date(),
         }
 
-        // Save to Firestore first to get the document ID
         const docRef = await addDoc(collection(db, 'appointments'), appointmentData)
         const appointmentId = docRef.id
 
         console.log('Appointment saved with ID:', appointmentId)
 
-        // Upload PDF to Storage with error handling
         try {
           const storageRef = ref(storage, `invoices/${appointmentId}.pdf`)
           console.log('Uploading PDF to storage...')
@@ -166,11 +187,9 @@ export default {
 
           console.log('PDF upload completed')
 
-          // Get PDF download URL
           const pdfUrl = await getDownloadURL(storageRef)
           console.log('PDF URL obtained:', pdfUrl)
 
-          // Update Firestore with PDF URL
           await updateDoc(doc(db, 'appointments', appointmentId), {
             pdfUrl: pdfUrl,
             pdfFileName: `invoice_${appointmentId}.pdf`,
@@ -181,13 +200,11 @@ export default {
 
           this.showStatus('Successfully saved invoice to cloud and calendar!', true)
 
-          // Clear form for next entry
           setTimeout(() => {
             this.$router.push('/calendar')
           }, 2000)
         } catch (storageError) {
           console.error('Storage error:', storageError)
-          // If storage fails, delete the Firestore document to maintain consistency
           await deleteDoc(doc(db, 'appointments', appointmentId))
           throw new Error('Failed to upload PDF to storage: ' + storageError.message)
         }
@@ -200,7 +217,6 @@ export default {
       return new Promise((resolve, reject) => {
         const paperEl = document.getElementById('paper')
 
-        // Add a small delay to ensure all fonts are loaded
         setTimeout(() => {
           html2canvas(paperEl, {
             scale: 2,
@@ -282,6 +298,31 @@ export default {
   box-sizing: border-box;
 }
 
+.mobile-preview-toggle {
+  display: none;
+  margin-bottom: 16px;
+}
+
+.toggle-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: #111;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.toggle-btn.active {
+  background: #333;
+}
+
+.hidden-on-mobile {
+  display: none;
+}
+
 /* Enhanced Responsive Design */
 @media (max-width: 1200px) {
   .app {
@@ -304,11 +345,26 @@ export default {
   }
 }
 
+/* Mobile-first approach for smaller screens */
 @media (max-width: 768px) {
   .app {
     margin: 16px auto;
     padding: 0 12px;
     gap: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-preview-toggle {
+    display: block;
+  }
+
+  .form-section,
+  .preview-section {
+    display: block;
+  }
+
+  .hidden-on-mobile {
+    display: none;
   }
 }
 

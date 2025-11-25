@@ -33,6 +33,9 @@ export default {
 </script>
 
 <style>
+/* Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
 /* Global styles from original index.html */
 * {
   box-sizing: border-box;
@@ -121,9 +124,6 @@ body {
   background: #111;
   color: white;
 }
-
-/* Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 /* Optional self-hosted header font */
 @font-face {

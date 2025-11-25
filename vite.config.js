@@ -6,6 +6,6 @@ export default defineConfig({
   plugins: [vue()],
   base: '/bycarolinecls-invoice/',
   build: {
-    outDir: 'docs', // Add this line
+    outDir: 'docs', // GitHub Pages will serve from /docs
   },
 })

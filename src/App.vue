@@ -4,7 +4,7 @@
     <header class="nav-header">
       <div class="nav-container">
         <router-link to="/" class="nav-logo">
-          <img src="/bycarolinecls.png" alt="CarolineCLS Logo" />
+          <img :src="logo" alt="CarolineCLS Logo" />
           <span>Bycarolinecls</span>
         </router-link>
         <nav class="nav-links">
@@ -27,8 +27,15 @@
 </template>
 
 <script>
+import logo from './assets/bycarolinecls.png'
+
 export default {
   name: 'App',
+  data() {
+    return {
+      logo,
+    }
+  },
 }
 </script>
 

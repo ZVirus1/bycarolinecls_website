@@ -9,14 +9,16 @@
         </router-link>
         <nav class="nav-links">
           <router-link to="/" class="nav-link" :class="{ active: $route.path === '/' }">
-            Invoice Generator
+            <i class="fas fa-file-invoice"></i>
+            <span class="nav-text">Invoice Generator</span>
           </router-link>
           <router-link
             to="/calendar"
             class="nav-link"
             :class="{ active: $route.path === '/calendar' }"
           >
-            Calendar
+            <i class="fas fa-calendar"></i>
+            <span class="nav-text">Calendar</span>
           </router-link>
         </nav>
       </div>
@@ -28,6 +30,7 @@
 
 <script>
 import logo from './assets/bycarolinecls.png'
+import '@fortawesome/fontawesome-free/css/all.css' // Import FontAwesome
 
 export default {
   name: 'App',
@@ -90,39 +93,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: auto; /* Changed from 60px */
-  min-height: 60px; /* Added */
-  padding: 8px 0; /* Added */
-}
-
-/* Add mobile responsive styles */
-@media (max-width: 768px) {
-  .nav-header {
-    padding: 0 12px;
-  }
-
-  .nav-container {
-    min-height: 50px;
-    padding: 6px 0;
-  }
-
-  .nav-logo {
-    font-size: 16px;
-  }
-
-  .nav-logo img {
-    height: 28px;
-    width: 28px;
-  }
-
-  .nav-links {
-    gap: 12px;
-  }
-
-  .nav-link {
-    padding: 6px 12px;
-    font-size: 14px;
-  }
+  height: auto;
+  min-height: 60px;
+  padding: 8px 0;
 }
 
 .nav-logo {
@@ -143,16 +116,19 @@ body {
 
 .nav-links {
   display: flex;
-  gap: 24px;
+  gap: 16px;
 }
 
 .nav-link {
   color: #333;
   text-decoration: none;
   font-weight: 500;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 8px;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .nav-link:hover {
@@ -162,6 +138,68 @@ body {
 .nav-link.active {
   background: #111;
   color: white;
+}
+
+/* FontAwesome icons */
+.nav-link i {
+  font-size: 16px;
+  width: 16px;
+  text-align: center;
+}
+
+/* Mobile styles - hide text, show only icons */
+@media (max-width: 768px) {
+  .nav-header {
+    padding: 0 12px;
+  }
+
+  .nav-container {
+    min-height: 50px;
+    padding: 6px 0;
+  }
+
+  .nav-logo {
+    font-size: 16px;
+  }
+
+  .nav-logo img {
+    height: 28px;
+    width: 28px;
+  }
+
+  .nav-links {
+    gap: 8px;
+  }
+
+  .nav-link {
+    padding: 8px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+  }
+
+  .nav-text {
+    display: none; /* Hide text on mobile */
+  }
+
+  .nav-link i {
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .nav-link {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+  }
+
+  .nav-link i {
+    font-size: 14px;
+  }
 }
 
 /* Optional self-hosted header font */

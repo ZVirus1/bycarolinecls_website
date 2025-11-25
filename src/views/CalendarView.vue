@@ -580,77 +580,107 @@ export default {
 }
 
 /* Enhanced Responsive Design */
+@media (max-width: 1024px) {
+  .calendar-day {
+    min-height: 80px; /* Reduced from 90px */
+    padding: 4px; /* Reduced from 6px */
+  }
+
+  .weekday {
+    padding: 8px 2px; /* Reduced padding */
+    font-size: 12px; /* Smaller font */
+  }
+
+  .appointment {
+    font-size: 9px; /* Smaller font */
+    padding: 2px 3px;
+  }
+
+  .day-number {
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+}
+
 @media (max-width: 768px) {
-  .calendar-container {
-    margin: 16px auto;
-    padding: 0 12px;
+  .calendar-day {
+    min-height: 60px; /* Reduced from 70px */
+    padding: 2px 1px; /* Reduced padding */
   }
 
-  .calendar-header {
-    margin-bottom: 16px;
+  .weekday {
+    padding: 6px 1px; /* Reduced padding */
+    font-size: 11px; /* Smaller font */
+    word-break: break-word; /* Allow word breaking */
+    line-height: 1.2;
   }
 
-  .calendar-title {
-    font-size: 24px;
-    text-align: center;
+  .day-number {
+    font-size: 11px;
+    margin-bottom: 1px;
   }
 
-  .calendar-controls {
-    flex-direction: column;
-    gap: 12px;
+  .appointment {
+    font-size: 8px;
+    padding: 1px 2px;
+    border-left-width: 2px;
+    line-height: 1.1;
   }
 
-  .month-navigation {
-    justify-content: center;
-  }
-
-  .action-buttons {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .calendar-btn {
-    flex: 1;
-    text-align: center;
-  }
-
-  .current-month {
-    min-width: 140px;
-    font-size: 16px;
+  .appointments {
+    gap: 1px; /* Reduced gap */
   }
 }
 
 @media (max-width: 480px) {
-  .calendar-container {
-    margin: 12px auto;
-    padding: 0 8px;
+  .calendar-day {
+    min-height: 50px; /* Reduced from 60px */
   }
 
-  .calendar-title {
-    font-size: 20px;
+  .weekday {
+    padding: 4px 1px;
+    font-size: 10px; /* Even smaller font */
   }
 
-  .appointment-item {
-    padding: 12px;
+  .day-number {
+    font-size: 10px;
   }
 
-  .appointment-date strong {
-    font-size: 14px;
+  .appointment {
+    font-size: 7px;
+    padding: 1px;
   }
 
-  .client-name {
-    font-size: 14px;
+  /* Reduce font size for weekday abbreviations */
+  .calendar-weekdays .weekday {
+    font-size: 9px;
   }
 }
 
+/* Very small screens - horizontal scroll solution */
 @media (max-width: 360px) {
-  .calendar-container {
-    margin: 8px auto;
-    padding: 0 6px;
+  .calendar {
+    overflow-x: auto; /* Allow horizontal scrolling */
   }
 
-  .action-buttons {
-    flex-direction: column;
+  .calendar-weekdays,
+  .calendar-days {
+    min-width: 500px; /* Minimum width to prevent excessive cramping */
+  }
+
+  .calendar-day {
+    min-height: 45px;
+  }
+
+  .appointment {
+    font-size: 6px;
+    padding: 0;
+  }
+
+  .appointment-delete {
+    width: 10px;
+    height: 10px;
+    font-size: 7px;
   }
 }
 </style>

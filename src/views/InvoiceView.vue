@@ -217,16 +217,29 @@ export default {
       return new Promise((resolve, reject) => {
         const paperEl = document.getElementById('paper')
 
+        // Wait for fonts and images to load
         setTimeout(() => {
           html2canvas(paperEl, {
             scale: 2,
-            backgroundColor: null,
+            backgroundColor: '#f5f5ef', // Explicit background color
             useCORS: true,
             logging: false,
+            allowTaint: false,
+            removeContainer: true,
+            imageTimeout: 15000, // Increase timeout for iOS
+            onclone: function (clonedDoc) {
+              // Ensure all images have CORS attributes
+              const images = clonedDoc.querySelectorAll('img')
+              images.forEach((img) => {
+                img.setAttribute('crossOrigin', 'anonymous')
+              })
+            },
           })
             .then((canvas) => {
               try {
-                const imgData = canvas.toDataURL('image/png')
+                // Convert canvas to data URL with proper format
+                const imgData = canvas.toDataURL('image/jpeg', 0.95) // Use JPEG for better iOS compatibility
+
                 const pdf = new jsPDF({
                   unit: 'pt',
                   format: 'a4',
@@ -236,10 +249,15 @@ export default {
                 const pageW = pdf.internal.pageSize.getWidth()
                 const pageH = pdf.internal.pageSize.getHeight()
                 const imgW = pageW
-                const imgH = canvas.height * (imgW / canvas.width)
-                const offsetY = (pageH - imgH) / 2 > 0 ? (pageH - imgH) / 2 : 0
+                const imgH = (canvas.height * imgW) / canvas.width
 
-                pdf.addImage(imgData, 'PNG', 0, offsetY, imgW, imgH)
+                // Ensure image fits on page
+                const scale = Math.min(1, pageH / imgH)
+                const finalHeight = imgH * scale
+                const finalWidth = imgW * scale
+                const offsetY = (pageH - finalHeight) / 2
+
+                pdf.addImage(imgData, 'JPEG', 0, offsetY, finalWidth, finalHeight)
                 const pdfBlob = pdf.output('blob')
 
                 if (!pdfBlob || pdfBlob.size === 0) {
@@ -254,7 +272,7 @@ export default {
             .catch((error) => {
               reject(new Error('Canvas generation failed: ' + error.message))
             })
-        }, 500)
+        }, 1000) // Increased delay for iOS
       })
     },
     getServicesData() {

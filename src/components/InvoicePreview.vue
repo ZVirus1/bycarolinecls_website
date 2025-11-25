@@ -1,5 +1,5 @@
 <template>
-  <div class="card paper-wrap">
+  <div class="card paper-wrap" ref="paperWrapper">
     <div class="preview-controls" v-if="isMobile">
       <button class="zoom-btn" @click="zoomOut">🔍 -</button>
       <span class="zoom-level">{{ Math.round(zoom * 100) }}%</span>
@@ -13,7 +13,6 @@
       :style="{ transform: `scale(${zoom})`, transformOrigin: 'top center' }"
     >
       <div class="page-pad" id="invoicePage">
-        <!-- ... keep existing template content exactly the same ... -->
         <div class="inv-title">INVOICE</div>
 
         <div class="top-meta">
@@ -26,16 +25,16 @@
 
           <div class="meta-box">
             <div class="meta-line">
-              <span class="k">Invoice Date :</span
-              ><span id="vInvDate">{{ displayInvoiceDate }}</span>
+              <span class="k">Invoice Date :</span>
+              <span id="vInvDate">{{ displayInvoiceDate }}</span>
             </div>
             <div class="meta-line">
-              <span class="k">Appointment Date :</span
-              ><span id="vAppDate">{{ displayAppointmentDate }}</span>
+              <span class="k">Appointment Date :</span>
+              <span id="vAppDate">{{ displayAppointmentDate }}</span>
             </div>
             <div class="meta-line">
-              <span class="k">Appointment Time :</span
-              ><span id="vAppTime">{{ displayAppointmentTime }}</span>
+              <span class="k">Appointment Time :</span>
+              <span id="vAppTime">{{ displayAppointmentTime }}</span>
             </div>
           </div>
         </div>
@@ -124,11 +123,6 @@ export default {
   mounted() {
     this.checkMobile()
     window.addEventListener('resize', this.checkMobile)
-
-    // Set appropriate initial zoom for mobile
-    if (this.isMobile) {
-      this.zoom = 0.5
-    }
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkMobile)
@@ -136,6 +130,20 @@ export default {
   methods: {
     checkMobile() {
       this.isMobile = window.innerWidth < 768
+      this.setInitialZoom()
+    },
+    setInitialZoom() {
+      if (!this.isMobile) {
+        this.zoom = 1
+        return
+      }
+      this.$nextTick(() => {
+        const wrapper = this.$refs.paperWrapper
+        if (!wrapper) return
+        const availableWidth = wrapper.clientWidth || window.innerWidth
+        const scale = availableWidth / 794 // 794px = A4 width in CSS
+        this.zoom = Math.min(scale, 1)
+      })
     },
     zoomIn() {
       if (this.zoom < 2) {
@@ -148,7 +156,11 @@ export default {
       }
     },
     resetZoom() {
-      this.zoom = this.isMobile ? 0.5 : 1
+      if (this.isMobile) {
+        this.setInitialZoom()
+      } else {
+        this.zoom = 1
+      }
     },
     calculateSubtotal() {
       let subtotal = 0
@@ -163,7 +175,6 @@ export default {
     },
   },
   computed: {
-    // ... keep all existing computed properties exactly the same ...
     displayName() {
       return this.formData.name || 'REDACTED-NAME'
     },
@@ -240,7 +251,10 @@ export default {
   justify-content: center;
   align-items: flex-start;
   flex-direction: column;
+  width: 100%;
+  overflow-x: auto;
 }
+
 .paper {
   width: 794px; /* Fixed A4 width */
   height: 1123px; /* Fixed A4 height */
@@ -250,92 +264,7 @@ export default {
   position: relative;
   overflow: hidden;
   transition: transform 0.3s ease;
-  max-width: 100%; /* Added */
-  margin: 0 auto; /* Added */
-}
-
-/* Enhanced Mobile Experience */
-@media (max-width: 768px) {
-  .preview-controls {
-    display: flex;
-  }
-
-  .paper {
-    transform-origin: top center;
-    margin: 0 auto;
-    width: 100%;
-    height: auto;
-    aspect-ratio: 794 / 1123;
-    transform: scale(1) !important; /* Remove scaling on mobile */
-    max-width: 100%;
-  }
-
-  .page-pad {
-    padding: 40px 48px;
-  }
-
-  /* Ensure the preview is properly visible */
-  .paper-wrap {
-    width: 100%;
-    overflow-x: auto;
-  }
-
-  /* Adjust font sizes for better mobile readability */
-  .inv-title {
-    font-size: 40px;
-    margin-bottom: 40px;
-  }
-
-  .top-meta {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .meta-box h3 {
-    font-size: 14px;
-  }
-
-  .meta-box p {
-    font-size: 12px;
-  }
-
-  .meta-line .k {
-    font-size: 14px;
-  }
-
-  .items-table thead th,
-  .items-table tbody td {
-    font-size: 13px;
-    padding: 8px 0;
-  }
-
-  .totals {
-    width: 100%;
-    max-width: 300px;
-  }
-
-  .payment {
-    font-size: 16px;
-  }
-
-  .payment h4 {
-    font-size: 16px;
-  }
-
-  .brand-logo img {
-    height: 80px;
-  }
-}
-
-/* Hide preview controls on desktop */
-@media (min-width: 769px) {
-  .preview-controls {
-    display: none;
-  }
-
-  .preview-title {
-    display: none !important;
-  }
+  margin: 0 auto;
 }
 
 .page-pad {
@@ -425,7 +354,7 @@ export default {
   width: 100%;
   border-collapse: collapse;
   border-top: 2px solid #aaaaaa;
-  border-bottom: 2px solid #aaaaaa;
+  /* removed border-bottom to avoid double line in PDF */
 }
 .items-table thead th {
   text-align: center;
@@ -522,15 +451,15 @@ export default {
   object-fit: contain;
 }
 
-/* Enhanced Mobile Experience */
+/* Mobile: show controls, keep layout but scaled */
 @media (max-width: 768px) {
   .preview-controls {
     display: flex;
   }
 
-  .paper {
-    transform-origin: top center;
-    margin: 0 auto;
+  .paper-wrap {
+    width: 100%;
+    overflow-x: auto;
   }
 }
 

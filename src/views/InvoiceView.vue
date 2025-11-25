@@ -118,24 +118,42 @@ export default {
         this.statusMessage = ''
       }, 5000)
     },
+
+    async capturePdfCanvas() {
+      const paperEl = document.getElementById('paper')
+      if (!paperEl) {
+        throw new Error('Invoice preview not found')
+      }
+
+      // Give layout/fonts a moment to settle
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready
+      }
+
+      const canvas = await html2canvas(paperEl, {
+        scale: 2,
+        backgroundColor: '#f5f5ef',
+        logging: false,
+        useCORS: true,
+      })
+
+      return canvas
+    },
+
     async downloadPDF() {
+      const previousShowPreview = this.showPreview
+
       try {
-        const paperEl = document.getElementById('paper')
-
-        // Wait for all resources to load
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        if (document.fonts && document.fonts.ready) {
-          await document.fonts.ready
+        // On mobile, ensure the preview is actually visible before capturing
+        if (this.isMobile) {
+          this.showPreview = true
+          await this.$nextTick()
         }
 
-        const canvas = await html2canvas(paperEl, {
-          scale: 2,
-          backgroundColor: '#f5f5ef',
-          logging: false,
-        })
-
-        const imgData = canvas.toDataURL('image/jpeg', 0.95)
+        const canvas = await this.capturePdfCanvas()
+        const imgData = canvas.toDataURL('image/png') // PNG for better compatibility
 
         const pdf = new jsPDF({
           unit: 'pt',
@@ -153,15 +171,20 @@ export default {
         const finalWidth = imgW * scale
         const offsetY = (pageH - finalHeight) / 2
 
-        pdf.addImage(imgData, 'JPEG', 0, offsetY, finalWidth, finalHeight)
+        pdf.addImage(imgData, 'PNG', 0, offsetY, finalWidth, finalHeight)
         pdf.save('invoice.pdf')
 
         this.showStatus('PDF generated successfully!', true)
       } catch (error) {
         console.error('Error generating PDF:', error)
         this.showStatus('Error generating PDF. Please try again.', false)
+      } finally {
+        if (this.isMobile) {
+          this.showPreview = previousShowPreview
+        }
       }
     },
+
     async saveToCloud() {
       try {
         this.showStatus('Generating PDF and saving to cloud...', true)
@@ -222,52 +245,51 @@ export default {
         this.showStatus('Error saving to cloud: ' + error.message, false)
       }
     },
+
     async generatePDFBlob() {
-      return new Promise((resolve, reject) => {
-        const paperEl = document.getElementById('paper')
-        setTimeout(() => {
-          html2canvas(paperEl, {
-            scale: 2,
-            backgroundColor: '#f5f5ef',
-            logging: false,
-          })
-            .then((canvas) => {
-              try {
-                const imgData = canvas.toDataURL('image/jpeg', 0.95)
-                const pdf = new jsPDF({
-                  unit: 'pt',
-                  format: 'a4',
-                  compress: true,
-                })
+      const previousShowPreview = this.showPreview
 
-                const pageW = pdf.internal.pageSize.getWidth()
-                const pageH = pdf.internal.pageSize.getHeight()
-                const imgW = pageW
-                const imgH = (canvas.height * imgW) / canvas.width
+      try {
+        if (this.isMobile) {
+          this.showPreview = true
+          await this.$nextTick()
+        }
 
-                const scale = Math.min(1, pageH / imgH)
-                const finalHeight = imgH * scale
-                const finalWidth = imgW * scale
-                const offsetY = (pageH - finalHeight) / 2
+        const canvas = await this.capturePdfCanvas()
+        const imgData = canvas.toDataURL('image/png')
 
-                pdf.addImage(imgData, 'JPEG', 0, offsetY, finalWidth, finalHeight)
-                const pdfBlob = pdf.output('blob')
+        const pdf = new jsPDF({
+          unit: 'pt',
+          format: 'a4',
+          compress: true,
+        })
 
-                if (!pdfBlob || pdfBlob.size === 0) {
-                  reject(new Error('Generated PDF is empty'))
-                } else {
-                  resolve(pdfBlob)
-                }
-              } catch (error) {
-                reject(new Error('PDF generation failed: ' + error.message))
-              }
-            })
-            .catch((error) => {
-              reject(new Error('Canvas generation failed: ' + error.message))
-            })
-        }, 1000)
-      })
+        const pageW = pdf.internal.pageSize.getWidth()
+        const pageH = pdf.internal.pageSize.getHeight()
+        const imgW = pageW
+        const imgH = (canvas.height * imgW) / canvas.width
+
+        const scale = Math.min(1, pageH / imgH)
+        const finalHeight = imgH * scale
+        const finalWidth = imgW * scale
+        const offsetY = (pageH - finalHeight) / 2
+
+        pdf.addImage(imgData, 'PNG', 0, offsetY, finalWidth, finalHeight)
+
+        const pdfBlob = pdf.output('blob')
+
+        if (!pdfBlob || pdfBlob.size === 0) {
+          throw new Error('Generated PDF is empty')
+        }
+
+        return pdfBlob
+      } finally {
+        if (this.isMobile) {
+          this.showPreview = previousShowPreview
+        }
+      }
     },
+
     getServicesData() {
       const services = []
       this.items.forEach((item) => {

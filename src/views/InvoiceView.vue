@@ -1,18 +1,6 @@
 <template>
-  <div class="app">
-    <!-- Mobile Preview Toggle -->
-    <div class="mobile-preview-toggle" v-if="isMobile">
-      <button
-        class="toggle-btn"
-        :class="{ active: showPreview }"
-        @click="showPreview = !showPreview"
-      >
-        {{ showPreview ? '📝 Edit Form' : '👁️ Preview' }}
-      </button>
-    </div>
-
-    <!-- ============ LEFT: FORM ============ -->
-    <div class="form-section" :class="{ 'hidden-on-mobile': isMobile && showPreview }">
+  <div class="invoice-container">
+    <div class="form-section">
       <InvoiceForm
         :form-data="formData"
         :items="items"
@@ -26,8 +14,8 @@
       />
     </div>
 
-    <!-- ============ RIGHT: PREVIEW PAPER ============ -->
-    <div class="preview-section" :class="{ 'hidden-on-mobile': isMobile && !showPreview }">
+    <div class="preview-section">
+      <h3 class="preview-title"><i class="fas fa-eye"></i> Preview</h3>
       <InvoicePreview :form-data="formData" :items="items" />
     </div>
   </div>
@@ -46,6 +34,7 @@ import {
   ref,
   uploadBytes,
   getDownloadURL,
+  deleteDoc,
 } from '../stores/firebase.js'
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -79,21 +68,9 @@ export default {
       ],
       statusMessage: '',
       isStatusSuccess: true,
-      showPreview: false,
-      isMobile: false,
     }
   },
-  mounted() {
-    this.checkMobile()
-    window.addEventListener('resize', this.checkMobile)
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.checkMobile)
-  },
   methods: {
-    checkMobile() {
-      this.isMobile = window.innerWidth < 768
-    },
     updateFormData(newData) {
       if (JSON.stringify(this.formData) !== JSON.stringify({ ...this.formData, ...newData })) {
         this.formData = { ...this.formData, ...newData }
@@ -119,28 +96,55 @@ export default {
       try {
         const paperEl = document.getElementById('paper')
 
+        // Wait for all resources to load
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+
         if (document.fonts && document.fonts.ready) {
           await document.fonts.ready
         }
 
         const canvas = await html2canvas(paperEl, {
           scale: 2,
-          backgroundColor: null,
+          backgroundColor: '#f5f5ef',
+          useCORS: true,
+          logging: false,
+          allowTaint: true,
+          imageTimeout: 30000,
+          onclone: function (clonedDoc) {
+            const images = clonedDoc.querySelectorAll('img')
+            images.forEach((img) => {
+              if (!img.hasAttribute('crossOrigin')) {
+                img.setAttribute('crossOrigin', 'anonymous')
+              }
+            })
+          },
         })
 
-        const imgData = canvas.toDataURL('image/png')
-        const pdf = new jsPDF({ unit: 'pt', format: 'a4' })
+        const imgData = canvas.toDataURL('image/jpeg', 0.95)
+
+        const pdf = new jsPDF({
+          unit: 'pt',
+          format: 'a4',
+          compress: true,
+        })
+
         const pageW = pdf.internal.pageSize.getWidth()
         const pageH = pdf.internal.pageSize.getHeight()
         const imgW = pageW
-        const imgH = canvas.height * (imgW / canvas.width)
-        const offsetY = (pageH - imgH) / 2 > 0 ? (pageH - imgH) / 2 : 0
+        const imgH = (canvas.height * imgW) / canvas.width
 
-        pdf.addImage(imgData, 'PNG', 0, offsetY, imgW, imgH)
+        const scale = Math.min(1, pageH / imgH)
+        const finalHeight = imgH * scale
+        const finalWidth = imgW * scale
+        const offsetY = (pageH - finalHeight) / 2
+
+        pdf.addImage(imgData, 'JPEG', 0, offsetY, finalWidth, finalHeight)
         pdf.save('invoice.pdf')
+
+        this.showStatus('PDF generated successfully!', true)
       } catch (error) {
         console.error('Error generating PDF:', error)
-        this.showStatus('Error generating PDF: ' + error.message, false)
+        this.showStatus('Error generating PDF. Please try again.', false)
       }
     },
     async saveToCloud() {
@@ -175,28 +179,18 @@ export default {
         const docRef = await addDoc(collection(db, 'appointments'), appointmentData)
         const appointmentId = docRef.id
 
-        console.log('Appointment saved with ID:', appointmentId)
-
         try {
           const storageRef = ref(storage, `invoices/${appointmentId}.pdf`)
-          console.log('Uploading PDF to storage...')
-
           await uploadBytes(storageRef, pdfBlob, {
             contentType: 'application/pdf',
           })
 
-          console.log('PDF upload completed')
-
           const pdfUrl = await getDownloadURL(storageRef)
-          console.log('PDF URL obtained:', pdfUrl)
-
           await updateDoc(doc(db, 'appointments', appointmentId), {
             pdfUrl: pdfUrl,
             pdfFileName: `invoice_${appointmentId}.pdf`,
             updatedAt: new Date(),
           })
-
-          console.log('Firestore updated with PDF URL')
 
           this.showStatus('Successfully saved invoice to cloud and calendar!', true)
 
@@ -216,30 +210,26 @@ export default {
     async generatePDFBlob() {
       return new Promise((resolve, reject) => {
         const paperEl = document.getElementById('paper')
-
-        // Wait for fonts and images to load
         setTimeout(() => {
           html2canvas(paperEl, {
             scale: 2,
-            backgroundColor: '#f5f5ef', // Explicit background color
+            backgroundColor: '#f5f5ef',
             useCORS: true,
             logging: false,
-            allowTaint: false,
-            removeContainer: true,
-            imageTimeout: 15000, // Increase timeout for iOS
+            allowTaint: true,
+            imageTimeout: 30000,
             onclone: function (clonedDoc) {
-              // Ensure all images have CORS attributes
               const images = clonedDoc.querySelectorAll('img')
               images.forEach((img) => {
-                img.setAttribute('crossOrigin', 'anonymous')
+                if (!img.hasAttribute('crossOrigin')) {
+                  img.setAttribute('crossOrigin', 'anonymous')
+                }
               })
             },
           })
             .then((canvas) => {
               try {
-                // Convert canvas to data URL with proper format
-                const imgData = canvas.toDataURL('image/jpeg', 0.95) // Use JPEG for better iOS compatibility
-
+                const imgData = canvas.toDataURL('image/jpeg', 0.95)
                 const pdf = new jsPDF({
                   unit: 'pt',
                   format: 'a4',
@@ -251,7 +241,6 @@ export default {
                 const imgW = pageW
                 const imgH = (canvas.height * imgW) / canvas.width
 
-                // Ensure image fits on page
                 const scale = Math.min(1, pageH / imgH)
                 const finalHeight = imgH * scale
                 const finalWidth = imgW * scale
@@ -272,7 +261,7 @@ export default {
             .catch((error) => {
               reject(new Error('Canvas generation failed: ' + error.message))
             })
-        }, 1000) // Increased delay for iOS
+        }, 1000)
       })
     },
     getServicesData() {
@@ -305,106 +294,53 @@ export default {
 </script>
 
 <style scoped>
-.app {
+.invoice-container {
   max-width: 1250px;
   margin: 24px auto;
   padding: 0 16px;
-  display: grid;
-  grid-template-columns: 460px 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
   width: 100%;
   box-sizing: border-box;
 }
 
-.mobile-preview-toggle {
-  display: none;
-  margin-bottom: 16px;
-}
-
-.toggle-btn {
-  width: 100%;
-  padding: 12px 16px;
-  background: #111;
-  color: white;
-  border: none;
-  border-radius: 8px;
+.preview-title {
+  font-size: 20px;
   font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  color: #111;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.toggle-btn.active {
-  background: #333;
+.preview-title i {
+  color: #666;
 }
 
-.hidden-on-mobile {
-  display: none;
-}
-
-/* Enhanced Responsive Design */
-@media (max-width: 1200px) {
-  .app {
-    grid-template-columns: 400px 1fr;
-    gap: 20px;
-  }
-}
-
-@media (max-width: 1024px) {
-  .app {
-    grid-template-columns: 350px 1fr;
-    gap: 16px;
-  }
-}
-
-@media (max-width: 900px) {
-  .app {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-}
-
-/* Mobile-first approach for smaller screens */
+/* Responsive design */
 @media (max-width: 768px) {
-  .app {
-    margin: 12px auto;
-    padding: 0 8px;
-    gap: 16px;
-    grid-template-columns: 1fr;
+  .invoice-container {
+    margin: 16px auto;
+    padding: 0 12px;
+    gap: 20px;
   }
 
-  .mobile-preview-toggle {
-    display: block;
-    margin-bottom: 12px;
-  }
-
-  .form-section,
-  .preview-section {
-    display: block;
-  }
-
-  .hidden-on-mobile {
-    display: none;
-  }
-
-  .toggle-btn {
-    padding: 10px 14px; /* Slightly smaller padding */
-    font-size: 14px; /* Smaller font */
+  .preview-title {
+    font-size: 18px;
   }
 }
 
 @media (max-width: 480px) {
-  .app {
+  .invoice-container {
     margin: 12px auto;
     padding: 0 8px;
-    gap: 12px;
+    gap: 16px;
   }
-}
 
-@media (max-width: 360px) {
-  .app {
-    margin: 8px auto;
-    padding: 0 6px;
-    gap: 10px;
+  .preview-title {
+    font-size: 16px;
   }
 }
 </style>

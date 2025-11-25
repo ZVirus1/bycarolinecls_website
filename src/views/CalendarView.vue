@@ -1,16 +1,24 @@
 <template>
   <div class="calendar-container">
     <div class="calendar-header">
-      <h1 class="calendar-title">Appointment Calendar</h1>
+      <h1 class="calendar-title"><i class="fas fa-calendar-alt"></i> Appointment Calendar</h1>
       <div class="calendar-controls">
         <div class="month-navigation">
-          <button class="calendar-btn nav-btn" @click="prevMonth">←</button>
+          <button class="calendar-btn nav-btn" @click="prevMonth">
+            <i class="fas fa-chevron-left"></i>
+          </button>
           <div class="current-month">{{ currentMonthDisplay }}</div>
-          <button class="calendar-btn nav-btn" @click="nextMonth">→</button>
+          <button class="calendar-btn nav-btn" @click="nextMonth">
+            <i class="fas fa-chevron-right"></i>
+          </button>
         </div>
         <div class="action-buttons">
-          <button class="calendar-btn primary" @click="goToToday">Today</button>
-          <button class="calendar-btn success" @click="showAddEventModal">+ Add Event</button>
+          <button class="calendar-btn primary" @click="goToToday">
+            <i class="fas fa-calendar-day"></i> Today
+          </button>
+          <button class="calendar-btn success" @click="showAddEventModal">
+            <i class="fas fa-plus"></i> Add Event
+          </button>
         </div>
       </div>
     </div>
@@ -22,7 +30,8 @@
         :class="{ active: showListView }"
         @click="showListView = !showListView"
       >
-        {{ showListView ? '📅 Calendar View' : '📋 List View' }}
+        <i class="fas" :class="showListView ? 'fa-calendar' : 'fa-list'"></i>
+        {{ showListView ? ' Calendar View' : ' List View' }}
       </button>
     </div>
 
@@ -311,17 +320,13 @@ export default {
   max-width: 1250px;
   margin: 24px auto;
   padding: 0 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .calendar-header {
   margin-bottom: 24px;
-}
-
-.calendar-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #111;
-  margin-bottom: 16px;
+  width: 100%;
 }
 
 .calendar-controls {
@@ -329,6 +334,67 @@ export default {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  width: 100%;
+}
+
+/* Mobile responsive for calendar header */
+@media (max-width: 768px) {
+  .calendar-container {
+    margin: 16px auto;
+    padding: 0 12px;
+  }
+
+  .calendar-header {
+    margin-bottom: 16px;
+  }
+
+  .calendar-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .month-navigation {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .action-buttons {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .calendar-btn {
+    flex: 1;
+    text-align: center;
+    min-width: 0; /* Allow buttons to shrink */
+  }
+
+  .current-month {
+    min-width: 140px;
+    font-size: 16px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .calendar-container {
+    margin: 12px auto;
+    padding: 0 8px;
+  }
+
+  .calendar-title {
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .calendar-btn {
+    font-size: 14px;
+    padding: 6px 8px;
+  }
+
+  .calendar-btn i {
+    margin-right: 4px;
+  }
 }
 
 .month-navigation {

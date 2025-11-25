@@ -72,7 +72,9 @@
         <button class="remove" type="button" @click="removeItem(index)">Remove</button>
       </div>
     </div>
-    <button class="btn secondary" type="button" @click="$emit('add-item')">+ Add item</button>
+    <button class="btn secondary" type="button" @click="$emit('add-item')">
+      <i class="fas fa-plus"></i> Add item
+    </button>
     <div class="muted">
       Only rows with a Description will be shown. A divider appears under each shown row.
     </div>
@@ -91,9 +93,11 @@
       </div>
     </div>
 
-    <button class="btn" type="button" @click="$emit('download-pdf')">Generate PDF</button>
+    <button class="btn" type="button" @click="$emit('download-pdf')">
+      <i class="fas fa-file-pdf"></i> Generate PDF
+    </button>
     <button class="btn success" type="button" @click="$emit('save-to-cloud')">
-      Generate PDF & Save to Calendar
+      <i class="fas fa-cloud-upload-alt"></i> Generate PDF & Save to Calendar
     </button>
     <div v-if="statusMessage" class="status-message" :class="statusClass">
       {{ statusMessage }}

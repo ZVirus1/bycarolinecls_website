@@ -119,6 +119,20 @@ export default {
       }, 5000)
     },
 
+    getInvoiceFileName() {
+      // Use customer name from form, fallback to 'Client'
+      const rawName = (this.formData.name || 'Client').trim()
+
+      // Turn spaces into dashes and strip weird characters
+      const safeName =
+        rawName
+          .replace(/\s+/g, '-') // spaces -> dashes
+          .replace(/[^a-zA-Z0-9\-]/g, '') || // only keep letters, numbers, dashes
+        'Client'
+
+      return `Bycarolinecls-Invoice-${safeName}.pdf`
+    },
+
     async capturePdfCanvas() {
       const paperEl = document.getElementById('paper')
       if (!paperEl) {
@@ -158,7 +172,7 @@ export default {
       try {
         // Reuse the same PDF generation logic as "saveToCloud"
         const pdfBlob = await this.generatePDFBlob()
-        const fileName = 'invoice.pdf'
+        const fileName = this.getInvoiceFileName()
 
         // 1) Always trigger classic download (desktop + mobile)
         const url = URL.createObjectURL(pdfBlob)
@@ -170,7 +184,7 @@ export default {
         document.body.removeChild(link)
         URL.revokeObjectURL(url)
 
-        // 2) Optional: on mobile, ALSO open the native share sheet with the PDF file
+        // 2) Optional: on mobile, ALSO open the native share sheet with the PDF file only
         const hasNavigator = typeof navigator !== 'undefined'
         const canShareFiles =
           this.isMobile && // only attempt on mobile, not desktop
@@ -181,6 +195,7 @@ export default {
         if (canShareFiles) {
           const file = new File([pdfBlob], fileName, { type: 'application/pdf' })
 
+          // We ONLY share the file – no URL passed here
           if (navigator.canShare({ files: [file] })) {
             try {
               await navigator.share({

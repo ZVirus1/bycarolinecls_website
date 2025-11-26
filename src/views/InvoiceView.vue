@@ -155,45 +155,50 @@ export default {
     },
 
     async downloadPDF() {
-      const previousShowPreview = this.showPreview
-
       try {
-        // On mobile, ensure the preview is actually visible before capturing
-        if (this.isMobile) {
-          this.showPreview = true
-          await this.$nextTick()
+        // Reuse the same PDF generation logic as "saveToCloud"
+        const pdfBlob = await this.generatePDFBlob()
+        const fileName = 'invoice.pdf'
+
+        // 1) Always trigger classic download (desktop + mobile)
+        const url = URL.createObjectURL(pdfBlob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+
+        // 2) Optional: on mobile, ALSO open the native share sheet with the PDF file
+        const hasNavigator = typeof navigator !== 'undefined'
+        const canShareFiles =
+          this.isMobile && // only attempt on mobile, not desktop
+          hasNavigator &&
+          'share' in navigator &&
+          'canShare' in navigator
+
+        if (canShareFiles) {
+          const file = new File([pdfBlob], fileName, { type: 'application/pdf' })
+
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: 'Invoice',
+                text: 'Invoice from Bycarolinecls',
+              })
+            } catch (shareError) {
+              // User cancelled or share failed; we already downloaded, so just log it
+              console.warn('Share cancelled or failed:', shareError)
+            }
+          }
         }
-
-        const canvas = await this.capturePdfCanvas()
-        const imgData = canvas.toDataURL('image/png') // PNG for better compatibility
-
-        const pdf = new jsPDF({
-          unit: 'pt',
-          format: 'a4',
-          compress: true,
-        })
-
-        const pageW = pdf.internal.pageSize.getWidth()
-        const pageH = pdf.internal.pageSize.getHeight()
-        const imgW = pageW
-        const imgH = (canvas.height * imgW) / canvas.width
-
-        const scale = Math.min(1, pageH / imgH)
-        const finalHeight = imgH * scale
-        const finalWidth = imgW * scale
-        const offsetY = (pageH - finalHeight) / 2
-
-        pdf.addImage(imgData, 'PNG', 0, offsetY, finalWidth, finalHeight)
-        pdf.save('invoice.pdf')
 
         this.showStatus('PDF generated successfully!', true)
       } catch (error) {
         console.error('Error generating PDF:', error)
         this.showStatus('Error generating PDF. Please try again.', false)
-      } finally {
-        if (this.isMobile) {
-          this.showPreview = previousShowPreview
-        }
       }
     },
 

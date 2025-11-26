@@ -205,12 +205,11 @@ export default {
   margin-right: 8px; /* Added - matches left margin */
 }
 
-/* Update mobile responsive for grid-2 */
 @media (max-width: 768px) {
   .grid-2 {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-right: 0; /* Reset on mobile since it's full width */
+    grid-template-columns: 1fr 1fr; /* Keep 2 columns on mobile */
+    gap: 12px; /* Keep the same gap as desktop */
+    margin-right: 8px; /* Keep the same margin as desktop */
   }
   .card {
     margin-bottom: 0; /* Remove bottom margin since preview follows immediately */

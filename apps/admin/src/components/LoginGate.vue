@@ -33,7 +33,6 @@
         {{ busy ? 'Signing in...' : 'Sign in' }}
       </button>
 
-      <p class="login-note">Accounts are created by the site owner in the Firebase console.</p>
     </form>
   </div>
 </template>
@@ -144,12 +143,5 @@ async function submit() {
 .login-btn:disabled {
   opacity: 0.55;
   cursor: default;
-}
-.login-note {
-  font-size: 11.5px;
-  color: #a09a90;
-  text-align: center;
-  margin: 18px 0 0;
-  line-height: 1.5;
 }
 </style>

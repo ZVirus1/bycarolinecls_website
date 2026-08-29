@@ -20,7 +20,7 @@
       </div>
 
       <div class="tail">
-        <router-link to="/book" class="btn">Check availability</router-link>
+        <router-link to="/book" class="btn">Book Now</router-link>
       </div>
     </div>
   </section>

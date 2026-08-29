@@ -67,7 +67,7 @@
   <section class="cta">
     <div class="shell">
       <h2 class="cta__title">Ready to book?</h2>
-      <p class="cta__sub">Check available dates and send a message. I reply within 24 hours.</p>
+      <p class="cta__sub">Send me your date and service, and I reply within 24 hours.</p>
       <router-link to="/book" class="btn btn--ondark">Book Now</router-link>
     </div>
   </section>

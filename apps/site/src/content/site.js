@@ -61,4 +61,4 @@ export const about = {
 }
 
 export const bookingNote =
-  'Dates marked unavailable are already booked. Pick a date that suits you and send a message. I will confirm within 24 hours.'
+  'Tell me the date and service you have in mind and send it over on WhatsApp. I will check my diary and confirm within 24 hours.'

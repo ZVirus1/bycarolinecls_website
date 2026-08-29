@@ -3,12 +3,8 @@
     <div class="shell book">
       <div class="book__intro">
         <p class="eyebrow">Booking</p>
-        <h1 class="page-title">Check availability</h1>
+        <h1 class="page-title">Make an enquiry</h1>
         <p class="lede">{{ bookingNote }}</p>
-      </div>
-
-      <div class="book__cal">
-        <AvailabilityCalendar v-model:selected="selectedDate" />
       </div>
 
       <form class="book__form" @submit.prevent>
@@ -25,16 +21,14 @@
         </label>
 
         <label class="field">
+          <span class="field__label">Preferred date</span>
+          <input v-model="selectedDate" type="date" :min="today" class="field__input" />
+        </label>
+
+        <label class="field">
           <span class="field__label">Preferred time</span>
           <input v-model="time" type="time" class="field__input" />
         </label>
-
-        <p class="chosen">
-          <template v-if="selectedDate">
-            Selected: <strong>{{ prettyDate }}</strong>
-          </template>
-          <template v-else>Pick a date from the calendar (optional).</template>
-        </p>
 
         <a :href="waHref" target="_blank" rel="noopener noreferrer" class="btn book__go">
           Continue on WhatsApp
@@ -50,7 +44,6 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import AvailabilityCalendar from '../components/AvailabilityCalendar.vue'
 import { bookingNote } from '../content/site.js'
 import { publicServices } from '@bycarolinecls/shared/services'
 import { rupiah } from '@bycarolinecls/shared/format'
@@ -61,16 +54,8 @@ const selectedDate = ref('')
 const service = ref('')
 const time = ref('')
 
-const prettyDate = computed(() =>
-  selectedDate.value
-    ? new Date(`${selectedDate.value}T00:00:00`).toLocaleDateString('en-GB', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    : '',
-)
+// Jakarta/Medan local today, so the picker cannot offer a date already past.
+const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())
 
 const waHref = computed(() =>
   whatsappLink(
@@ -81,14 +66,11 @@ const waHref = computed(() =>
 
 <style scoped>
 .book {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(28px, 5vw, 56px);
-  align-items: start;
+  max-width: 560px;
 }
 
 .book__intro {
-  grid-column: 1 / -1;
+  margin-bottom: clamp(28px, 4vw, 40px);
 }
 
 .page-title {
@@ -150,9 +132,4 @@ const waHref = computed(() =>
   line-height: 1.55;
 }
 
-@media (max-width: 860px) {
-  .book {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

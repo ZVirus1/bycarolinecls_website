@@ -6,21 +6,31 @@
   <LoginGate v-else-if="!isAuthenticated" />
 
   <div v-else id="app" class="shell">
-    <button
-      class="sidebar-toggle"
-      :aria-expanded="String(navOpen)"
-      aria-controls="admin-nav"
-      @click="navOpen = !navOpen"
-    >
-      <i class="fas" :class="navOpen ? 'fa-xmark' : 'fa-bars'"></i>
-      <span class="sr-only">{{ navOpen ? 'Close menu' : 'Open menu' }}</span>
-    </button>
+    <header class="topbar">
+      <button
+        class="icon-btn"
+        aria-controls="admin-nav"
+        :aria-expanded="String(navOpen)"
+        @click="navOpen = true"
+      >
+        <i class="fas fa-bars"></i>
+        <span class="sr-only">Open menu</span>
+      </button>
+      <a href="/" class="topbar__brand" title="View the public site">
+        <img :src="logo" alt="Bycarolinecls" />
+      </a>
+    </header>
 
     <aside id="admin-nav" class="sidebar" :class="{ 'is-open': navOpen }">
-      <router-link to="/" class="brand" @click="navOpen = false">
-        <img :src="logo" alt="" />
-        <span>Bycarolinecls</span>
-      </router-link>
+      <div class="sidebar__head">
+        <button class="icon-btn sidebar__close" @click="navOpen = false">
+          <i class="fas fa-xmark"></i>
+          <span class="sr-only">Close menu</span>
+        </button>
+        <a href="/" class="brand" title="View the public site">
+          <img :src="logo" alt="Bycarolinecls" />
+        </a>
+      </div>
 
       <nav class="side-nav" aria-label="Admin sections">
         <router-link
@@ -40,7 +50,6 @@
         <button class="signout" @click="handleSignOut">
           <i class="fas fa-right-from-bracket"></i> Sign out
         </button>
-        <a href="/" class="view-site">View public site ↗</a>
       </div>
     </aside>
 
@@ -80,7 +89,16 @@ export default {
       return currentUser.value?.email ?? ''
     },
   },
+  mounted() {
+    window.addEventListener('keydown', this.onKey)
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.onKey)
+  },
   methods: {
+    onKey(e) {
+      if (e.key === 'Escape') this.navOpen = false
+    },
     async handleSignOut() {
       await signOut()
     },
@@ -164,23 +182,44 @@ body {
   height: 100vh;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  color: #111;
-  font-weight: 700;
-  font-size: 15px;
-  padding: 6px 8px 18px;
+.sidebar__head {
+  padding-bottom: 16px;
   border-bottom: 1px solid #eeebe4;
   margin-bottom: 14px;
 }
 
+/* The logo is the only brand element, so let it fill the sidebar's inner width. */
+.brand {
+  display: block;
+  padding: 4px 6px;
+}
+
 .brand img {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.sidebar__close {
+  display: none;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border: 1px solid #e6e3dc;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 16px;
+  color: #1d1d1d;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: #f5f3ee;
 }
 
 .side-nav {
@@ -253,37 +292,34 @@ body {
   background: #f5f3ee;
 }
 
-.view-site {
-  display: block;
-  padding: 9px 12px;
-  font-size: 12px;
-  color: #a09a90;
-  text-decoration: none;
-}
-
-.view-site:hover {
-  color: #1d1d1d;
-}
-
 .content {
   flex: 1;
   min-width: 0;
 }
 
-.sidebar-toggle {
+/* Mobile top bar: hamburger on the left, logo beside it. Hidden on desktop. */
+.topbar {
   display: none;
   position: fixed;
-  top: 12px;
-  left: 12px;
+  inset: 0 0 auto 0;
   z-index: 60;
-  width: 42px;
-  height: 42px;
-  border: 1px solid #e6e3dc;
-  border-radius: 10px;
+  align-items: center;
+  gap: 12px;
+  height: 58px;
+  padding: 0 12px;
   background: #fff;
-  font-size: 16px;
-  cursor: pointer;
-  color: #1d1d1d;
+  border-bottom: 1px solid #e6e3dc;
+}
+
+.topbar__brand {
+  display: block;
+  min-width: 0;
+}
+
+.topbar__brand img {
+  display: block;
+  height: 26px;
+  width: auto;
 }
 
 .scrim {
@@ -291,15 +327,16 @@ body {
 }
 
 @media (max-width: 860px) {
-  .sidebar-toggle {
-    display: grid;
-    place-items: center;
+  .topbar {
+    display: flex;
   }
 
   .sidebar {
     position: fixed;
     inset: 0 auto 0 0;
     z-index: 70;
+    width: min(78vw, 280px);
+    flex-basis: auto;
     transform: translateX(-100%);
     transition: transform 0.22s ease;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.12);
@@ -307,6 +344,27 @@ body {
 
   .sidebar.is-open {
     transform: none;
+  }
+
+  /* Drawer header mirrors the top bar: close button where the hamburger was. */
+  .sidebar__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .sidebar__close {
+    display: grid;
+  }
+
+  .brand {
+    padding: 0;
+    min-width: 0;
+  }
+
+  .brand img {
+    width: auto;
+    height: 26px;
   }
 
   .scrim {
@@ -318,7 +376,13 @@ body {
   }
 
   .content {
-    padding-top: 62px;
+    padding-top: 58px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
   }
 }
 </style>

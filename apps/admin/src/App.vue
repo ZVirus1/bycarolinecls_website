@@ -295,7 +295,9 @@ body {
   display: none;
   position: fixed;
   inset: 0 0 auto 0;
-  z-index: 60;
+  /* Above the drawer (70) and scrim (65): the header is shared chrome, and the
+     drawer's shadow would otherwise tint the strip of header above it. */
+  z-index: 80;
   align-items: center;
   gap: 12px;
   height: 58px;

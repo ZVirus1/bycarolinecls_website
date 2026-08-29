@@ -1,5 +1,5 @@
 {
-  "name": "@bycarolinecls/admin",
+  "name": "@bycarolinecls/site",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -9,13 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.1.0",
-    "firebase": "^11.1.0",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.4",
+    "@bycarolinecls/shared": "*",
     "vue": "^3.5.22",
-    "vue-router": "^4.6.3",
-    "@bycarolinecls/shared": "*"
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",

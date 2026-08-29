@@ -104,7 +104,7 @@
 </template>
 
 <script>
-import { rupiah, dmy, longDate, escapeHtml } from '../stores/firebase.js'
+import { rupiah, dmy, longDate, escapeHtml } from '@bycarolinecls/shared'
 import footerLogo from '../assets/bycarolinecls.png'
 
 export default {

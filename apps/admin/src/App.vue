@@ -1,5 +1,11 @@
 <template>
-  <div id="app">
+  <!-- Nothing renders until Firebase has restored (or rejected) the session,
+       so the login screen doesn't flash on every reload. -->
+  <div v-if="!isAuthReady" class="auth-booting">Loading...</div>
+
+  <LoginGate v-else-if="!isAuthenticated" />
+
+  <div v-else id="app">
     <!-- Navigation Header -->
     <header class="nav-header">
       <div class="nav-container">
@@ -20,6 +26,10 @@
             <i class="fas fa-calendar"></i>
             <span class="nav-text">Calendar</span>
           </router-link>
+          <button class="nav-link nav-signout" title="Sign out" @click="handleSignOut">
+            <i class="fas fa-right-from-bracket"></i>
+            <span class="nav-text">Sign out</span>
+          </button>
         </nav>
       </div>
     </header>
@@ -31,13 +41,25 @@
 <script>
 import logo from './assets/bycarolinecls.png'
 import '@fortawesome/fontawesome-free/css/all.css' // Import FontAwesome
+import LoginGate from './components/LoginGate.vue'
+import { isAuthenticated, isAuthReady, signOut } from './stores/auth.js'
 
 export default {
   name: 'App',
+  components: { LoginGate },
   data() {
     return {
       logo,
     }
+  },
+  computed: {
+    isAuthenticated: () => isAuthenticated.value,
+    isAuthReady: () => isAuthReady.value,
+  },
+  methods: {
+    async handleSignOut() {
+      await signOut()
+    },
   },
 }
 </script>
@@ -75,6 +97,21 @@ body {
   --ink: #1d1d1d;
   --rule: #c6c6c6;
   --rule-strong: #aaaaaa;
+}
+
+.auth-booting {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  color: #8a857c;
+  font-size: 14px;
+}
+
+.nav-signout {
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
 }
 
 /* Navigation */
@@ -205,7 +242,7 @@ body {
 /* Optional self-hosted header font */
 @font-face {
   font-family: 'Roxborough CF';
-  src: url('./fonts/RoxboroughCF.ttf') format('ttf');
+  src: url('/admin/fonts/RoxboroughCF.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;

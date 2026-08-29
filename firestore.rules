@@ -1,0 +1,37 @@
+rules_version = '2';
+
+// Admin-only data. There is no public signup - accounts are created by hand in
+// the Firebase console - so "is signed in" is equivalent to "is the owner".
+//
+// To harden further, swap isAdmin() for an explicit allowlist:
+//   function isAdmin() {
+//     return request.auth != null
+//       && request.auth.uid in ['UID_ONE', 'UID_TWO'];
+//   }
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    match /appointments/{doc} {
+      allow read, write: if isAdmin();
+    }
+
+    match /invoices/{doc} {
+      allow read, write: if isAdmin();
+    }
+
+    // The public price list. World-readable on purpose: the public pricing
+    // page and /api/pricing read it without credentials. Only admins write.
+    match /settings/pricing {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Deny anything not matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

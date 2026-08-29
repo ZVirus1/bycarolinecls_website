@@ -106,7 +106,7 @@
 </template>
 
 <script>
-import { PREDEFINED_SERVICES } from '../stores/firebase.js'
+import { PREDEFINED_SERVICES } from '@bycarolinecls/shared'
 
 export default {
   name: 'InvoiceForm',

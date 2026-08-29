@@ -1,0 +1,26 @@
+{
+  "name": "bycarolinecls",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@bycarolinecls/site",
+    "dev:admin": "npm run dev --workspace=@bycarolinecls/admin",
+    "build": "npm run build:site && npm run build:admin",
+    "build:site": "npm run build --workspace=@bycarolinecls/site",
+    "build:admin": "npm run build --workspace=@bycarolinecls/admin",
+    "preview": "wrangler pages dev dist",
+    "format": "prettier --write \"apps/*/src/**/*.{js,vue,css}\" \"functions/**/*.js\""
+  },
+  "devDependencies": {
+    "prettier": "3.6.2",
+    "wrangler": "^3.90.0"
+  }
+}

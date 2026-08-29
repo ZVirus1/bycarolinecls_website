@@ -1,11 +1,17 @@
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-// https://vitejs.dev/config/
+// Admin app: served at /admin/, built into the shared dist/ as dist/admin/.
+// Assets land under /admin/assets/ so a single path rule covers the whole app.
 export default defineConfig({
   plugins: [vue()],
-  base: '/bycarolinecls-invoice/',
+  base: '/admin/',
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
   build: {
-    outDir: 'docs', // GitHub Pages will serve from /docs
+    outDir: '../../dist/admin',
+    emptyOutDir: true,
   },
 })

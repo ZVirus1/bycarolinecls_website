@@ -18,6 +18,7 @@
 
 const MAX_RANGE_DAYS = 120
 const CACHE_SECONDS = 900 // 15 min - calendar changes are not urgent
+const DEFAULT_TZ = 'Asia/Jakarta'
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url)
@@ -27,7 +28,12 @@ export async function onRequestGet({ request, env }) {
     return json({ error: 'Calendar not configured' }, 503)
   }
 
-  const from = parseDate(url.searchParams.get('from')) ?? startOfToday()
+  // Bookings are bucketed by the artist's local day, not UTC. Without this an
+  // 19:00 Jakarta booking (12:00Z) is fine, but a 01:00 Jakarta booking
+  // (18:00Z the previous day) would grey out the wrong date on the public site.
+  const tz = env.BUSINESS_TIMEZONE || DEFAULT_TZ
+
+  const from = parseDate(url.searchParams.get('from')) ?? startOfToday(tz)
   const to = parseDate(url.searchParams.get('to')) ?? addDays(from, 60)
 
   if (to < from) return json({ error: '`to` must be on or after `from`' }, 400)
@@ -50,14 +56,16 @@ export async function onRequestGet({ request, env }) {
     return json({ error: 'Calendar temporarily unavailable' }, 502)
   }
 
-  const busy = parseIcsBusy(ics, from, to)
+  const busy = parseIcsBusy(ics, from, to, tz)
 
   return json(
     {
       from: isoDate(from),
       to: isoDate(to),
-      // Dates with at least one event. The UI greys these out.
-      busyDates: [...new Set(busy.map((b) => isoDate(b.start)))].sort(),
+      timezone: tz,
+      // Local dates with at least one event. The UI greys these out. An event
+      // spanning midnight marks every local day it touches.
+      busyDates: [...new Set(busy.flatMap((b) => localDatesSpanned(b.start, b.end, tz)))].sort(),
       // Coarse intervals for same-day partial availability.
       busy: busy.map((b) => ({ start: b.start.toISOString(), end: b.end.toISOString() })),
     },
@@ -73,7 +81,7 @@ export async function onRequestGet({ request, env }) {
  * only DTSTART/DTEND. Enough for a busy-time feed; it does not expand RRULEs
  * (see note below) and ignores every descriptive field on purpose.
  */
-function parseIcsBusy(ics, from, to) {
+function parseIcsBusy(ics, from, to, tz) {
   const lines = unfold(ics)
   const out = []
   let cur = null
@@ -100,8 +108,8 @@ function parseIcsBusy(ics, from, to) {
     const value = line.slice(idx + 1)
     const key = rawKey.split(';')[0].toUpperCase()
 
-    if (key === 'DTSTART') cur.start = parseIcsDate(value, rawKey)
-    else if (key === 'DTEND') cur.end = parseIcsDate(value, rawKey)
+    if (key === 'DTSTART') cur.start = parseIcsDate(value, rawKey, tz)
+    else if (key === 'DTEND') cur.end = parseIcsDate(value, rawKey, tz)
     else if (key === 'STATUS' && value.toUpperCase() === 'CANCELLED') cur.cancelled = true
   }
 
@@ -118,31 +126,99 @@ function unfold(text) {
     .filter(Boolean)
 }
 
-// Handles: 20260315T090000Z (UTC), 20260315T090000 (floating/local), 20260315 (date only)
-function parseIcsDate(value, rawKey) {
+// Handles: 20260315T090000Z (UTC), 20260315T090000 (floating or TZID), 20260315 (all-day)
+function parseIcsDate(value, rawKey, tz) {
   const v = value.trim()
+  const n = (x) => Number(x)
+
+  // All-day: a bare date is already a local calendar day.
   if (/^\d{8}$/.test(v)) {
-    const [y, m, d] = [v.slice(0, 4), v.slice(4, 6), v.slice(6, 8)].map(Number)
-    return new Date(Date.UTC(y, m - 1, d))
+    return zonedToUtc(n(v.slice(0, 4)), n(v.slice(4, 6)), n(v.slice(6, 8)), 0, 0, 0, tz)
   }
+
   const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/.exec(v)
   if (!m) return null
-  const [, y, mo, d, h, mi, s, z] = m
-  const n = (x) => Number(x)
-  // Without a Z, the time is floating or carries a TZID we don't resolve here.
-  // Treating it as UTC keeps day-level busy/free correct, which is all the
-  // public page shows. If you need exact times across DST, add a TZID lookup.
-  void z
+  const [, y, mo, d, h, mi, sec, z] = m
+
+  // Trailing Z means a real UTC instant.
+  if (z) return new Date(Date.UTC(n(y), n(mo) - 1, n(d), n(h), n(mi), n(sec)))
+
+  // Otherwise the time is floating, or carries a TZID we do not resolve. Both
+  // are far better read as the artist's local wall-clock time than as UTC.
   void rawKey
-  return new Date(Date.UTC(n(y), n(mo) - 1, n(d), n(h), n(mi), n(s)))
+  return zonedToUtc(n(y), n(mo), n(d), n(h), n(mi), n(sec), tz)
+}
+
+/* ---------- timezone ---------- */
+
+// Offset (ms) that `tz` is ahead of UTC at the given instant.
+function tzOffsetMs(instant, tz) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+      .formatToParts(instant)
+      .map((p) => [p.type, p.value]),
+  )
+  const asUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour) % 24,
+    Number(parts.minute),
+    Number(parts.second),
+  )
+  return asUtc - instant.getTime()
+}
+
+// Wall-clock time in `tz` -> the UTC instant it refers to.
+function zonedToUtc(y, mo, d, h, mi, s, tz) {
+  const guess = Date.UTC(y, mo - 1, d, h, mi, s)
+  // Two passes so the offset is evaluated at the resulting instant, which
+  // matters on DST boundaries. Jakarta has no DST, so this is exact there.
+  let ts = guess - tzOffsetMs(new Date(guess), tz)
+  ts = guess - tzOffsetMs(new Date(ts), tz)
+  return new Date(ts)
+}
+
+// YYYY-MM-DD as seen in `tz`.
+function localDate(instant, tz) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(instant)
+}
+
+// Every local calendar day an interval touches. `end` is exclusive, so an event
+// finishing exactly at midnight does not claim the following day.
+function localDatesSpanned(start, end, tz) {
+  const days = [localDate(start, tz)]
+  const lastInstant = new Date(Math.max(start.getTime(), end.getTime() - 1))
+  const last = localDate(lastInstant, tz)
+  let cursor = start
+  while (days[days.length - 1] !== last && days.length < MAX_RANGE_DAYS) {
+    cursor = new Date(cursor.getTime() + DAY_MS)
+    days.push(localDate(cursor, tz))
+  }
+  return days
 }
 
 /* ---------- helpers ---------- */
 
 const DAY_MS = 86400000
-const startOfToday = () => {
-  const n = new Date()
-  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
+// Midnight today as the artist experiences it, not as UTC does.
+const startOfToday = (tz) => {
+  const [y, m, d] = localDate(new Date(), tz).split('-').map(Number)
+  return zonedToUtc(y, m, d, 0, 0, 0, tz)
 }
 const addDays = (d, n) => new Date(d.getTime() + n * DAY_MS)
 const daysBetween = (a, b) => Math.round((b - a) / DAY_MS)

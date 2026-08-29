@@ -50,6 +50,7 @@ import {
   getDownloadURL,
   deleteDoc,
 } from '../stores/firebase.js'
+import { nextInvoiceNumber } from '../stores/invoices.js'
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 
@@ -227,11 +228,15 @@ export default {
           throw new Error('Failed to generate PDF')
         }
 
+        // Reserved before the write so the number is unique even if two tabs
+        // save at once.
+        const invoiceNumber = await nextInvoiceNumber()
+
         const appointmentData = {
-          clientName: this.formData.name || 'REDACTED-NAME',
-          phone: this.formData.phone || 'REDACTED-PHONE',
-          address:
-            this.formData.address || 'REDACTED-ADDRESS',
+          invoiceNumber,
+          clientName: this.formData.name.trim(),
+          phone: this.formData.phone.trim(),
+          address: this.formData.address.trim(),
           appointmentDate: this.formData.appointmentDate,
           appointmentTime: this.formData.appointmentTime,
           invoiceDate: this.formData.invoiceDate,

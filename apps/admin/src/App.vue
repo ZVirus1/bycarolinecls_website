@@ -1,48 +1,62 @@
 <template>
   <!-- Nothing renders until Firebase has restored (or rejected) the session,
        so the login screen doesn't flash on every reload. -->
-  <div v-if="!isAuthReady" class="auth-booting">Loading...</div>
+  <div v-if="!isAuthReady" class="auth-booting">Loading…</div>
 
   <LoginGate v-else-if="!isAuthenticated" />
 
-  <div v-else id="app">
-    <!-- Navigation Header -->
-    <header class="nav-header">
-      <div class="nav-container">
-        <router-link to="/" class="nav-logo">
-          <img :src="logo" alt="CarolineCLS Logo" />
-          <span>Bycarolinecls</span>
-        </router-link>
-        <nav class="nav-links">
-          <router-link to="/" class="nav-link" :class="{ active: $route.path === '/' }">
-            <i class="fas fa-file-invoice"></i>
-            <span class="nav-text">Invoice Generator</span>
-          </router-link>
-          <router-link
-            to="/calendar"
-            class="nav-link"
-            :class="{ active: $route.path === '/calendar' }"
-          >
-            <i class="fas fa-calendar"></i>
-            <span class="nav-text">Calendar</span>
-          </router-link>
-          <button class="nav-link nav-signout" title="Sign out" @click="handleSignOut">
-            <i class="fas fa-right-from-bracket"></i>
-            <span class="nav-text">Sign out</span>
-          </button>
-        </nav>
-      </div>
-    </header>
+  <div v-else id="app" class="shell">
+    <button
+      class="sidebar-toggle"
+      :aria-expanded="String(navOpen)"
+      aria-controls="admin-nav"
+      @click="navOpen = !navOpen"
+    >
+      <i class="fas" :class="navOpen ? 'fa-xmark' : 'fa-bars'"></i>
+      <span class="sr-only">{{ navOpen ? 'Close menu' : 'Open menu' }}</span>
+    </button>
 
-    <router-view />
+    <aside id="admin-nav" class="sidebar" :class="{ 'is-open': navOpen }">
+      <router-link to="/" class="brand" @click="navOpen = false">
+        <img :src="logo" alt="" />
+        <span>Bycarolinecls</span>
+      </router-link>
+
+      <nav class="side-nav" aria-label="Admin sections">
+        <router-link
+          v-for="item in navItems"
+          :key="item.to"
+          :to="item.to"
+          class="side-link"
+          @click="navOpen = false"
+        >
+          <i class="fas" :class="item.icon"></i>
+          <span>{{ item.label }}</span>
+        </router-link>
+      </nav>
+
+      <div class="sidebar-foot">
+        <p class="who" :title="email">{{ email }}</p>
+        <button class="signout" @click="handleSignOut">
+          <i class="fas fa-right-from-bracket"></i> Sign out
+        </button>
+        <a href="/" class="view-site">View public site ↗</a>
+      </div>
+    </aside>
+
+    <div v-if="navOpen" class="scrim" @click="navOpen = false" />
+
+    <main class="content">
+      <router-view />
+    </main>
   </div>
 </template>
 
 <script>
 import logo from './assets/bycarolinecls.png'
-import '@fortawesome/fontawesome-free/css/all.css' // Import FontAwesome
+import '@fortawesome/fontawesome-free/css/all.css'
 import LoginGate from './components/LoginGate.vue'
-import { isAuthenticated, isAuthReady, signOut } from './stores/auth.js'
+import { isAuthenticated, isAuthReady, currentUser, signOut } from './stores/auth.js'
 
 export default {
   name: 'App',
@@ -50,11 +64,21 @@ export default {
   data() {
     return {
       logo,
+      navOpen: false,
+      navItems: [
+        { to: '/', label: 'New Invoice', icon: 'fa-file-invoice' },
+        { to: '/invoices', label: 'Invoices', icon: 'fa-folder-open' },
+        { to: '/calendar', label: 'Calendar', icon: 'fa-calendar' },
+        { to: '/pricing', label: 'Pricing', icon: 'fa-tags' },
+      ],
     }
   },
   computed: {
     isAuthenticated: () => isAuthenticated.value,
     isAuthReady: () => isAuthReady.value,
+    email() {
+      return currentUser.value?.email ?? ''
+    },
   },
   methods: {
     async handleSignOut() {
@@ -65,12 +89,18 @@ export default {
 </script>
 
 <style>
-/* Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
-
-/* Global styles from original index.html */
+/* ---------- globals (relied on by the invoice preview) ---------- */
 * {
   box-sizing: border-box;
+}
+
+:root {
+  --paper-w: 794px; /* A4 @96dpi-ish */
+  --paper-h: 1123px;
+  --ink: #1d1d1d;
+  --rule: #c6c6c6;
+  --rule-strong: #aaaaaa;
+  --sidebar-w: 232px;
 }
 
 body {
@@ -86,17 +116,25 @@ body {
     'Helvetica Neue',
     Arial,
     'Noto Sans',
-    'Liberation Sans',
     sans-serif;
   line-height: 1.35;
 }
 
-:root {
-  --paper-w: 794px; /* A4 @96dpi-ish */
-  --paper-h: 1123px;
-  --ink: #1d1d1d;
-  --rule: #c6c6c6;
-  --rule-strong: #aaaaaa;
+@font-face {
+  font-family: 'Roxborough CF';
+  src: url('/admin/fonts/RoxboroughCF.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .auth-booting {
@@ -107,144 +145,180 @@ body {
   font-size: 14px;
 }
 
-.nav-signout {
-  background: none;
-  border: 0;
-  font: inherit;
-  cursor: pointer;
+/* ---------- layout ---------- */
+.shell {
+  display: flex;
+  min-height: 100vh;
 }
 
-/* Navigation */
-.nav-header {
+.sidebar {
+  width: var(--sidebar-w);
+  flex: 0 0 var(--sidebar-w);
   background: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 0 16px;
+  border-right: 1px solid #e6e3dc;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
   position: sticky;
   top: 0;
-  z-index: 100;
+  height: 100vh;
 }
 
-.nav-container {
-  max-width: 1250px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: auto;
-  min-height: 60px;
-  padding: 8px 0;
-}
-
-.nav-logo {
+.brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-weight: 700;
-  font-size: 18px;
-  color: #111;
+  gap: 10px;
   text-decoration: none;
+  color: #111;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 6px 8px 18px;
+  border-bottom: 1px solid #eeebe4;
+  margin-bottom: 14px;
 }
 
-.nav-logo img {
-  height: 32px;
-  width: 32px;
+.brand img {
+  width: 30px;
+  height: 30px;
   object-fit: contain;
 }
 
-.nav-links {
+.side-nav {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.nav-link {
-  color: #333;
-  text-decoration: none;
-  font-weight: 500;
-  padding: 8px 12px;
-  border-radius: 8px;
-  transition: background 0.2s;
+.side-link {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #4a463f;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s;
 }
 
-.nav-link:hover {
-  background: #f5f5f5;
-}
-
-.nav-link.active {
-  background: #111;
-  color: white;
-}
-
-/* FontAwesome icons */
-.nav-link i {
-  font-size: 16px;
-  width: 16px;
+.side-link i {
+  width: 17px;
   text-align: center;
+  font-size: 14px;
 }
 
-/* Mobile styles - hide text, show only icons */
-@media (max-width: 768px) {
-  .nav-header {
-    padding: 0 12px;
-  }
-
-  .nav-container {
-    min-height: 50px;
-    padding: 6px 0;
-  }
-
-  .nav-logo {
-    font-size: 16px;
-  }
-
-  .nav-logo img {
-    height: 28px;
-    width: 28px;
-  }
-
-  .nav-links {
-    gap: 8px;
-  }
-
-  .nav-link {
-    padding: 8px;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    justify-content: center;
-  }
-
-  .nav-text {
-    display: none; /* Hide text on mobile */
-  }
-
-  .nav-link i {
-    font-size: 16px;
-    margin: 0;
-  }
+.side-link:hover {
+  background: #f5f3ee;
 }
 
-/* Very small screens */
-@media (max-width: 360px) {
-  .nav-link {
-    width: 36px;
-    height: 36px;
-    padding: 6px;
-  }
-
-  .nav-link i {
-    font-size: 14px;
-  }
+/* exact match so "New Invoice" (/) doesn't stay lit on every route */
+.side-link.router-link-exact-active {
+  background: #1d1d1d;
+  color: #fff;
 }
 
-/* Optional self-hosted header font */
-@font-face {
-  font-family: 'Roxborough CF';
-  src: url('/admin/fonts/RoxboroughCF.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+.sidebar-foot {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #eeebe4;
+}
+
+.who {
+  font-size: 11.5px;
+  color: #a09a90;
+  margin: 0 0 10px;
+  padding-inline: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signout {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  color: #4a463f;
+  cursor: pointer;
+}
+
+.signout:hover {
+  background: #f5f3ee;
+}
+
+.view-site {
+  display: block;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: #a09a90;
+  text-decoration: none;
+}
+
+.view-site:hover {
+  color: #1d1d1d;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 60;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #e6e3dc;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  color: #1d1d1d;
+}
+
+.scrim {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .sidebar-toggle {
+    display: grid;
+    place-items: center;
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 70;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.12);
+  }
+
+  .sidebar.is-open {
+    transform: none;
+  }
+
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 65;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .content {
+    padding-top: 62px;
+  }
 }
 </style>

@@ -180,7 +180,7 @@ export default {
     getServiceType(appointment) {
       if (!appointment.hasInvoice) return 'No Invoice'
       const services = appointment.services || []
-      if (services.some((s) => s.description.toLowerCase().includes('trial'))) {
+      if (services.some((s) => (s.description || '').toLowerCase().includes('trial'))) {
         return 'Trial'
       }
       return 'Makeup'
@@ -190,7 +190,7 @@ export default {
         return 'no-invoice'
       }
       const services = appointment.services || []
-      if (services.some((s) => s.description.toLowerCase().includes('trial'))) {
+      if (services.some((s) => (s.description || '').toLowerCase().includes('trial'))) {
         return 'trial'
       }
       return 'makeup'

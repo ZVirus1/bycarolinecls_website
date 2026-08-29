@@ -106,7 +106,7 @@
 </template>
 
 <script>
-import { PREDEFINED_SERVICES } from '@bycarolinecls/shared'
+import { services, loadPricing } from '../stores/pricing.js'
 
 export default {
   name: 'InvoiceForm',
@@ -118,15 +118,22 @@ export default {
   },
   data() {
     return {
-      PREDEFINED_SERVICES,
       localFormData: { ...this.formData },
       localItems: [...this.items],
     }
   },
   computed: {
+    // Live list managed under Pricing, so the dropdown and the public pricing
+    // page can never disagree.
+    PREDEFINED_SERVICES() {
+      return services.value
+    },
     statusClass() {
       return this.isStatusSuccess ? 'status-success' : 'status-error'
     },
+  },
+  created() {
+    loadPricing()
   },
   watch: {
     formData: {

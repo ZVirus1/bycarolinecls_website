@@ -119,13 +119,14 @@ export default {
       }
 
       const services = appointment.services || []
-      if (services.some((s) => s.description.toLowerCase().includes('trial'))) {
+      if (services.some((s) => (s.description || '').toLowerCase().includes('trial'))) {
         return 'trial'
       }
       return 'makeup'
     },
     getAppointmentDisplayText(appointment) {
-      const firstName = appointment.clientName.split(' ')[0]
+      // clientName can be blank now that invoices no longer default it.
+      const firstName = (appointment.clientName || 'Unnamed').split(' ')[0]
       return appointment.hasInvoice
         ? `${appointment.appointmentTime} - ${firstName}`
         : `${appointment.appointmentTime} - ${firstName} (No Invoice)`

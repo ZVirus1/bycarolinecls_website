@@ -19,7 +19,7 @@
           <select v-model="service" class="field__input">
             <option value="">Not sure yet</option>
             <option v-for="s in services" :key="s.id" :value="s.description">
-              {{ s.description }} — {{ rupiah(s.price) }}
+              {{ s.description }} ({{ rupiah(s.price) }})
             </option>
           </select>
         </label>

@@ -5,7 +5,7 @@
     <p class="soon__eyebrow">{{ business.location }}</p>
     <h1 class="soon__title">{{ business.tagline }}</h1>
     <p class="soon__body">
-      A new site is on its way. In the meantime, message me directly for bookings and enquiries —
+      A new site is on its way. In the meantime, message me directly for bookings and enquiries.
       I reply within 24 hours.
     </p>
 

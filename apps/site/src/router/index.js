@@ -43,8 +43,8 @@ const router = createRouter({
 
 router.afterEach((to) => {
   document.title = to.meta.title
-    ? `${to.meta.title} — Bycarolinecls`
-    : 'Bycarolinecls — Professional Hair & Makeup Artist'
+    ? `${to.meta.title} | Bycarolinecls`
+    : 'Bycarolinecls | Professional Hair & Makeup Artist'
 })
 
 export default router

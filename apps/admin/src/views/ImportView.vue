@@ -22,7 +22,7 @@
         <li>Tick the events you want and import</li>
       </ol>
       <p class="how__note">
-        Nothing here writes back to TimeTree — it is read only. To keep bookings in step
+        Nothing here writes back to TimeTree. It is read only. To keep bookings in step
         automatically instead of by hand, see the scheduled job in
         <code>.github/workflows/timetree-sync.yml</code>.
       </p>
@@ -32,14 +32,14 @@
       <input type="file" accept=".ics,text/calendar" @change="onFile" />
       <i class="fas fa-cloud-arrow-up"></i>
       <span v-if="parsing">Reading…</span>
-      <span v-else-if="fileName">{{ fileName }} — choose another</span>
+      <span v-else-if="fileName">{{ fileName }} (choose another)</span>
       <span v-else>Choose a <strong>.ics</strong> file</span>
     </label>
 
     <p v-if="message" class="banner" :class="ok ? 'banner--ok' : 'banner--bad'">{{ message }}</p>
 
     <p v-if="recurrenceWarning" class="banner banner--warn">
-      This file contains repeating events. Repeats are not expanded — only the first occurrence of
+      This file contains repeating events. Repeats are not expanded. Only the first occurrence of
       each is imported, so recurring bookings need adding by hand.
     </p>
 
@@ -95,7 +95,7 @@
 
       <p class="note">
         Imported events are created as calendar entries with no invoice attached. Re-importing the
-        same file is safe — events already brought in are matched on their TimeTree id and skipped.
+        same file is safe. Events already brought in are matched on their TimeTree id and skipped.
       </p>
     </template>
   </div>
@@ -233,7 +233,7 @@ async function runImport() {
   selected.value = new Set()
   ok.value = failed === 0
   message.value = failed
-    ? `Imported ${done.value}, but ${failed} failed — see the browser console.`
+    ? `Imported ${done.value}, but ${failed} failed. See the browser console.`
     : `Imported ${done.value} event${done.value === 1 ? '' : 's'}.`
 
   if (!failed && done.value) setTimeout(() => router.push('/calendar'), 1800)

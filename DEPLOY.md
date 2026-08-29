@@ -5,7 +5,7 @@ Hosting is Cloudflare Pages (free tier); the domain stays registered at GoDaddy.
 
 ---
 
-## 1. Firebase (do this first — nothing works without it)
+## 1. Firebase (do this first, nothing works without it)
 
 The project `bycarolinecls-2144b` already exists. It has never had working
 credentials: the committed config was placeholder text, so every read and write
@@ -17,13 +17,13 @@ failed silently.
 3. Copy the `firebaseConfig` values into `.env.local` (see `.env.example`).
 4. **Build → Authentication → Get started → Sign-in method → Email/Password → Enable.**
 5. **Authentication → Users → Add user.** Create one account per person (1–2).
-   There is no public signup — this is the only way an account is created.
+   There is no public signup. This is the only way an account is created.
 6. **Build → Firestore Database → Create database** if it does not exist.
    Start in *production mode*.
 7. Publish the rules from `firestore.rules` and `storage.rules`
    (Firestore → Rules → paste → Publish; same for Storage).
 
-> The `VITE_FIREBASE_*` values are **public by design** — Vite inlines them into
+> The `VITE_FIREBASE_*` values are **public by design**: Vite inlines them into
 > the browser bundle. The API key identifies the project, it does not grant
 > access. `firestore.rules` is what actually protects the data.
 
@@ -60,7 +60,7 @@ The standalone invoice repo and its GitHub Pages site are untouched and stay liv
    | `VITE_FIREBASE_APP_ID` | from step 1 |
    | `FIREBASE_PROJECT_ID` | `bycarolinecls-2144b` |
    | `BUSINESS_TIMEZONE` | `Asia/Jakarta` |
-4. Deploy. You get `<project>.pages.dev` — check it works before touching DNS.
+4. Deploy. You get `<project>.pages.dev`: check it works before touching DNS.
 
 ### Authorise the domain in Firebase
 
@@ -73,7 +73,7 @@ The standalone invoice repo and its GitHub Pages site are untouched and stay liv
 
 Two options. **A is cleaner; B avoids touching nameservers.**
 
-### Option A — move nameservers to Cloudflare (recommended)
+### Option A: move nameservers to Cloudflare (recommended)
 
 The domain stays *registered and paid for* at GoDaddy. Only DNS hosting moves.
 This is required for the bare `bycarolinecls.com` to work: Cloudflare's docs are
@@ -81,7 +81,7 @@ explicit that an apex domain must be a zone on the Cloudflare account, and
 GoDaddy has no ALIAS/ANAME record type to work around it.
 
 1. Cloudflare dashboard → **Add a site** → `bycarolinecls.com` → Free plan.
-2. Cloudflare scans your existing DNS. **Check the imported records carefully** —
+2. Cloudflare scans your existing DNS. **Check the imported records carefully**,
    especially `MX` (email) and any `TXT` (SPF/DKIM/verification). If you use
    email on this domain, a missing MX record means mail stops arriving.
 3. Cloudflare shows two nameservers, e.g. `xxx.ns.cloudflare.com`.
@@ -92,7 +92,7 @@ GoDaddy has no ALIAS/ANAME record type to work around it.
    `bycarolinecls.com` *and* `www.bycarolinecls.com`. Cloudflare creates the
    records itself.
 
-### Option B — keep DNS at GoDaddy
+### Option B: keep DNS at GoDaddy
 
 Only `www.` can point at Pages.
 
@@ -107,15 +107,15 @@ Only `www.` can point at Pages.
 
 ## 5. Verify
 
-- `https://bycarolinecls.com` — landing page loads
-- `/portfolio`, `/pricing`, `/about` — direct page loads work (SPA fallback)
-- `/book` — calendar renders; **Continue on WhatsApp** opens the right number
-- `/api/availability` — returns JSON with `busyDates`
-- `/api/pricing` — returns JSON
-- `/admin` — shows the login screen, **not** the invoice form
+- `https://bycarolinecls.com`: landing page loads
+- `/portfolio`, `/pricing`, `/about`: direct page loads work (SPA fallback)
+- `/book`: calendar renders; **Continue on WhatsApp** opens the right number
+- `/api/availability`: returns JSON with `busyDates`
+- `/api/pricing`: returns JSON
+- `/admin`: shows the login screen, **not** the invoice form
 - Sign in → create a test invoice → confirm the PDF downloads and the booking
   appears under Invoices and on the Calendar
-- `/admin` while signed out — must not expose data
+- `/admin` while signed out: must not expose data
 
 ---
 
@@ -126,7 +126,7 @@ feed, so there is no true real-time push available from anyone. The sync polls.
 
 `.github/workflows/timetree-sync.yml` runs **every 5 minutes** and can also be
 triggered by hand from the **Actions** tab. It calls
-`scripts/timetree-fetch.mjs`, which is ours — around 200 lines, no
+`scripts/timetree-fetch.mjs`, which is ours. Around 200 lines, no
 dependencies, and it talks to exactly two URLs, both on `timetreeapp.com`. No
 third-party package ever sees the credentials. The admin calendar and the public
 availability page read Firestore, so both pick up each sync on refresh.
@@ -139,7 +139,7 @@ GitHub repo → **Settings → Secrets and variables → Actions**:
 |---|---|
 | `TIMETREE_EMAIL` | your TimeTree login email |
 | `TIMETREE_PASSWORD` | your TimeTree password |
-| `TIMETREE_CALENDAR_ID` | the calendar to sync — run `node scripts/timetree-fetch.mjs --list` to see yours |
+| `TIMETREE_CALENDAR_ID` | the calendar to sync: run `node scripts/timetree-fetch.mjs --list` to see yours |
 | `FIREBASE_SERVICE_ACCOUNT` | the service account JSON, pasted whole |
 
 Get the service account from Firebase console → **Project settings → Service
@@ -148,7 +148,7 @@ secret value.
 
 > This repo is public, but Actions secrets are encrypted and are not exposed to
 > pull requests from forks, so they are not readable by others. Never paste
-> these values into a file — only into the Secrets UI.
+> these values into a file, only into the Secrets UI.
 
 ### Two caveats about the 5-minute interval
 
@@ -156,7 +156,7 @@ secret value.
    GitHub accepts, but scheduled runs are frequently delayed and occasionally
    skipped under load. Expect a real cadence closer to 5–20 minutes. Nothing
    can be done about this from our side.
-2. **Each run signs in to TimeTree afresh** — roughly 288 logins a day against
+2. **Each run signs in to TimeTree afresh**: roughly 288 logins a day against
    an undocumented endpoint. TimeTree rate-limits sign-ins (error `-495`). If exports start failing with auth or rate-limit
    errors, raise the cron to `*/15` or `*/30` in the workflow file. That is the
    first thing to try if syncing goes flaky.
@@ -165,7 +165,7 @@ secret value.
 
 - The sync **never writes to TimeTree**. It only reads an export.
 - A booking that already has an invoice is **never deleted** by the sync, even
-  if it disappears from TimeTree — the invoice is your record, not theirs.
+  if it disappears from TimeTree. The invoice is your record, not theirs.
 - Only changed documents are rewritten, so invoices attached to a booking are
   not needlessly touched.
 - The exported `.ics` holds real client names and is deleted from the runner
@@ -177,7 +177,7 @@ secret value.
 TimeTree's **Public Calendar** is an official free feature that can be read
 without signing in. Set `TIMETREE_PUBLIC_CALENDAR_ID` instead of the email and
 password and the workflow switches automatically. The trade-off is that a
-Public Calendar is genuinely public, so event titles would be on the open web —
+Public Calendar is genuinely public, so event titles would be on the open web, and
 only viable if bookings are titled generically ("Booked") rather than with
 client names.
 
@@ -187,7 +187,7 @@ client names.
 
 TimeTree removed its calendar export and shut the public API down on
 22 Dec 2023, so there is no live feed to subscribe to. Do a **one-time** export
-instead — run by hand, read-only, never on the server:
+instead, run by hand, read-only, never on the server:
 
 ```sh
 pipx install timetree-exporter
@@ -198,7 +198,7 @@ Then import `bookings.ics` into Google Calendar, or re-enter the bookings in
 `/admin`. Nothing in production depends on TimeTree.
 
 > `timetree-exporter` is an unofficial community tool using reverse-engineered
-> endpoints. It only reads. Do not put it in an automated pipeline — it can
+> endpoints. It only reads. Do not put it in an automated pipeline. It can
 > break without notice, and a scraper in the critical path of a commercial
 > booking site is a liability.
 
@@ -208,14 +208,14 @@ Then import `bookings.ics` into Google Calendar, or re-enter the bookings in
 
 ### This repo is public
 
-That is fine, and deliberate — it is what makes the 5-minute sync free. Nothing
+That is fine, and deliberate. It is what makes the 5-minute sync free. Nothing
 in the current tree is sensitive:
 
 - **Actions secrets are safe.** They are encrypted, masked in logs, and are not
   given to pull requests from forks. A stranger cannot read them.
 - **The Firebase web config is public by design.** Vite inlines it into the
   browser bundle regardless. The API key identifies the project, it does not
-  grant access — `firestore.rules` is what protects the data.
+  grant access. `firestore.rules` is what protects the data.
 - **Payment details are no longer committed.** They come from `VITE_BANK_*`
   environment variables set in Cloudflare Pages.
 

@@ -42,15 +42,15 @@ npm run build && npm run preview
 
 ## Editing content
 
-- **Site copy, portfolio, social links** — `apps/site/src/content/site.js`
-- **Photos** — drop into `apps/site/public/portfolio/`, then list them in that file
-- **Prices** — edit in `/admin` → Pricing. That drives the invoice dropdown *and*
+- **Site copy, portfolio, social links**: `apps/site/src/content/site.js`
+- **Photos**: drop into `apps/site/public/portfolio/`, then list them in that file
+- **Prices**: edit in `/admin` → Pricing. That drives the invoice dropdown *and*
   the public pricing page. `packages/shared/services.js` is only the seed and
   offline fallback.
 
 ## How data flows
 
-`appointments` is one collection holding both calendar events and invoices — an
+`appointments` is one collection holding both calendar events and invoices. An
 invoice is an appointment with `hasInvoice: true` and a `pdfUrl`. The calendar
 and the invoice list therefore cannot disagree about a date.
 
@@ -73,4 +73,4 @@ See [DEPLOY.md](./DEPLOY.md).
   with its own GitHub Pages deployment. That repo is untouched; its history was
   merged into `apps/admin/` here.
 - TimeTree has no live integration. Its export was removed and its API shut down
-  on 22 Dec 2023 — see the migration section in DEPLOY.md.
+  on 22 Dec 2023. See the migration section in DEPLOY.md.

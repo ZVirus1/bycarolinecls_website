@@ -5,7 +5,7 @@
       <h1 class="page-title">Pricing</h1>
       <p class="lede">
         All prices are in Indonesian Rupiah. Travel outside {{ business.location }} may incur an
-        additional fee — message me for a quote.
+        additional fee. Message me for a quote.
       </p>
 
       <div v-for="group in grouped" :key="group.name" class="group">

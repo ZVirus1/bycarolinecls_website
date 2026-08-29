@@ -13,7 +13,7 @@
     <!-- If the feed is down or unconfigured, the page must still be useful:
          fall back to letting people enquire without a date. -->
     <div v-else-if="state === 'error'" class="cal__msg cal__msg--warn">
-      Live availability is unavailable right now — please send a message and I'll confirm dates
+      Live availability is unavailable right now. Please send a message and I'll confirm dates
       directly.
     </div>
 

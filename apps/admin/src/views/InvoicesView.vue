@@ -51,16 +51,16 @@
         </thead>
         <tbody>
           <tr v-for="inv in filtered" :key="inv.id">
-            <td class="mono">{{ inv.invoiceNumber || '—' }}</td>
+            <td class="mono">{{ inv.invoiceNumber || '-' }}</td>
             <td>
-              <span class="name">{{ inv.clientName || '—' }}</span>
+              <span class="name">{{ inv.clientName || '-' }}</span>
               <span v-if="inv.phone" class="sub">{{ inv.phone }}</span>
             </td>
             <td>
               {{ formatDate(inv.appointmentDate) }}
               <span v-if="inv.appointmentTime" class="sub">{{ inv.appointmentTime }}</span>
             </td>
-            <td class="services" :title="inv.serviceSummary">{{ inv.serviceSummary || '—' }}</td>
+            <td class="services" :title="inv.serviceSummary">{{ inv.serviceSummary || '-' }}</td>
             <td class="num">{{ rupiah(inv.total) }}</td>
             <td class="actions">
               <a
@@ -128,7 +128,7 @@ const filtered = computed(() => {
 })
 
 function formatDate(d) {
-  if (!d) return '—'
+  if (!d) return '-'
   const parsed = new Date(d)
   return isNaN(parsed)
     ? d

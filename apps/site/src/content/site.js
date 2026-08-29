@@ -18,8 +18,8 @@ export const business = {
   artist: 'Caroline',
   // Shown under the hero headline
   intro:
-    'Hello, I am Caroline — a professional hair and makeup artist. My passion is not only the art of makeup, but making every person feel completely themselves on the days that matter most.',
-  location: 'Jakarta, Indonesia',
+    'Hello, I am Caroline, a professional hair and makeup artist. My passion is not only the art of makeup, but making every person feel completely themselves on the days that matter most.',
+  location: 'Medan, Indonesia',
   email: 'hello@bycarolinecls.com',
   domain: 'bycarolinecls.com',
 }
@@ -55,10 +55,10 @@ export const portfolioCategories = ['All', 'Wedding', 'Party', 'Prewedding', 'Gr
 export const about = {
   heading: 'About',
   body: [
-    'Replace this with your story — how you started, what you specialise in, and what a client can expect when they book with you.',
+    'Replace this with your story: how you started, what you specialise in, and what a client can expect when they book with you.',
     'A second paragraph works well for training, certifications, or the products you use.',
   ],
 }
 
 export const bookingNote =
-  'Dates marked unavailable are already booked. Pick a date that suits you and send a message — I will confirm within 24 hours.'
+  'Dates marked unavailable are already booked. Pick a date that suits you and send a message. I will confirm within 24 hours.'

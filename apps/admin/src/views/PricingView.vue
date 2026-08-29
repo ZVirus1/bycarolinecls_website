@@ -87,7 +87,7 @@
 
       <p class="note">
         Unticking <strong>Public</strong> keeps a service available as an invoice line item but
-        hides it from the public pricing page — useful for complimentary trials.
+        hides it from the public pricing page. Useful for complimentary trials.
       </p>
     </template>
   </div>

@@ -14,14 +14,17 @@
     <details class="how">
       <summary>How to produce the file</summary>
       <ol>
-        <li>Install the exporter: <code>pipx install timetree-exporter</code></li>
-        <li>Run <code>timetree-exporter -o timetree.ics</code> and sign in when prompted</li>
-        <li>Pick the calendar with your bookings, then upload the file below</li>
+        <li>
+          Export any <code>.ics</code> from a calendar app, or use
+          <code>scripts/timetree-fetch.mjs</code> in this repo to pull straight from TimeTree.
+        </li>
+        <li>Upload the file below and review what it found</li>
+        <li>Tick the events you want and import</li>
       </ol>
       <p class="how__note">
-        <code>timetree-exporter</code> is an unofficial community tool. It only ever reads, so it
-        cannot damage your TimeTree calendar. To keep this in step automatically, see the scheduled
-        job in <code>.github/workflows/timetree-sync.yml</code>.
+        Nothing here writes back to TimeTree — it is read only. To keep bookings in step
+        automatically instead of by hand, see the scheduled job in
+        <code>.github/workflows/timetree-sync.yml</code>.
       </p>
     </details>
 

@@ -9,7 +9,11 @@
  * READ ONLY as far as TimeTree is concerned - this consumes a file that has
  * already been exported. Nothing here writes back to TimeTree.
  *
- *   node scripts/sync-timetree.mjs timetree.ics
+ *   node scripts/timetree-fetch.mjs --calendar <id> --out timetree.json
+ *   node scripts/sync-timetree.mjs timetree.json
+ *
+ * Accepts either the JSON from timetree-fetch.mjs or a .ics file exported by
+ * hand.
  *
  * Requires GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT (the
  * service account JSON, as a string).
@@ -39,21 +43,43 @@ function credentials() {
 initializeApp({ credential: credentials() })
 const db = getFirestore()
 
-const ics = readFileSync(icsPath, 'utf8')
-if (!/BEGIN:VCALENDAR/i.test(ics)) throw new Error(`${icsPath} is not a calendar file`)
-
-if (hasRecurrence(ics)) {
-  console.warn('⚠ feed contains RRULEs; repeats are not expanded, only first occurrences sync')
-}
-
 // Sync a window around today rather than all history - past bookings never
 // change, and a bounded window keeps each run cheap.
 const now = new Date()
 const from = new Date(now.getTime() - 60 * 86400000)
 const to = new Date(now.getTime() + 400 * 86400000)
 
-const events = parseEvents(ics, { from, to, tz: TZ, includeDetails: true })
+const raw = readFileSync(icsPath, 'utf8')
+const events = icsPath.endsWith('.json') ? fromJson(raw) : fromIcs(raw)
 console.log(`Parsed ${events.length} event(s) in window.`)
+
+/** Output of scripts/timetree-fetch.mjs. */
+function fromJson(text) {
+  const data = JSON.parse(text)
+  if (!Array.isArray(data.events)) throw new Error('JSON has no events array')
+  if (data.events.some((e) => e.recurring)) {
+    console.warn('⚠ some events repeat; repeats are not expanded, only first occurrences sync')
+  }
+  return data.events
+    .map((e) => ({
+      uid: e.uid,
+      summary: e.title,
+      location: e.location,
+      allDay: e.allDay,
+      start: new Date(e.start),
+      end: new Date(e.end),
+    }))
+    .filter((e) => e.end > from && e.start < to)
+}
+
+/** A .ics exported by hand. */
+function fromIcs(text) {
+  if (!/BEGIN:VCALENDAR/i.test(text)) throw new Error(`${icsPath} is not a calendar file`)
+  if (hasRecurrence(text)) {
+    console.warn('⚠ feed contains RRULEs; repeats are not expanded, only first occurrences sync')
+  }
+  return parseEvents(text, { from, to, tz: TZ, includeDetails: true })
+}
 
 const col = db.collection('appointments')
 

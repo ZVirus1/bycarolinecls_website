@@ -125,7 +125,10 @@ TimeTree has no official API (shut down 22 Dec 2023) and no iCal subscription
 feed, so there is no true real-time push available from anyone. The sync polls.
 
 `.github/workflows/timetree-sync.yml` runs **every 5 minutes** and can also be
-triggered by hand from the **Actions** tab. The admin calendar and the public
+triggered by hand from the **Actions** tab. It calls
+`scripts/timetree-fetch.mjs`, which is ours — around 200 lines, no
+dependencies, and it talks to exactly two URLs, both on `timetreeapp.com`. No
+third-party package ever sees the credentials. The admin calendar and the public
 availability page read Firestore, so both pick up each sync on refresh.
 
 ### Secrets to set
@@ -136,7 +139,7 @@ GitHub repo → **Settings → Secrets and variables → Actions**:
 |---|---|
 | `TIMETREE_EMAIL` | your TimeTree login email |
 | `TIMETREE_PASSWORD` | your TimeTree password |
-| `TIMETREE_CALENDAR_CODE` | the calendar to sync (run `timetree-exporter` once locally to list them) |
+| `TIMETREE_CALENDAR_ID` | the calendar to sync — run `node scripts/timetree-fetch.mjs --list` to see yours |
 | `FIREBASE_SERVICE_ACCOUNT` | the service account JSON, pasted whole |
 
 Get the service account from Firebase console → **Project settings → Service
@@ -154,7 +157,7 @@ secret value.
    skipped under load. Expect a real cadence closer to 5–20 minutes. Nothing
    can be done about this from our side.
 2. **Each run signs in to TimeTree afresh** — roughly 288 logins a day against
-   an unofficial endpoint. If exports start failing with auth or rate-limit
+   an undocumented endpoint. TimeTree rate-limits sign-ins (error `-495`). If exports start failing with auth or rate-limit
    errors, raise the cron to `*/15` or `*/30` in the workflow file. That is the
    first thing to try if syncing goes flaky.
 

@@ -115,10 +115,10 @@ export default {
   --rule: #c6c6c6;
   --rule-strong: #aaaaaa;
   --sidebar-w: 232px;
-  --btn-bg: #e7e0d2;
-  --btn-bg-hover: #dbd2c0;
+  --btn-bg: #ece8db;
+  --btn-bg-hover: #ded9c6;
   --btn-fg: #1d1d1d;
-  --btn-border: #d8d0be;
+  --btn-border: #ddd8c6;
 }
 
 body {

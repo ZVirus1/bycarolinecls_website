@@ -79,7 +79,7 @@
     </button>
     <label style="margin-top: 18px">Link to Calendar Event</label>
     <select v-model="localLinkedId">
-      <option value="">No linked event</option>
+      <option value="">Not linked yet</option>
       <option v-for="ev in calendarEvents" :key="ev.id" :value="ev.id">
         {{ ev.clientName || 'Unnamed' }}
       </option>
@@ -87,8 +87,8 @@
     <div class="hint">
       {{
         calendarEvents.length
-          ? 'Bookings synced from TimeTree on this appointment date.'
-          : 'No bookings on this appointment date yet.'
+          ? 'Bookings on this appointment date that have no invoice yet.'
+          : 'Nothing on this appointment date. Change the Appointment Date above, or check the Calendar tab for which dates have bookings.'
       }}
     </div>
 
@@ -366,7 +366,8 @@ select::-webkit-scrollbar-thumb:hover {
   display: grid;
   grid-template-columns: 1fr 80px 1fr auto;
   gap: 8px;
-  align-items: center;
+  /* stretch, not center: otherwise the bin button is shorter than the fields */
+  align-items: stretch;
   margin-bottom: 8px; /* Added space after Remove button */
 }
 
@@ -389,10 +390,10 @@ select::-webkit-scrollbar-thumb:hover {
   border: 1px solid #e6e3dc;
   background: #fff;
   color: #8a857c;
-  padding: 10px 12px;
+  padding: 0 14px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
 }
 .item-row .remove:hover {
   border-color: #e8c4c4;
@@ -420,6 +421,9 @@ select::-webkit-scrollbar-thumb:hover {
   width: 100%;
   transition: background-color 0.2s;
   font-size: 16px;
+}
+.btn:hover:not(:disabled) {
+  background: var(--btn-bg-hover);
 }
 .btn.secondary {
   background: #f2eee8;

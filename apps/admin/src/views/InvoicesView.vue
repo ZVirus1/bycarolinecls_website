@@ -256,6 +256,10 @@ function fileName(inv) {
   gap: 8px;
 }
 
+.btn:hover {
+  background: var(--btn-bg-hover);
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;

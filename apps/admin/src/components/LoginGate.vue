@@ -140,6 +140,9 @@ async function submit() {
   color: var(--btn-fg);
   cursor: pointer;
 }
+.login-btn:hover:not(:disabled) {
+  background: var(--btn-bg-hover);
+}
 .login-btn:disabled {
   opacity: 0.55;
   cursor: default;

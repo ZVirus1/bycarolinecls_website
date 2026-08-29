@@ -434,8 +434,9 @@ export default {
   white-space: nowrap;
 }
 
-.calendar-btn:hover {
-  background: #f5f5f5;
+.calendar-btn:hover:not(:disabled) {
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
 }
 
 .calendar-btn.primary {

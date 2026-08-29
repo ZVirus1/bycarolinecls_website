@@ -278,6 +278,10 @@ code {
   cursor: pointer;
   white-space: nowrap;
 }
+.btn:hover:not(:disabled) {
+  background: var(--btn-bg-hover);
+  border-color: var(--btn-bg-hover);
+}
 .btn:disabled {
   opacity: 0.45;
   cursor: default;

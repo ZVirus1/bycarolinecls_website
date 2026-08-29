@@ -168,5 +168,14 @@ const busyDates = [
 
 await db.doc('settings/availability').set({ busyDates, updatedAt: new Date().toISOString() })
 
+// Stamp the run so the admin can show "Last synced" without guessing.
+await db.doc('settings/sync').set({
+  lastSyncAt: new Date().toISOString(),
+  created,
+  updated,
+  removed,
+  source: 'timetree',
+})
+
 console.log(`✓ created ${created}, updated ${updated}, removed ${removed}`)
 console.log(`✓ published ${busyDates.length} busy date(s)`)

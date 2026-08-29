@@ -8,13 +8,13 @@
   <div v-else id="app" class="shell">
     <header class="topbar">
       <button
-        class="icon-btn"
+        class="menu-btn"
         aria-controls="admin-nav"
         :aria-expanded="String(navOpen)"
-        @click="navOpen = true"
+        @click="navOpen = !navOpen"
       >
-        <i class="fas fa-bars"></i>
-        <span class="sr-only">Open menu</span>
+        <i class="fas" :class="navOpen ? 'fa-xmark' : 'fa-bars'"></i>
+        <span class="sr-only">{{ navOpen ? 'Close menu' : 'Open menu' }}</span>
       </button>
       <a href="/" class="topbar__brand" title="View the public site">
         <img :src="logo" alt="Bycarolinecls" />
@@ -23,10 +23,6 @@
 
     <aside id="admin-nav" class="sidebar" :class="{ 'is-open': navOpen }">
       <div class="sidebar__head">
-        <button class="icon-btn sidebar__close" @click="navOpen = false">
-          <i class="fas fa-xmark"></i>
-          <span class="sr-only">Close menu</span>
-        </button>
         <a href="/" class="brand" title="View the public site">
           <img :src="logo" alt="Bycarolinecls" />
         </a>
@@ -200,25 +196,22 @@ body {
   height: auto;
 }
 
-.sidebar__close {
-  display: none;
-}
-
-.icon-btn {
+/* Named to avoid colliding with the scoped .icon-btn in PricingView. */
+.menu-btn {
   display: grid;
   place-items: center;
   width: 40px;
   height: 40px;
   flex: 0 0 40px;
-  border: 1px solid #e6e3dc;
+  border: 0;
   border-radius: 10px;
-  background: #fff;
-  font-size: 16px;
+  background: none;
+  font-size: 18px;
   color: #1d1d1d;
   cursor: pointer;
 }
 
-.icon-btn:hover {
+.menu-btn:hover {
   background: #f5f3ee;
 }
 
@@ -333,7 +326,8 @@ body {
 
   .sidebar {
     position: fixed;
-    inset: 0 auto 0 0;
+    inset: 58px auto 0 0;
+    height: auto;
     z-index: 70;
     width: min(78vw, 280px);
     flex-basis: auto;
@@ -346,31 +340,15 @@ body {
     transform: none;
   }
 
-  /* Drawer header mirrors the top bar: close button where the hamburger was. */
+  /* The logo already sits in the top bar, so the drawer is nav only. */
   .sidebar__head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .sidebar__close {
-    display: grid;
-  }
-
-  .brand {
-    padding: 0;
-    min-width: 0;
-  }
-
-  .brand img {
-    width: auto;
-    height: 26px;
+    display: none;
   }
 
   .scrim {
     display: block;
     position: fixed;
-    inset: 0;
+    inset: 58px 0 0 0;
     z-index: 65;
     background: rgba(0, 0, 0, 0.35);
   }

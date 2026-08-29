@@ -19,9 +19,16 @@
           <button class="calendar-btn success" @click="showAddEventModal">
             <i class="fas fa-plus"></i> Add Event
           </button>
-          <router-link to="/import" class="calendar-btn">
-            <i class="fas fa-file-import"></i> Import from TimeTree
-          </router-link>
+          <div class="sync">
+            <button class="calendar-btn" :disabled="syncing" @click="runSync">
+              <i class="fas fa-rotate" :class="{ 'fa-spin': syncing }"></i>
+              {{ syncing ? 'Syncing…' : 'Sync now' }}
+            </button>
+            <p class="sync__when">
+              <template v-if="syncMessage">{{ syncMessage }}</template>
+              <template v-else>Last synced: {{ lastSynced }}</template>
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -119,6 +126,7 @@ import {
   deleteObject,
 } from '../stores/firebase.js'
 import { publishAvailability } from '../stores/availability.js'
+import { loadSyncStatus, requestSync, formatSyncedAt } from '../stores/sync.js'
 
 export default {
   name: 'CalendarView',
@@ -135,9 +143,15 @@ export default {
       appointmentToDelete: null,
       showListView: false,
       isMobile: false,
+      syncedAt: null,
+      syncing: false,
+      syncMessage: '',
     }
   },
   computed: {
+    lastSynced() {
+      return formatSyncedAt(this.syncedAt)
+    },
     currentMonthDisplay() {
       return this.currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     },
@@ -165,11 +179,46 @@ export default {
     this.checkMobile()
     window.addEventListener('resize', this.checkMobile)
     await this.loadAppointmentsFromFirebase()
+    await this.refreshSyncStatus()
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkMobile)
   },
   methods: {
+    async refreshSyncStatus() {
+      try {
+        this.syncedAt = (await loadSyncStatus())?.lastSyncAt ?? null
+      } catch {
+        this.syncedAt = null
+      }
+    },
+
+    /**
+     * The sync runs in GitHub Actions, so this only asks it to start. New
+     * events land in Firestore a minute or so later, hence the delayed reload.
+     */
+    async runSync() {
+      this.syncing = true
+      this.syncMessage = ''
+      try {
+        const res = await requestSync()
+        if (res.ok) {
+          this.syncMessage = 'Sync requested. Events appear in a minute or so.'
+          setTimeout(async () => {
+            await this.loadAppointmentsFromFirebase()
+            await this.refreshSyncStatus()
+          }, 60000)
+        } else if (res.reason === 'not_configured') {
+          this.syncMessage = 'Manual sync is not set up yet. The 5-minute schedule still runs.'
+        } else {
+          this.syncMessage = 'Could not start a sync. Try again shortly.'
+        }
+      } finally {
+        this.syncing = false
+        setTimeout(() => (this.syncMessage = ''), 8000)
+      }
+    },
+
     checkMobile() {
       this.isMobile = window.innerWidth < 768
     },
@@ -755,5 +804,18 @@ export default {
     height: 10px;
     font-size: 7px;
   }
+}
+
+.sync {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.sync__when {
+  margin: 0;
+  font-size: 11.5px;
+  color: #8a857c;
 }
 </style>

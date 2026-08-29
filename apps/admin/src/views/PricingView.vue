@@ -8,10 +8,10 @@
           site within about 5 minutes.
         </p>
       </div>
-      <div class="page__actions">
+      <div v-if="dirty || busy" class="page__actions">
         <button class="btn ghost" :disabled="busy" @click="reset">Revert</button>
-        <button class="btn" :disabled="busy || !dirty" @click="save">
-          {{ busy ? 'Saving…' : dirty ? 'Save changes' : 'Saved' }}
+        <button class="btn" :disabled="busy" @click="save">
+          {{ busy ? 'Saving…' : 'Save changes' }}
         </button>
       </div>
     </header>
@@ -84,11 +84,6 @@
       </div>
 
       <button class="btn ghost add" @click="add"><i class="fas fa-plus"></i> Add service</button>
-
-      <p class="note">
-        Unticking <strong>Public</strong> keeps a service available as an invoice line item but
-        hides it from the public pricing page. Useful for complimentary trials.
-      </p>
     </template>
   </div>
 </template>
@@ -326,12 +321,5 @@ async function save() {
   padding: 48px;
   text-align: center;
   color: #8a857c;
-}
-
-.note {
-  font-size: 12.5px;
-  color: #8a857c;
-  line-height: 1.6;
-  margin-top: 20px;
 }
 </style>

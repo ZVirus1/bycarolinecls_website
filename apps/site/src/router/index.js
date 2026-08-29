@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 
+// Every view is lazy so the holding page ships almost nothing, and the live
+// site's first paint is not carrying the other four pages.
 const routes = [
-  { path: '/', name: 'home', component: HomeView },
+  { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
   {
     path: '/portfolio',
     name: 'portfolio',

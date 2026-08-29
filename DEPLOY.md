@@ -201,6 +201,56 @@ Then import `bookings.ics` into Google Calendar, or re-enter the bookings in
 
 ---
 
+## Security notes
+
+### This repo is public
+
+That is fine, and deliberate — it is what makes the 5-minute sync free. Nothing
+in the current tree is sensitive:
+
+- **Actions secrets are safe.** They are encrypted, masked in logs, and are not
+  given to pull requests from forks. A stranger cannot read them.
+- **The Firebase web config is public by design.** Vite inlines it into the
+  browser bundle regardless. The API key identifies the project, it does not
+  grant access — `firestore.rules` is what protects the data.
+- **Payment details are no longer committed.** They come from `VITE_BANK_*`
+  environment variables set in Cloudflare Pages.
+
+### What is still in git history
+
+Earlier commits (inherited from the invoice repo, which is also public) contain
+a BCA account number, and one client's phone number, home address and first
+name. Removing them from the current tree does not remove them from history.
+
+- The account number is low-consequence — it appears on every invoice you send.
+- The client's phone and address are third-party personal data and are the part
+  worth caring about.
+
+To purge them, the history has to be rewritten and force-pushed:
+
+```sh
+pipx install git-filter-repo
+git filter-repo --replace-text <(printf '%s\n' \
+  'REDACTED-ACCOUNT-NO==>REDACTED' \
+  'REDACTED-ADDRESS==>REDACTED')
+git push --force
+```
+
+Note that GitHub may retain unreferenced commits for a while, and the same
+values remain in the separate invoice repo. Rewriting here alone is partial.
+
+### Making the repo private instead
+
+Possible, but it changes the sync economics, because private repos only get
+2,000 free Actions minutes a month:
+
+| Repo | Interval | Rough monthly cost |
+|---|---|---|
+| Public | every 5 min | £0 |
+| Private | every 5 min | ~£100 in Actions overage |
+| Private | every 30 min | a few £ |
+| Private | every 60 min | £0 |
+
 ## Costs
 
 | Item | Cost |

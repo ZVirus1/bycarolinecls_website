@@ -109,12 +109,14 @@ for (const e of events) {
   const uid = e.uid || `${e.start.toISOString()}|${e.summary}`
   seenUids.add(uid)
 
+  // hasInvoice is deliberately NOT in here: it belongs to us, not TimeTree.
+  // Including it would wipe the invoice flag off a booking whose title or time
+  // later changed in TimeTree, orphaning the invoice.
   const payload = {
     clientName: e.summary || 'TimeTree event',
     appointmentDate: localDate(e.start, TZ),
     appointmentTime: e.allDay ? '' : localTime(e.start, TZ),
     address: e.location || '',
-    hasInvoice: false,
     source: 'timetree',
     timetreeUid: uid,
     syncedAt: FieldValue.serverTimestamp(),
@@ -122,7 +124,12 @@ for (const e of events) {
 
   const prior = existing.get(uid)
   if (!prior) {
-    batch.set(col.doc(), { ...payload, services: [], createdAt: FieldValue.serverTimestamp() })
+    batch.set(col.doc(), {
+      ...payload,
+      hasInvoice: false,
+      services: [],
+      createdAt: FieldValue.serverTimestamp(),
+    })
     created++
   } else if (
     prior.appointmentDate !== payload.appointmentDate ||

@@ -196,6 +196,7 @@ export default {
     window.addEventListener('keydown', this.onKey)
     await this.loadAppointmentsFromFirebase()
     await this.refreshSyncStatus()
+    await this.autoSyncIfStale()
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkMobile)
@@ -205,6 +206,26 @@ export default {
     onKey(e) {
       if (e.key === 'Escape') this.selected = null
     },
+    /**
+     * GitHub drops most of our 5-minute schedule under load, so opening the
+     * calendar nudges a sync when the data is stale. Quietly does nothing when
+     * the manual trigger is not configured.
+     */
+    async autoSyncIfStale() {
+      const STALE_MS = 10 * 60 * 1000
+      const last = this.syncedAt ? new Date(this.syncedAt).getTime() : 0
+      if (Date.now() - last < STALE_MS) return
+      const res = await requestSync().catch(() => ({ ok: false }))
+      if (res.ok) {
+        this.syncMessage = 'Syncing in the background…'
+        setTimeout(async () => {
+          await this.loadAppointmentsFromFirebase()
+          await this.refreshSyncStatus()
+          this.syncMessage = ''
+        }, 60000)
+      }
+    },
+
     async refreshSyncStatus() {
       try {
         this.syncedAt = (await loadSyncStatus())?.lastSyncAt ?? null

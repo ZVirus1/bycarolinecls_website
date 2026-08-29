@@ -156,18 +156,6 @@ for (const [uid, doc] of existing) {
 }
 await flush()
 
-// Republish the public dates-only document.
-const allSnap = await col.get()
-const busyDates = [
-  ...new Set(
-    allSnap.docs
-      .map((d) => d.data().appointmentDate)
-      .filter((d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)),
-  ),
-].sort()
-
-await db.doc('settings/availability').set({ busyDates, updatedAt: new Date().toISOString() })
-
 // Stamp the run so the admin can show "Last synced" without guessing.
 await db.doc('settings/sync').set({
   lastSyncAt: new Date().toISOString(),
@@ -178,4 +166,3 @@ await db.doc('settings/sync').set({
 })
 
 console.log(`✓ created ${created}, updated ${updated}, removed ${removed}`)
-console.log(`✓ published ${busyDates.length} busy date(s)`)

@@ -15,8 +15,8 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    // Proxy the availability function to a local `wrangler pages dev` during
-    // development so the booking calendar works with `npm run dev`.
+    // Proxy /api to a local `wrangler pages dev` during development so the
+    // pricing page reads live prices instead of the bundled fallback.
     proxy: { '/api': 'http://127.0.0.1:8788' },
   },
 })

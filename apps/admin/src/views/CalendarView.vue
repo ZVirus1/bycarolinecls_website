@@ -125,7 +125,6 @@ import {
   ref,
   deleteObject,
 } from '../stores/firebase.js'
-import { publishAvailability } from '../stores/availability.js'
 import { loadSyncStatus, requestSync, formatSyncedAt } from '../stores/sync.js'
 
 export default {
@@ -257,10 +256,6 @@ export default {
           id: doc.id,
           ...doc.data(),
         }))
-
-        // Keep the public dates-only document in step with what is actually
-        // booked. Cheap, and self-healing if a write was ever missed.
-        publishAvailability(this.appointments)
       } catch (error) {
         console.error('Error loading appointments:', error)
         this.appointments = []

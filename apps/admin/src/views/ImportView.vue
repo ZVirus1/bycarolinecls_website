@@ -105,7 +105,6 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, collection, addDoc, getDocs } from '../stores/firebase.js'
-import { publishAvailability, loadAllAppointments } from '../stores/availability.js'
 import { parseEvents, hasRecurrence, localDate, localTime, DEFAULT_TZ } from '../lib/ics.js'
 
 const router = useRouter()
@@ -221,12 +220,6 @@ async function runImport() {
       console.error('import failed for', row.uid, err)
       failed += 1
     }
-  }
-
-  try {
-    await publishAvailability(await loadAllAppointments())
-  } catch (err) {
-    console.error('availability refresh failed:', err)
   }
 
   importing.value = false

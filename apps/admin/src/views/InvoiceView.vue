@@ -22,8 +22,11 @@
         @update:form-data="updateFormData"
         @update:items="updateItems"
         @add-item="addItem"
-        @download-pdf="downloadPDF"
-        @save-to-cloud="saveToCloud"
+        :calendar-events="calendarEvents"
+        :linked-event-id="linkedEventId"
+        :busy="busy"
+        @update:linked-event-id="linkedEventId = $event"
+        @generate="generateInvoice"
       />
     </div>
 
@@ -49,6 +52,9 @@ import {
   uploadBytes,
   getDownloadURL,
   deleteDoc,
+  getDocs,
+  query,
+  where,
 } from '../stores/firebase.js'
 import { nextInvoiceNumber } from '../stores/invoices.js'
 import { jsPDF } from 'jspdf'
@@ -79,10 +85,10 @@ export default {
         accountName: import.meta.env.VITE_BANK_ACCOUNT_NAME || '',
         accountNo: import.meta.env.VITE_BANK_ACCOUNT_NO || '',
       },
-      items: [
-        { description: 'Makeup Bride Full Day', quantity: 1, total: '8000000', isPredefined: true },
-        { description: '', quantity: 1, total: '', isPredefined: false },
-      ],
+      items: [{ description: '', quantity: 1, total: '', isPredefined: false }],
+      calendarEvents: [],
+      linkedEventId: '',
+      busy: false,
       statusMessage: '',
       isStatusSuccess: true,
       showPreview: false,
@@ -92,11 +98,39 @@ export default {
   mounted() {
     this.checkMobile()
     window.addEventListener('resize', this.checkMobile)
+    this.loadCalendarEvents()
+  },
+  watch: {
+    'formData.appointmentDate'() {
+      this.linkedEventId = ''
+      this.loadCalendarEvents()
+    },
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkMobile)
   },
   methods: {
+    /** Bookings already on the chosen appointment date, so an invoice can
+     *  attach to one instead of creating a second copy of the same booking. */
+    async loadCalendarEvents() {
+      const date = this.formData.appointmentDate
+      if (!date) {
+        this.calendarEvents = []
+        return
+      }
+      try {
+        const snap = await getDocs(
+          query(collection(db, 'appointments'), where('appointmentDate', '==', date)),
+        )
+        this.calendarEvents = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((a) => !a.hasInvoice)
+      } catch (err) {
+        console.error('Could not load calendar events:', err)
+        this.calendarEvents = []
+      }
+    },
+
     checkMobile() {
       this.isMobile = window.innerWidth < 768
     },
@@ -120,20 +154,6 @@ export default {
       setTimeout(() => {
         this.statusMessage = ''
       }, 5000)
-    },
-
-    getInvoiceFileName() {
-      // Use customer name from form, fallback to 'Client'
-      const rawName = (this.formData.name || 'Client').trim()
-
-      // Turn spaces into dashes and strip weird characters
-      const safeName =
-        rawName
-          .replace(/\s+/g, '-') // spaces -> dashes
-          .replace(/[^a-zA-Z0-9\-]/g, '') || // only keep letters, numbers, dashes
-        'Client'
-
-      return `Bycarolinecls-Invoice-${safeName}.pdf`
     },
 
     async capturePdfCanvas() {
@@ -171,70 +191,29 @@ export default {
       }
     },
 
-    async downloadPDF() {
+    /**
+     * One action: build the PDF, attach it to a booking (linking to an existing
+     * one where chosen, so a synced TimeTree event never gets duplicated), then
+     * show it.
+     */
+    async generateInvoice() {
+      if (this.busy) return
+      this.busy = true
+
+      // Opened synchronously: iOS Safari blocks window.open once we have awaited.
+      const viewer = window.open('', '_blank')
+      let createdId = null
+
       try {
-        // Reuse the same PDF generation logic as "saveToCloud"
-        const pdfBlob = await this.generatePDFBlob()
-        const fileName = this.getInvoiceFileName()
-
-        // 1) Always trigger classic download (desktop + mobile)
-        const url = URL.createObjectURL(pdfBlob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = fileName
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
-
-        // 2) Optional: on mobile, ALSO open the native share sheet with the PDF file only
-        const hasNavigator = typeof navigator !== 'undefined'
-        const canShareFiles =
-          this.isMobile && // only attempt on mobile, not desktop
-          hasNavigator &&
-          'share' in navigator &&
-          'canShare' in navigator
-
-        if (canShareFiles) {
-          const file = new File([pdfBlob], fileName, { type: 'application/pdf' })
-
-          // We ONLY share the file – no URL passed here
-          if (navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({
-                files: [file],
-                title: 'Invoice',
-                text: 'Invoice from Bycarolinecls',
-              })
-            } catch (shareError) {
-              // User cancelled or share failed; we already downloaded, so just log it
-              console.warn('Share cancelled or failed:', shareError)
-            }
-          }
-        }
-
-        this.showStatus('PDF generated successfully!', true)
-      } catch (error) {
-        console.error('Error generating PDF:', error)
-        this.showStatus('Error generating PDF. Please try again.', false)
-      }
-    },
-
-    async saveToCloud() {
-      try {
-        this.showStatus('Generating PDF and saving to cloud...', true)
+        this.showStatus('Generating invoice...', true)
 
         const pdfBlob = await this.generatePDFBlob()
+        if (!pdfBlob) throw new Error('Failed to generate PDF')
 
-        if (!pdfBlob) {
-          throw new Error('Failed to generate PDF')
-        }
-
-        // Reserved before the write so the number is unique even if two tabs
-        // save at once.
+        // Reserved before the write so the number is unique even if two tabs save at once.
         const invoiceNumber = await nextInvoiceNumber()
 
-        const appointmentData = {
+        const invoiceData = {
           invoiceNumber,
           clientName: this.formData.name.trim(),
           phone: this.formData.phone.trim(),
@@ -250,38 +229,47 @@ export default {
           accountName: this.formData.accountName,
           accountNo: this.formData.accountNo,
           hasInvoice: true,
-          createdAt: new Date(),
+          updatedAt: new Date(),
         }
 
-        const docRef = await addDoc(collection(db, 'appointments'), appointmentData)
-        const appointmentId = docRef.id
-
-        try {
-          const storageRef = ref(storage, `invoices/${appointmentId}.pdf`)
-          await uploadBytes(storageRef, pdfBlob, {
-            contentType: 'application/pdf',
+        let appointmentId = this.linkedEventId
+        if (appointmentId) {
+          await updateDoc(doc(db, 'appointments', appointmentId), invoiceData)
+        } else {
+          const docRef = await addDoc(collection(db, 'appointments'), {
+            ...invoiceData,
+            createdAt: new Date(),
           })
-
-          const pdfUrl = await getDownloadURL(storageRef)
-          await updateDoc(doc(db, 'appointments', appointmentId), {
-            pdfUrl: pdfUrl,
-            pdfFileName: `invoice_${appointmentId}.pdf`,
-            updatedAt: new Date(),
-          })
-
-          this.showStatus(`Saved invoice ${invoiceNumber} to cloud and calendar!`, true)
-
-          setTimeout(() => {
-            this.$router.push('/calendar')
-          }, 2000)
-        } catch (storageError) {
-          console.error('Storage error:', storageError)
-          await deleteDoc(doc(db, 'appointments', appointmentId))
-          throw new Error('Failed to upload PDF to storage: ' + storageError.message)
+          appointmentId = docRef.id
+          createdId = appointmentId
         }
+
+        const storageRef = ref(storage, `invoices/${appointmentId}.pdf`)
+        await uploadBytes(storageRef, pdfBlob, { contentType: 'application/pdf' })
+        const pdfUrl = await getDownloadURL(storageRef)
+
+        await updateDoc(doc(db, 'appointments', appointmentId), {
+          pdfUrl,
+          pdfFileName: `invoice_${appointmentId}.pdf`,
+          updatedAt: new Date(),
+        })
+
+        if (viewer && !viewer.closed) viewer.location.href = pdfUrl
+        else window.open(pdfUrl, '_blank', 'noopener')
+
+        this.showStatus(`Invoice ${invoiceNumber} generated.`, true)
+        this.linkedEventId = ''
+        await this.loadCalendarEvents()
       } catch (error) {
-        console.error('Error saving to cloud:', error)
-        this.showStatus('Error saving to cloud: ' + error.message, false)
+        console.error('Error generating invoice:', error)
+        if (viewer && !viewer.closed) viewer.close()
+        // Only ever undo a booking we created; never delete one we linked to.
+        if (createdId) {
+          await deleteDoc(doc(db, 'appointments', createdId)).catch(() => {})
+        }
+        this.showStatus('Error generating invoice: ' + error.message, false)
+      } finally {
+        this.busy = false
       }
     },
 
@@ -364,7 +352,7 @@ export default {
   margin: 24px auto;
   padding: 0 16px;
   display: grid;
-  grid-template-columns: 460px 1fr;
+  grid-template-columns: 560px 1fr;
   gap: 24px;
   width: 100%;
   box-sizing: border-box;
@@ -415,14 +403,14 @@ export default {
 /* Enhanced Responsive Design */
 @media (max-width: 1200px) {
   .app {
-    grid-template-columns: 400px 1fr;
+    grid-template-columns: 460px 1fr;
     gap: 20px;
   }
 }
 
 @media (max-width: 1024px) {
   .app {
-    grid-template-columns: 350px 1fr;
+    grid-template-columns: 380px 1fr;
     gap: 16px;
   }
 }

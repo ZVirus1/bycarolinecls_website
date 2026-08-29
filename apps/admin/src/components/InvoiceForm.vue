@@ -69,35 +69,31 @@
           placeholder="Total (e.g. 8000000)"
           @input="formatTotal(item)"
         />
-        <button class="remove" type="button" @click="removeItem(index)">Remove</button>
+        <button class="remove" type="button" aria-label="Remove item" @click="removeItem(index)">
+          <i class="fas fa-trash-can"></i>
+        </button>
       </div>
     </div>
     <button class="btn secondary" type="button" @click="$emit('add-item')">
       <i class="fas fa-plus"></i> Add item
     </button>
-    <div class="muted">
-      Only rows with a Description will be shown. A divider appears under each shown row.
+    <label style="margin-top: 18px">Link to Calendar Event</label>
+    <select v-model="localLinkedId">
+      <option value="">No linked event</option>
+      <option v-for="ev in calendarEvents" :key="ev.id" :value="ev.id">
+        {{ ev.clientName || 'Unnamed' }}
+      </option>
+    </select>
+    <div class="hint">
+      {{
+        calendarEvents.length
+          ? 'Bookings synced from TimeTree on this appointment date.'
+          : 'No bookings on this appointment date yet.'
+      }}
     </div>
 
-    <label style="margin-top: 16px">Bank</label>
-    <input v-model="localFormData.bank" type="text" />
-
-    <div class="grid-2">
-      <div>
-        <label>Account Name</label>
-        <input v-model="localFormData.accountName" type="text" />
-      </div>
-      <div>
-        <label>Account No.</label>
-        <input v-model="localFormData.accountNo" type="text" />
-      </div>
-    </div>
-
-    <button class="btn" type="button" @click="$emit('download-pdf')">
-      <i class="fas fa-file-pdf"></i> Generate PDF
-    </button>
-    <button class="btn success" type="button" @click="$emit('save-to-cloud')">
-      <i class="fas fa-cloud-upload-alt"></i> Generate PDF & Save to Calendar
+    <button class="btn" type="button" :disabled="busy" @click="$emit('generate')">
+      <i class="fas fa-file-pdf"></i> {{ busy ? 'Generating…' : 'Generate Invoice' }}
     </button>
     <div v-if="statusMessage" class="status-message" :class="statusClass">
       {{ statusMessage }}
@@ -115,11 +111,15 @@ export default {
     items: Array,
     statusMessage: String,
     isStatusSuccess: Boolean,
+    calendarEvents: { type: Array, default: () => [] },
+    linkedEventId: { type: String, default: '' },
+    busy: Boolean,
   },
   data() {
     return {
       localFormData: { ...this.formData },
       localItems: [...this.items],
+      localLinkedId: this.linkedEventId,
     }
   },
   computed: {
@@ -159,6 +159,12 @@ export default {
         this.$emit('update:items', newVal)
       },
       deep: true,
+    },
+    linkedEventId(newVal) {
+      this.localLinkedId = newVal
+    },
+    localLinkedId(newVal) {
+      this.$emit('update:linked-event-id', newVal)
     },
   },
   methods: {
@@ -378,14 +384,25 @@ select::-webkit-scrollbar-thumb:hover {
 }
 
 .item-row .remove {
-  border: 1px solid #ffd7d7;
-  background: #fff0f0;
-  color: #b61c1c;
-  font-weight: 600;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e6e3dc;
+  background: #fff;
+  color: #8a857c;
   padding: 10px 12px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
+}
+.item-row .remove:hover {
+  border-color: #e8c4c4;
+  background: #fdf5f5;
+  color: #b61c1c;
+}
+.hint {
+  font-size: 12px;
+  color: #8a857c;
+  margin-top: 6px;
 }
 .btn {
   display: inline-flex;

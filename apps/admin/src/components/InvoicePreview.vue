@@ -72,12 +72,7 @@
               <td class="total" id="vPaid">{{ displayPaid }}</td>
             </tr>
             <tr>
-              <td id="large-balance">
-                <div class="two-lines">
-                  <span>Balance Due</span>
-                  <span class="sub">&nbsp;</span>
-                </div>
-              </td>
+              <td id="large-balance">Balance Due</td>
               <td class="total" id="vBalance">{{ displayBalance }}</td>
             </tr>
           </tbody>
@@ -342,6 +337,8 @@ export default {
   font-size: 16px;
   letter-spacing: 0.25px;
   font-weight: 700;
+  /* Without this the UA's default h3 margin drops BILLED TO below Invoice Date. */
+  margin-top: 0;
   margin-bottom: 6px;
 }
 .meta-box p {
@@ -423,6 +420,7 @@ export default {
   padding: 18px 0;
   font-size: 15px;
   border: none;
+  vertical-align: middle;
 }
 .totals tr td:first-child {
   font-weight: 700;

@@ -4,6 +4,14 @@
  * you should never need to touch a component to update the site.
  */
 
+/**
+ * Hero image for the landing page.
+ * Drop the file into apps/site/public/ and set the path here, e.g. '/hero.jpg'.
+ * Leave null to show a placeholder instead of a broken image.
+ * Use a wide, high-resolution shot - it renders full-bleed.
+ */
+export const heroImage = null
+
 export const business = {
   name: 'Bycarolinecls',
   tagline: 'Professional Hair and Makeup Artist',

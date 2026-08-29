@@ -2,9 +2,12 @@
   <!-- Hero -->
   <section class="hero">
     <div class="hero__media">
-      <img v-if="heroImage" :src="heroImage" alt="" />
+      <img v-if="heroImage" :src="heroImage" alt="" fetchpriority="high" />
       <div v-else class="hero__placeholder">
-        <p>Add a hero image at <code>apps/site/public/hero.jpg</code></p>
+        <p>
+          Add a photo to <code>apps/site/public/</code> and set
+          <code>heroImage</code> in <code>src/content/site.js</code>
+        </p>
       </div>
     </div>
 
@@ -72,13 +75,9 @@
 
 <script setup>
 import { computed } from 'vue'
-import { business, portfolio } from '../content/site.js'
+import { business, portfolio, heroImage } from '../content/site.js'
 import { publicServices } from '@bycarolinecls/shared/services'
 import { rupiah } from '@bycarolinecls/shared/format'
-
-// Vite serves anything in public/ from the root; if the file is absent the
-// browser 404s the <img>, so we gate on an explicit constant instead.
-const heroImage = null
 
 const featured = computed(() => portfolio.slice(0, 6))
 const teaserServices = computed(() => publicServices().slice(0, 4))

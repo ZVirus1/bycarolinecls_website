@@ -1,5 +1,0 @@
-# Admin SPA - must come before the catch-all
-/admin/*    /admin/index.html    200
-
-# Public SPA
-/*          /index.html          200

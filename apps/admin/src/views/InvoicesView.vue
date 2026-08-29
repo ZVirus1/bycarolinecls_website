@@ -68,16 +68,10 @@
                 class="link-btn"
                 >View</a
               >
-              <a
-                v-if="inv.pdfUrl"
-                :href="inv.pdfUrl"
-                :download="fileName(inv)"
-                class="link-btn"
+              <a v-if="inv.pdfUrl" :href="inv.pdfUrl" :download="fileName(inv)" class="link-btn"
                 >Download</a
               >
-              <button v-if="!inv.timetreeUid" class="link-btn" @click="openLink(inv)">
-                Link
-              </button>
+              <button v-if="!inv.timetreeUid" class="link-btn" @click="openLink(inv)">Link</button>
               <span v-if="!inv.pdfUrl" class="sub">No PDF</span>
             </td>
           </tr>
@@ -100,9 +94,7 @@
         </p>
 
         <div v-if="candidatesLoading" class="empty">Loading…</div>
-        <div v-else-if="!candidates.length" class="empty">
-          No unlinked bookings on that date.
-        </div>
+        <div v-else-if="!candidates.length" class="empty">No unlinked bookings on that date.</div>
         <ul v-else class="cand">
           <li v-for="c in candidates" :key="c.id">
             <button class="cand__btn" :disabled="busy" @click="confirmLink(c)">

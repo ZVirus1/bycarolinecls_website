@@ -53,14 +53,20 @@
                   ↓
                 </button>
               </td>
-              <td>
+              <td class="c-name" data-label="Service">
                 <input v-model="row.description" class="in" placeholder="Service name" />
               </td>
-              <td>
+              <td class="c-cat" data-label="Category">
                 <input v-model="row.category" class="in" list="cats" placeholder="Category" />
               </td>
-              <td class="c-price">
-                <input v-model.number="row.price" type="number" min="0" step="50000" class="in in--num" />
+              <td class="c-price" data-label="Price (IDR)">
+                <input
+                  v-model.number="row.price"
+                  type="number"
+                  min="0"
+                  step="50000"
+                  class="in in--num"
+                />
                 <span class="hint">{{ rupiah(row.price) }}</span>
               </td>
               <td class="c-pub">
@@ -318,5 +324,119 @@ async function save() {
   padding: 48px;
   text-align: center;
   color: #8a857c;
+}
+
+/* On a phone the six-column table only fitted by scrolling sideways at 680px,
+   which made this the one page you had to squint at. Each service becomes a
+   card instead, at the same type size as the rest of the admin. */
+@media (max-width: 720px) {
+  .table-wrap {
+    overflow-x: visible;
+  }
+
+  .tbl {
+    min-width: 0;
+  }
+
+  .tbl thead {
+    display: none;
+  }
+
+  .tbl,
+  .tbl tbody {
+    display: block;
+  }
+
+  .tbl tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 14px;
+    border-bottom: 1px solid #eeebe4;
+  }
+
+  .tbl tr:last-child {
+    border-bottom: 0;
+  }
+
+  .tbl td {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+  }
+
+  .tbl td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8a857c;
+    margin-bottom: 6px;
+  }
+
+  .c-name,
+  .c-cat,
+  .c-price {
+    flex: 1 1 100%;
+  }
+
+  .c-name {
+    order: 1;
+  }
+  .c-cat {
+    order: 2;
+  }
+  .c-price {
+    order: 3;
+  }
+
+  /* Controls share one row at the foot of the card. */
+  .c-drag {
+    order: 4;
+    margin-right: auto;
+  }
+  .c-pub {
+    order: 5;
+  }
+  .c-del {
+    order: 6;
+  }
+
+  .c-drag,
+  .c-pub,
+  .c-del {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .c-drag::before,
+  .c-del::before {
+    content: none;
+  }
+
+  .c-pub::before {
+    content: 'Public';
+    margin: 0;
+  }
+
+  .in {
+    font-size: 15px;
+    padding: 11px 12px;
+  }
+
+  .in--num,
+  .hint {
+    text-align: left;
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
 }
 </style>

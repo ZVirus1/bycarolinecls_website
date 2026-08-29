@@ -17,11 +17,7 @@
     </div>
 
     <label>Address</label>
-    <input
-      v-model="localFormData.address"
-      type="text"
-      placeholder="Street, area, city"
-    />
+    <input v-model="localFormData.address" type="text" placeholder="Street, area, city" />
 
     <div class="grid-2">
       <div>

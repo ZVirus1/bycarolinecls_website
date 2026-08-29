@@ -21,7 +21,13 @@
 import { readFileSync } from 'node:fs'
 import { initializeApp, cert } from 'firebase-admin/app'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
-import { parseEvents, hasRecurrence, localDate, localTime, DEFAULT_TZ } from '../apps/admin/src/lib/ics.js'
+import {
+  parseEvents,
+  hasRecurrence,
+  localDate,
+  localTime,
+  DEFAULT_TZ,
+} from '../apps/admin/src/lib/ics.js'
 
 const TZ = process.env.BUSINESS_TIMEZONE || DEFAULT_TZ
 const icsPath = process.argv[2]
@@ -50,6 +56,12 @@ const from = new Date(now.getTime() - 60 * 86400000)
 const to = new Date(now.getTime() + 400 * 86400000)
 
 const raw = readFileSync(icsPath, 'utf8')
+
+// True only when the fetch actually reached a message endpoint. When it is
+// false an empty thread means "we could not ask", not "there is nothing", so
+// messages are left alone rather than cleared.
+let messagesFetched = false
+
 const events = icsPath.endsWith('.json') ? fromJson(raw) : fromIcs(raw)
 console.log(`Parsed ${events.length} event(s) in window.`)
 
@@ -60,12 +72,15 @@ function fromJson(text) {
   if (data.events.some((e) => e.recurring)) {
     console.warn('⚠ some events repeat; repeats are not expanded, only first occurrences sync')
   }
+  messagesFetched = data.messagesFetched === true
   return data.events
     .map((e) => ({
       uid: e.uid,
       summary: e.title,
+      note: e.note,
       location: e.location,
       allDay: e.allDay,
+      messages: Array.isArray(e.messages) ? e.messages : [],
       start: new Date(e.start),
       end: new Date(e.end),
     }))
@@ -78,7 +93,11 @@ function fromIcs(text) {
   if (hasRecurrence(text)) {
     console.warn('⚠ feed contains RRULEs; repeats are not expanded, only first occurrences sync')
   }
-  return parseEvents(text, { from, to, tz: TZ, includeDetails: true })
+  return parseEvents(text, { from, to, tz: TZ, includeDetails: true }).map((e) => ({
+    ...e,
+    note: e.description ?? '',
+    messages: [],
+  }))
 }
 
 const col = db.collection('appointments')
@@ -97,6 +116,14 @@ const seenUids = new Set()
 let batch = db.batch()
 let queued = 0
 
+/** Cheap deep-equal: threads are short, and only text and author can change. */
+function sameMessages(a, b) {
+  const left = a ?? []
+  const right = b ?? []
+  if (left.length !== right.length) return false
+  return left.every((m, i) => m.id === right[i].id && m.text === right[i].text)
+}
+
 async function flush() {
   if (queued) {
     await batch.commit()
@@ -112,20 +139,34 @@ for (const e of events) {
   // hasInvoice is deliberately NOT in here: it belongs to us, not TimeTree.
   // Including it would wipe the invoice flag off a booking whose title or time
   // later changed in TimeTree, orphaning the invoice.
+  const messages = (e.messages ?? []).map((m) => ({
+    id: String(m.id ?? ''),
+    author: m.author ?? '',
+    text: String(m.text ?? ''),
+    at: m.at ?? null,
+  }))
+
   const payload = {
     clientName: e.summary || 'TimeTree event',
     appointmentDate: localDate(e.start, TZ),
     appointmentTime: e.allDay ? '' : localTime(e.start, TZ),
+    // TimeTree shows a start and an end; the admin now shows the same range.
+    appointmentEndTime: e.allDay ? '' : localTime(e.end, TZ),
     address: e.location || '',
+    note: e.note || '',
     source: 'timetree',
     timetreeUid: uid,
     syncedAt: FieldValue.serverTimestamp(),
   }
 
+  // Only claim a thread is empty when we actually managed to read threads.
+  if (messagesFetched || messages.length) payload.messages = messages
+
   const prior = existing.get(uid)
   if (!prior) {
     batch.set(col.doc(), {
       ...payload,
+      messages,
       hasInvoice: false,
       services: [],
       createdAt: FieldValue.serverTimestamp(),
@@ -134,7 +175,11 @@ for (const e of events) {
   } else if (
     prior.appointmentDate !== payload.appointmentDate ||
     prior.appointmentTime !== payload.appointmentTime ||
-    prior.clientName !== payload.clientName
+    prior.appointmentEndTime !== payload.appointmentEndTime ||
+    prior.clientName !== payload.clientName ||
+    (prior.note || '') !== payload.note ||
+    (prior.address || '') !== payload.address ||
+    ('messages' in payload && !sameMessages(prior.messages, payload.messages))
   ) {
     // Only touch docs that actually changed, so invoices attached to a booking
     // are never needlessly rewritten.

@@ -129,6 +129,11 @@ body {
   margin: 0;
   background: #f6f6f2;
   color: var(--ink);
+  /* iOS inflates text per block, by a factor that depends on how wide that
+     block is. That made Pricing render noticeably smaller than the other
+     pages. Pin it so every page renders at the size it was authored at. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   font-family:
     Inter,
     system-ui,
@@ -223,6 +228,12 @@ input[type='time']::-webkit-calendar-picker-indicator:hover {
 
 input[type='search']::-webkit-search-cancel-button {
   cursor: pointer;
+}
+
+/* Safari on iOS paints button text in the system blue when no colour is set.
+   Anything with its own colour still wins - this is only the floor. */
+button {
+  color: var(--ink);
 }
 
 .sr-only {

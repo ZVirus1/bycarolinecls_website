@@ -32,7 +32,6 @@
       <button type="submit" class="login-btn" :disabled="busy">
         {{ busy ? 'Signing in...' : 'Sign in' }}
       </button>
-
     </form>
   </div>
 </template>

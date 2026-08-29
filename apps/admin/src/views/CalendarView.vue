@@ -45,8 +45,12 @@
     </div>
 
     <div class="legend" v-if="!showListView || !isMobile">
-      <span class="legend__key"><span class="legend__dot legend__dot--invoiced"></span>Invoiced</span>
-      <span class="legend__key"><span class="legend__dot legend__dot--pending"></span>Not invoiced</span>
+      <span class="legend__key"
+        ><span class="legend__dot legend__dot--invoiced"></span>Invoiced</span
+      >
+      <span class="legend__key"
+        ><span class="legend__dot legend__dot--pending"></span>Not invoiced</span
+      >
     </div>
 
     <!-- Calendar Grid View -->
@@ -54,6 +58,7 @@
       <CalendarGrid
         :current-date="currentDate"
         :appointments="appointments"
+        :max-per-day="isMobile ? 4 : 0"
         @appointment-click="handleAppointmentClick"
       />
     </div>
@@ -64,25 +69,30 @@
         <h3>Appointments for {{ currentMonthDisplay }}</h3>
       </div>
       <div class="appointments-list">
-        <div
-          v-for="appointment in currentMonthAppointments"
-          :key="appointment.id"
-          class="appointment-item"
-          :class="getAppointmentType(appointment)"
-          @click="handleAppointmentClick(appointment)"
-        >
-          <div class="appointment-main">
-            <div class="appointment-date">
-              <strong>{{ formatAppointmentDate(appointment.appointmentDate) }}</strong>
-              <span class="appointment-time">{{ appointment.appointmentTime }}</span>
-            </div>
+        <section v-for="group in appointmentsByDay" :key="group.date" class="day-group">
+          <header class="day-group__head">
+            <span class="day-group__weekday">{{ group.weekday }}</span>
+            <span class="day-group__day">{{ group.dayNumber }}</span>
+            <span class="day-group__month">{{ group.month }}</span>
+            <span class="day-group__count">
+              {{ group.items.length }} booking{{ group.items.length === 1 ? '' : 's' }}
+            </span>
+          </header>
+          <div
+            v-for="appointment in group.items"
+            :key="appointment.id"
+            class="appointment-item"
+            :class="getAppointmentType(appointment)"
+            @click="handleAppointmentClick(appointment)"
+          >
+            <div class="appointment-time">{{ timeRange(appointment) || 'All day' }}</div>
             <div class="appointment-details">
-              <div class="client-name">{{ appointment.clientName }}</div>
+              <div class="client-name">{{ appointment.clientName || 'Unnamed' }}</div>
               <div class="service-type">{{ getServiceType(appointment) }}</div>
             </div>
           </div>
-        </div>
-        <div v-if="currentMonthAppointments.length === 0" class="no-appointments">
+        </section>
+        <div v-if="appointmentsByDay.length === 0" class="no-appointments">
           No appointments for {{ currentMonthDisplay }}
         </div>
       </div>
@@ -105,7 +115,11 @@
           </div>
           <div class="sheet__row" v-if="selected.appointmentTime">
             <dt>Time</dt>
-            <dd>{{ selected.appointmentTime }}</dd>
+            <dd>{{ timeRange(selected) }}</dd>
+          </div>
+          <div class="sheet__row" v-if="selected.address">
+            <dt>Location</dt>
+            <dd>{{ selected.address }}</dd>
           </div>
           <div class="sheet__row" v-if="selectedServices">
             <dt>Services</dt>
@@ -120,6 +134,22 @@
             <dd>{{ selected.phone }}</dd>
           </div>
         </dl>
+
+        <div v-if="selected.note" class="sheet__note">
+          <p class="sheet__label">Note</p>
+          <p class="sheet__text">{{ selected.note }}</p>
+        </div>
+
+        <div v-if="selected.messages && selected.messages.length" class="sheet__messages">
+          <p class="sheet__label">Messages</p>
+          <article v-for="m in selected.messages" :key="m.id" class="msg">
+            <header class="msg__head">
+              <span class="msg__author">{{ m.author || 'TimeTree' }}</span>
+              <span class="msg__at" v-if="m.at">{{ formatMessageAt(m.at) }}</span>
+            </header>
+            <p class="msg__text">{{ m.text }}</p>
+          </article>
+        </div>
 
         <a
           v-if="selected.pdfUrl"
@@ -169,6 +199,31 @@ export default {
     },
     currentMonthDisplay() {
       return this.currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    },
+    /**
+     * The phone list reads as a day-by-day agenda, so bookings that share a
+     * date sit under one heading instead of floating as unrelated cards.
+     */
+    appointmentsByDay() {
+      const groups = []
+      const byDate = new Map()
+      for (const a of this.currentMonthAppointments) {
+        let group = byDate.get(a.appointmentDate)
+        if (!group) {
+          const d = new Date(`${a.appointmentDate}T00:00:00`)
+          group = {
+            date: a.appointmentDate,
+            weekday: d.toLocaleDateString('en-US', { weekday: 'short' }),
+            dayNumber: d.getDate(),
+            month: d.toLocaleDateString('en-US', { month: 'short' }),
+            items: [],
+          }
+          byDate.set(a.appointmentDate, group)
+          groups.push(group)
+        }
+        group.items.push(a)
+      }
+      return groups
     },
     currentMonthAppointments() {
       const currentMonth = this.currentDate.getMonth()
@@ -279,6 +334,24 @@ export default {
 
     checkMobile() {
       this.isMobile = window.innerWidth < 768
+    },
+    /** "6:00 - 8:00" when TimeTree gave us an end, otherwise just the start. */
+    timeRange(a) {
+      if (!a?.appointmentTime) return ''
+      return a.appointmentEndTime && a.appointmentEndTime !== a.appointmentTime
+        ? `${a.appointmentTime} - ${a.appointmentEndTime}`
+        : a.appointmentTime
+    },
+    formatMessageAt(iso) {
+      const d = new Date(iso)
+      if (isNaN(d)) return ''
+      return d.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Jakarta',
+      })
     },
     formatAppointmentDate(dateString) {
       const date = new Date(dateString)
@@ -463,11 +536,16 @@ export default {
 
 .calendar-btn {
   background: #fff;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--btn-border);
   border-radius: 8px;
   padding: 8px 16px;
   cursor: pointer;
+  font: inherit;
   font-weight: 500;
+  /* Explicit, because iOS paints button text in the system blue otherwise. */
+  color: var(--btn-fg);
+  -webkit-appearance: none;
+  appearance: none;
   transition: all 0.2s;
   white-space: nowrap;
 }
@@ -550,58 +628,90 @@ export default {
   overflow-y: auto;
 }
 
+/* One heading per day, its bookings tucked underneath, so same-day work reads
+   as one block instead of a run of unrelated cards. */
+.day-group + .day-group {
+  border-top: 1px solid #eeebe4;
+}
+
+.day-group__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f8f4f0;
+  border-bottom: 1px solid #eeebe4;
+}
+
+.day-group__weekday {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a09a90;
+}
+
+.day-group__day {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1d1d1d;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-group__month {
+  font-size: 13px;
+  color: #6b665e;
+}
+
+.day-group__count {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: #a09a90;
+}
+
 .appointment-item {
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 13px 16px;
+  border-bottom: 1px solid #f4f1ec;
   cursor: pointer;
   transition: background-color 0.2s;
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
 }
 
 .appointment-item:hover {
   background: #faf8f5;
 }
 
-.appointment-item:last-child {
+.day-group .appointment-item:last-child {
   border-bottom: none;
 }
 
-.appointment-main {
-  flex: 1;
-}
-
-.appointment-date {
-  margin-bottom: 8px;
-}
-
-.appointment-date strong {
-  display: block;
-  color: #5a4b3a;
-  font-size: 16px;
-}
-
 .appointment-time {
-  color: #666;
-  font-size: 14px;
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: #6b665e;
+  min-width: 84px;
 }
 
 .appointment-details {
-  color: #5a4b3a;
+  flex: 1;
+  min-width: 0;
 }
 
 .client-name {
   font-weight: 600;
-  margin-bottom: 4px;
+  font-size: 15px;
+  margin-bottom: 2px;
 }
 
 .service-type {
-  font-size: 14px;
-  color: #666;
+  font-size: 12.5px;
+  color: #8a857c;
 }
-
 
 .no-appointments {
   padding: 40px 20px;
@@ -612,151 +722,11 @@ export default {
 
 /* Invoiced or not is the only distinction that matters here. */
 .appointment-item.invoiced {
-  border-left: 4px solid #1d1d1d;
+  box-shadow: inset 3px 0 0 #1d1d1d;
 }
 
 .appointment-item.pending {
-  border-left: 4px solid #a09a90;
-}
-
-.modal {
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-.modal-content {
-  background-color: #fefefe;
-  margin: 2% auto;
-  padding: 20px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-}
-
-.close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.close:hover {
-  color: #000;
-}
-
-
-
-
-
-/* Enhanced Responsive Design */
-@media (max-width: 1024px) {
-  .calendar-day {
-    min-height: 80px; /* Reduced from 90px */
-    padding: 4px; /* Reduced from 6px */
-  }
-
-  .weekday {
-    padding: 8px 2px; /* Reduced padding */
-    font-size: 12px; /* Smaller font */
-  }
-
-  .appointment {
-    font-size: 9px; /* Smaller font */
-    padding: 2px 3px;
-  }
-
-  .day-number {
-    font-size: 12px;
-    margin-bottom: 2px;
-  }
-}
-
-@media (max-width: 768px) {
-  .calendar-day {
-    min-height: 60px; /* Reduced from 70px */
-    padding: 2px 1px; /* Reduced padding */
-  }
-
-  .weekday {
-    padding: 6px 1px; /* Reduced padding */
-    font-size: 11px; /* Smaller font */
-    word-break: break-word; /* Allow word breaking */
-    line-height: 1.2;
-  }
-
-  .day-number {
-    font-size: 11px;
-    margin-bottom: 1px;
-  }
-
-  .appointment {
-    font-size: 8px;
-    padding: 1px 2px;
-    border-left-width: 2px;
-    line-height: 1.1;
-  }
-
-  .appointments {
-    gap: 1px; /* Reduced gap */
-  }
-}
-
-@media (max-width: 480px) {
-  .calendar-day {
-    min-height: 50px; /* Reduced from 60px */
-  }
-
-  .weekday {
-    padding: 4px 1px;
-    font-size: 10px; /* Even smaller font */
-  }
-
-  .day-number {
-    font-size: 10px;
-  }
-
-  .appointment {
-    font-size: 7px;
-    padding: 1px;
-  }
-
-  /* Reduce font size for weekday abbreviations */
-  .calendar-weekdays .weekday {
-    font-size: 9px;
-  }
-}
-
-/* Very small screens - horizontal scroll solution */
-@media (max-width: 360px) {
-  .calendar {
-    overflow-x: auto; /* Allow horizontal scrolling */
-  }
-
-  .calendar-weekdays,
-  .calendar-days {
-    min-width: 500px; /* Minimum width to prevent excessive cramping */
-  }
-
-  .calendar-day {
-    min-height: 45px;
-  }
-
-  .appointment {
-    font-size: 6px;
-    padding: 0;
-  }
-
-  .appointment-delete {
-    width: 10px;
-    height: 10px;
-    font-size: 7px;
-  }
+  box-shadow: inset 3px 0 0 #ddd8c6;
 }
 
 .sync {
@@ -793,6 +763,9 @@ export default {
   border-radius: 14px;
   padding: 30px 28px 28px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  /* Message threads can be long, so the card scrolls rather than overflowing. */
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
 .sheet__close {
@@ -861,6 +834,63 @@ export default {
 .sheet__row .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12.5px;
+}
+
+.sheet__label {
+  margin: 0 0 8px;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #a09a90;
+}
+
+.sheet__note,
+.sheet__messages {
+  margin-top: 20px;
+}
+
+.sheet__text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.msg {
+  background: #f8f6f1;
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+
+.msg + .msg {
+  margin-top: 8px;
+}
+
+.msg__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.msg__author {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b665e;
+}
+
+.msg__at {
+  font-size: 11px;
+  color: #a09a90;
+}
+
+.msg__text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  /* TimeTree messages are typed as multi-line forms; keep the line breaks. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .sheet__go {

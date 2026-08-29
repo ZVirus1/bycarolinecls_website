@@ -45,10 +45,16 @@
 
     <template v-if="rows.length">
       <div class="summary">
-        <span><strong>{{ newRows.length }}</strong> new</span>
-        <span><strong>{{ dupeRows.length }}</strong> already imported</span>
+        <span
+          ><strong>{{ newRows.length }}</strong> new</span
+        >
+        <span
+          ><strong>{{ dupeRows.length }}</strong> already imported</span
+        >
         <button class="btn" :disabled="importing || !selected.size" @click="runImport">
-          {{ importing ? `Importing ${done}/${selected.size}…` : `Import ${selected.size} selected` }}
+          {{
+            importing ? `Importing ${done}/${selected.size}…` : `Import ${selected.size} selected`
+          }}
         </button>
       </div>
 
@@ -152,9 +158,7 @@ async function onFile(event) {
 
     // Existing TimeTree ids, so re-importing the same file is a no-op.
     const existing = await getDocs(collection(db, 'appointments'))
-    const seen = new Set(
-      existing.docs.map((d) => d.data().timetreeUid).filter(Boolean),
-    )
+    const seen = new Set(existing.docs.map((d) => d.data().timetreeUid).filter(Boolean))
 
     rows.value = events.map((e, i) => {
       const uid = e.uid || `${e.start.toISOString()}|${e.summary}`
@@ -189,9 +193,7 @@ function toggle(key) {
 }
 
 function toggleAll() {
-  selected.value = allNewSelected.value
-    ? new Set()
-    : new Set(newRows.value.map((r) => r.key))
+  selected.value = allNewSelected.value ? new Set() : new Set(newRows.value.map((r) => r.key))
 }
 
 async function runImport() {

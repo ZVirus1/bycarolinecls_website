@@ -29,13 +29,6 @@
             @click="$emit('appointment-click', appointment)"
           >
             {{ getAppointmentDisplayText(appointment) }}
-            <button
-              class="appointment-delete"
-              @click.stop="$emit('appointment-delete', appointment)"
-              title="Delete event"
-            >
-              ×
-            </button>
           </div>
         </div>
       </div>
@@ -123,7 +116,7 @@ export default {
       return `${appointment.appointmentTime} - ${firstName}`
     },
   },
-  emits: ['appointment-click', 'appointment-delete'],
+  emits: ['appointment-click'],
 }
 </script>
 
@@ -197,7 +190,6 @@ export default {
   padding: 4px 6px;
   border-radius: 6px;
   font-size: 11px;
-  border-left: 3px solid #a09a90;
   color: #4a463f;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -211,40 +203,20 @@ export default {
   box-shadow: 0 2px 6px rgba(29, 29, 29, 0.16);
 }
 
-/* Invoiced reads as solid ink; not-yet-invoiced stays quiet. */
+/* Invoiced carries a left rule; not-invoiced is one flat colour. */
 .appointment.invoiced {
-  background: #1d1d1d;
-  border-left-color: #1d1d1d;
-  color: #faf8f5;
+  background: #f2eee8;
+  border-left: 3px solid #1d1d1d;
+  color: #1d1d1d;
+  font-weight: 600;
 }
 
 .appointment.pending {
   background: #f2eee8;
-  border-left-color: #a09a90;
-  color: #4a463f;
+  color: #6b665e;
 }
 
-.appointment-delete {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 14px;
-  height: 14px;
-  font-size: 9px;
-  cursor: pointer;
-  display: none;
-  line-height: 1;
-}
 
-.appointment:hover .appointment-delete {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 /* Enhanced Responsive Design */
 @media (max-width: 1024px) {
@@ -325,12 +297,6 @@ export default {
   .appointment {
     font-size: 7px;
     padding: 1px;
-  }
-
-  .appointment-delete {
-    width: 12px;
-    height: 12px;
-    font-size: 8px;
   }
 }
 </style>

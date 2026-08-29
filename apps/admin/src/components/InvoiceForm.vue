@@ -393,8 +393,8 @@ select::-webkit-scrollbar-thumb:hover {
   justify-content: center;
   gap: 8px;
   border: none;
-  background: #111;
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border-radius: 10px;
   padding: 14px 16px;
   font-weight: 600;
@@ -405,10 +405,10 @@ select::-webkit-scrollbar-thumb:hover {
   font-size: 16px;
 }
 .btn.secondary {
-  background: #333;
+  background: #f2eee8;
 }
 .btn.success {
-  background: #666;
+  background: var(--btn-bg);
 }
 .muted {
   color: #666;

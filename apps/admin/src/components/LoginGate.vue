@@ -136,8 +136,8 @@ async function submit() {
   padding: 12px;
   border: 0;
   border-radius: 8px;
-  background: #1d1d1d;
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   cursor: pointer;
 }
 .login-btn:disabled {

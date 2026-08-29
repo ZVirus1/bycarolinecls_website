@@ -28,9 +28,6 @@
           <button class="calendar-btn primary" @click="goToToday">
             <i class="fas fa-calendar-day"></i> Today
           </button>
-          <button class="calendar-btn success" @click="showAddEventModal">
-            <i class="fas fa-plus"></i> Add Event
-          </button>
         </div>
       </div>
     </div>
@@ -58,7 +55,6 @@
         :current-date="currentDate"
         :appointments="appointments"
         @appointment-click="handleAppointmentClick"
-        @appointment-delete="showDeleteConfirmation"
       />
     </div>
 
@@ -85,13 +81,6 @@
               <div class="service-type">{{ getServiceType(appointment) }}</div>
             </div>
           </div>
-          <button
-            class="delete-btn"
-            @click.stop="showDeleteConfirmation(appointment)"
-            title="Delete event"
-          >
-            ×
-          </button>
         </div>
         <div v-if="currentMonthAppointments.length === 0" class="no-appointments">
           No appointments for {{ currentMonthDisplay }}
@@ -99,18 +88,48 @@
       </div>
     </div>
 
-    <!-- Add Event Modal -->
-    <AppointmentModal :show="showModal" @close="closeModal" @save="addNewEvent" />
+    <!-- Event detail -->
+    <div v-if="selected" class="sheet" @click.self="selected = null">
+      <div class="sheet__card" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+        <button class="sheet__close" aria-label="Close" @click="selected = null">
+          <i class="fas fa-xmark"></i>
+        </button>
 
-    <!-- Delete Confirmation Modal -->
-    <div v-if="showDeleteModal" id="deleteModal" class="modal">
-      <div class="modal-content delete-confirm-modal">
-        <h3>Delete Event</h3>
-        <p>Are you sure you want to delete this event? This action cannot be undone.</p>
-        <div class="modal-buttons">
-          <button @click="confirmDelete" class="btn-danger">Delete</button>
-          <button @click="cancelDelete" class="btn-secondary">Cancel</button>
-        </div>
+        <p class="sheet__eyebrow">{{ selected.hasInvoice ? 'Invoiced' : 'Not invoiced' }}</p>
+        <h2 id="sheet-title" class="sheet__name">{{ selected.clientName || 'Unnamed' }}</h2>
+
+        <dl class="sheet__rows">
+          <div class="sheet__row">
+            <dt>Date</dt>
+            <dd>{{ formatAppointmentDate(selected.appointmentDate) }}</dd>
+          </div>
+          <div class="sheet__row" v-if="selected.appointmentTime">
+            <dt>Time</dt>
+            <dd>{{ selected.appointmentTime }}</dd>
+          </div>
+          <div class="sheet__row" v-if="selectedServices">
+            <dt>Services</dt>
+            <dd>{{ selectedServices }}</dd>
+          </div>
+          <div class="sheet__row" v-if="selected.invoiceNumber">
+            <dt>Invoice</dt>
+            <dd class="mono">{{ selected.invoiceNumber }}</dd>
+          </div>
+          <div class="sheet__row" v-if="selected.phone">
+            <dt>Phone</dt>
+            <dd>{{ selected.phone }}</dd>
+          </div>
+        </dl>
+
+        <a
+          v-if="selected.pdfUrl"
+          :href="selected.pdfUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="calendar-btn primary sheet__go"
+        >
+          View invoice
+        </a>
       </div>
     </div>
   </div>
@@ -118,35 +137,19 @@
 
 <script>
 import CalendarGrid from '../components/CalendarGrid.vue'
-import AppointmentModal from '../components/AppointmentModal.vue'
-import {
-  db,
-  storage,
-  collection,
-  addDoc,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  ref,
-  deleteObject,
-} from '../stores/firebase.js'
+import { db, collection, getDocs, orderBy, query } from '../stores/firebase.js'
 import { loadSyncStatus, requestSync, formatSyncedAt } from '../stores/sync.js'
 
 export default {
   name: 'CalendarView',
   components: {
     CalendarGrid,
-    AppointmentModal,
   },
   data() {
     return {
       currentDate: new Date(),
       appointments: [],
-      showModal: false,
-      showDeleteModal: false,
-      appointmentToDelete: null,
+      selected: null,
       showListView: false,
       isMobile: false,
       syncedAt: null,
@@ -155,6 +158,12 @@ export default {
     }
   },
   computed: {
+    selectedServices() {
+      return (this.selected?.services || [])
+        .map((s) => s.description)
+        .filter(Boolean)
+        .join(', ')
+    },
     lastSynced() {
       return formatSyncedAt(this.syncedAt)
     },
@@ -184,13 +193,18 @@ export default {
   async mounted() {
     this.checkMobile()
     window.addEventListener('resize', this.checkMobile)
+    window.addEventListener('keydown', this.onKey)
     await this.loadAppointmentsFromFirebase()
     await this.refreshSyncStatus()
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkMobile)
+    window.removeEventListener('keydown', this.onKey)
   },
   methods: {
+    onKey(e) {
+      if (e.key === 'Escape') this.selected = null
+    },
     async refreshSyncStatus() {
       try {
         this.syncedAt = (await loadSyncStatus())?.lastSyncAt ?? null
@@ -270,92 +284,8 @@ export default {
       this.currentDate = new Date()
       this.showListView = false
     },
-    showAddEventModal() {
-      this.showModal = true
-    },
-    closeModal() {
-      this.showModal = false
-    },
-    async addNewEvent(eventData) {
-      try {
-        const appointmentData = {
-          clientName: eventData.clientName,
-          appointmentDate: eventData.date,
-          appointmentTime: eventData.time,
-          services: eventData.service
-            ? [{ description: eventData.service, quantity: 1, total: '' }]
-            : [],
-          hasInvoice: false,
-          createdAt: new Date(),
-        }
-
-        await addDoc(collection(db, 'appointments'), appointmentData)
-
-        await this.loadAppointmentsFromFirebase()
-        this.closeModal()
-
-        return true
-      } catch (error) {
-        console.error('Error adding event:', error)
-        return false
-      }
-    },
     handleAppointmentClick(appointment) {
-      if (appointment.hasInvoice && appointment.pdfUrl) {
-        window.open(appointment.pdfUrl, '_blank')
-      } else {
-        alert(
-          `Event: ${appointment.clientName}\nDate: ${appointment.appointmentDate}\nTime: ${
-            appointment.appointmentTime
-          }\nService: ${
-            appointment.services?.[0]?.description || 'No service specified'
-          }\n\nNo invoice attached to this event.`,
-        )
-      }
-    },
-    showDeleteConfirmation(appointment) {
-      this.appointmentToDelete = appointment
-      this.showDeleteModal = true
-    },
-    async confirmDelete() {
-      if (this.appointmentToDelete) {
-        const success = await this.deleteAppointment(
-          this.appointmentToDelete.id,
-          this.appointmentToDelete.hasInvoice,
-        )
-        this.showDeleteModal = false
-
-        if (success) {
-          alert('Event deleted successfully!')
-        } else {
-          alert('Error deleting event. Please try again.')
-        }
-
-        this.appointmentToDelete = null
-      }
-    },
-    cancelDelete() {
-      this.showDeleteModal = false
-      this.appointmentToDelete = null
-    },
-    async deleteAppointment(appointmentId, hasInvoice) {
-      try {
-        await deleteDoc(doc(db, 'appointments', appointmentId))
-
-        if (hasInvoice) {
-          const storageRef = ref(storage, `invoices/${appointmentId}.pdf`)
-          await deleteObject(storageRef).catch((error) => {
-            console.log('PDF not found or already deleted:', error)
-          })
-        }
-
-        await this.loadAppointmentsFromFirebase()
-
-        return true
-      } catch (error) {
-        console.error('Error deleting appointment:', error)
-        return false
-      }
+      this.selected = appointment
     },
   },
 }
@@ -509,18 +439,18 @@ export default {
 }
 
 .calendar-btn.primary {
-  background: #111;
-  color: white;
-  border-color: #111;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border-color: var(--btn-border);
 }
 
 .calendar-btn.primary:hover {
-  background: #333;
+  background: var(--btn-bg-hover);
 }
 
 .calendar-btn.success {
-  background: #10b981;
-  color: white;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border-color: #10b981;
 }
 
@@ -543,8 +473,8 @@ export default {
 .toggle-btn {
   width: 100%;
   padding: 12px 16px;
-  background: #111;
-  color: white;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -553,7 +483,7 @@ export default {
 }
 
 .toggle-btn.active {
-  background: #333;
+  background: var(--btn-bg-hover);
 }
 
 /* Mobile List View */
@@ -633,21 +563,6 @@ export default {
   color: #666;
 }
 
-.delete-btn {
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-left: 12px;
-}
 
 .no-appointments {
   padding: 40px 20px;
@@ -665,7 +580,6 @@ export default {
   border-left: 4px solid #a09a90;
 }
 
-/* Modal Styles */
 .modal {
   position: fixed;
   z-index: 1000;
@@ -697,34 +611,9 @@ export default {
   color: #000;
 }
 
-.delete-confirm-modal {
-  text-align: center;
-}
 
-.delete-confirm-modal .modal-buttons {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 20px;
-}
 
-.delete-confirm-modal .btn-danger {
-  background: #dc2626;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-}
 
-.delete-confirm-modal .btn-secondary {
-  background: #6b7280;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-}
 
 /* Enhanced Responsive Design */
 @media (max-width: 1024px) {
@@ -843,5 +732,102 @@ export default {
   margin: 0;
   font-size: 11.5px;
   color: #8a857c;
+}
+
+/* ---------- event detail card ---------- */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(29, 29, 29, 0.45);
+}
+
+.sheet__card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border: 1px solid #e6e3dc;
+  border-radius: 14px;
+  padding: 30px 28px 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+}
+
+.sheet__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #6b665e;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.sheet__close:hover {
+  background: #f2eee8;
+  color: #1d1d1d;
+}
+
+.sheet__eyebrow {
+  margin: 0 0 8px;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #a09a90;
+}
+
+.sheet__name {
+  margin: 0 0 20px;
+  font-family: 'Roxborough CF', Georgia, serif;
+  font-size: 25px;
+  font-weight: 400;
+  padding-right: 34px;
+}
+
+.sheet__rows {
+  margin: 0;
+  border-top: 1px solid #eeebe4;
+}
+
+.sheet__row {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid #eeebe4;
+}
+
+.sheet__row dt {
+  font-size: 12px;
+  color: #a09a90;
+  flex: 0 0 auto;
+}
+
+.sheet__row dd {
+  margin: 0;
+  font-size: 13.5px;
+  text-align: right;
+  color: #1d1d1d;
+}
+
+.sheet__row .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+}
+
+.sheet__go {
+  margin-top: 22px;
+  width: 100%;
+  justify-content: center;
+  text-decoration: none;
 }
 </style>

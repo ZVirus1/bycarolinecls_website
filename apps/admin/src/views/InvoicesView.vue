@@ -175,8 +175,8 @@ function fileName(inv) {
   font-weight: 600;
   padding: 9px 16px;
   border-radius: 8px;
-  background: #1d1d1d;
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   text-decoration: none;
   display: inline-flex;
   align-items: center;

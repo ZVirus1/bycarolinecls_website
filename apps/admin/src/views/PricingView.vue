@@ -185,10 +185,10 @@ async function save() {
   font-size: 13.5px;
   font-weight: 600;
   padding: 9px 16px;
-  border: 1px solid #1d1d1d;
+  border: 1px solid var(--btn-border);
   border-radius: 8px;
-  background: #1d1d1d;
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   cursor: pointer;
 }
 .btn:disabled {

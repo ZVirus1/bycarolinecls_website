@@ -391,8 +391,8 @@ export default {
 .toggle-btn {
   width: 100%;
   padding: 12px 16px;
-  background: #111;
-  color: white;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -405,7 +405,7 @@ export default {
 }
 
 .toggle-btn.active {
-  background: #333;
+  background: var(--btn-bg-hover);
 }
 
 .hidden-on-mobile {

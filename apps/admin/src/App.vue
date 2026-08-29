@@ -71,7 +71,7 @@ export default {
       logo,
       navOpen: false,
       navItems: [
-        { to: '/', label: 'New Invoice', icon: 'fa-file-invoice' },
+        { to: '/', label: 'New Invoice', icon: 'fa-plus' },
         { to: '/invoices', label: 'Invoices', icon: 'fa-folder-open' },
         { to: '/calendar', label: 'Calendar', icon: 'fa-calendar' },
         { to: '/pricing', label: 'Pricing', icon: 'fa-tags' },
@@ -115,6 +115,10 @@ export default {
   --rule: #c6c6c6;
   --rule-strong: #aaaaaa;
   --sidebar-w: 232px;
+  --btn-bg: #e7e0d2;
+  --btn-bg-hover: #dbd2c0;
+  --btn-fg: #1d1d1d;
+  --btn-border: #d8d0be;
 }
 
 body {
@@ -246,8 +250,8 @@ body {
 
 /* exact match so "New Invoice" (/) doesn't stay lit on every route */
 .side-link.router-link-exact-active {
-  background: #1d1d1d;
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
 }
 
 .sidebar-foot {

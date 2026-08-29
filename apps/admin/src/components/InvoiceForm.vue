@@ -12,7 +12,7 @@
       </div>
       <div>
         <label>Invoice Date</label>
-        <input v-model="localFormData.invoiceDate" type="date" />
+        <BaseDate v-model="localFormData.invoiceDate" />
       </div>
     </div>
 
@@ -26,34 +26,25 @@
     <div class="grid-2">
       <div>
         <label>Appointment Date</label>
-        <input v-model="localFormData.appointmentDate" type="date" />
+        <BaseDate v-model="localFormData.appointmentDate" />
       </div>
       <div>
         <label>Appointment Time</label>
-        <input v-model="localFormData.appointmentTime" type="time" />
+        <BaseTime v-model="localFormData.appointmentTime" />
       </div>
     </div>
 
     <label>Invoice items</label>
     <div class="items">
       <div v-for="(item, index) in localItems" :key="index" class="item-row">
-        <select
-          v-model="item.description"
-          class="d-select"
-          :style="{ display: item.isPredefined ? 'none' : '' }"
-          @change="onServiceChange(item, $event)"
-        >
-          <option value="">-- Choose Service --</option>
-          <option
-            v-for="service in PREDEFINED_SERVICES"
-            :key="service.description"
-            :value="service.description"
-            :data-price="service.price"
-          >
-            {{ service.description }}
-          </option>
-          <option value="custom">-- Custom Item --</option>
-        </select>
+        <div v-show="!item.isPredefined">
+          <BaseSelect
+            :model-value="item.description"
+            :options="serviceOptions"
+            placeholder="Choose a service"
+            @update:model-value="onServiceChange(item, $event)"
+          />
+        </div>
         <input
           v-model="item.description"
           class="d-text"
@@ -78,19 +69,12 @@
       <i class="fas fa-plus"></i> Add item
     </button>
     <label style="margin-top: 18px">Link to Calendar Event</label>
-    <select v-model="localLinkedId">
-      <option value=""></option>
-      <option v-for="ev in calendarEvents" :key="ev.id" :value="ev.id">
-        {{ ev.clientName || 'Unnamed' }}
-      </option>
-    </select>
-    <div class="hint">
-      {{
-        calendarEvents.length
-          ? 'Bookings on this appointment date that have no invoice yet.'
-          : 'Nothing on this appointment date. Change the Appointment Date above, or check the Calendar tab for which dates have bookings.'
-      }}
-    </div>
+    <BaseSelect
+      v-model="localLinkedId"
+      :options="eventOptions"
+      placeholder="Choose a booking"
+      empty-text="No event for this appointment date"
+    />
 
     <button class="btn" type="button" :disabled="busy" @click="$emit('generate')">
       <i class="fas fa-file-pdf"></i> {{ busy ? 'Generating…' : 'Generate Invoice' }}
@@ -103,9 +87,13 @@
 
 <script>
 import { services, loadPricing } from '../stores/pricing.js'
+import BaseDate from './ui/BaseDate.vue'
+import BaseTime from './ui/BaseTime.vue'
+import BaseSelect from './ui/BaseSelect.vue'
 
 export default {
   name: 'InvoiceForm',
+  components: { BaseDate, BaseTime, BaseSelect },
   props: {
     formData: Object,
     items: Array,
@@ -127,6 +115,18 @@ export default {
     // page can never disagree.
     PREDEFINED_SERVICES() {
       return services.value
+    },
+    serviceOptions() {
+      return [
+        ...services.value.map((s) => ({ value: s.description, label: s.description })),
+        { value: 'custom', label: 'Custom item', rule: true },
+      ]
+    },
+    eventOptions() {
+      return this.calendarEvents.map((ev) => ({
+        value: ev.id,
+        label: ev.clientName || 'Unnamed',
+      }))
     },
     statusClass() {
       return this.isStatusSuccess ? 'status-success' : 'status-error'
@@ -168,20 +168,19 @@ export default {
     },
   },
   methods: {
-    onServiceChange(item, event) {
-      const selectedValue = event.target.value
-
-      if (selectedValue === 'custom') {
+    onServiceChange(item, value) {
+      if (value === 'custom') {
         item.isPredefined = true
         item.description = ''
         item.total = ''
-      } else if (selectedValue) {
-        const selectedOption = event.target.options[event.target.selectedIndex]
-        const price = selectedOption.getAttribute('data-price')
-        item.total = price ? Number(price).toLocaleString('id-ID') : ''
-        item.description = selectedValue
-        item.isPredefined = false
+        return
       }
+      if (!value) return
+
+      const price = services.value.find((s) => s.description === value)?.price
+      item.total = price ? Number(price).toLocaleString('id-ID') : ''
+      item.description = value
+      item.isPredefined = false
     },
     formatTotal(item) {
       // Remove non-numeric characters except decimal

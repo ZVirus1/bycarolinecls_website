@@ -7,90 +7,93 @@
       <button class="reset-btn" @click="resetZoom">Reset</button>
     </div>
 
-    <div
-      id="paper"
-      class="paper"
-      :style="{ transform: `scale(${zoom})`, transformOrigin: 'center top' }"
-    >
-      <div class="page-pad" id="invoicePage">
-        <div class="inv-title">INVOICE</div>
+    <!-- transform does not shrink layout height, so the box is sized to match -->
+    <div class="paper-box" :style="{ height: `${Math.round(1123 * zoom) + 2}px` }">
+      <div
+        id="paper"
+        class="paper"
+        :style="{ transform: `scale(${zoom})`, transformOrigin: 'center top' }"
+      >
+        <div class="page-pad" id="invoicePage">
+          <div class="inv-title">INVOICE</div>
 
-        <div class="top-meta">
-          <div class="meta-box">
-            <h3>BILLED TO:</h3>
-            <p id="vName">{{ displayName }}</p>
-            <p id="vPhone">{{ displayPhone }}</p>
-            <p id="vAddress" v-html="displayAddress"></p>
-          </div>
-
-          <div class="meta-box">
-            <div class="meta-line">
-              <span class="k">Invoice Date :</span>
-              <span id="vInvDate">{{ displayInvoiceDate }}</span>
+          <div class="top-meta">
+            <div class="meta-box">
+              <h3>BILLED TO:</h3>
+              <p id="vName">{{ displayName }}</p>
+              <p id="vPhone">{{ displayPhone }}</p>
+              <p id="vAddress" v-html="displayAddress"></p>
             </div>
-            <div class="meta-line">
-              <span class="k">Appointment Date :</span>
-              <span id="vAppDate">{{ displayAppointmentDate }}</span>
-            </div>
-            <div class="meta-line">
-              <span class="k">Appointment Time :</span>
-              <span id="vAppTime">{{ displayAppointmentTime }}</span>
-            </div>
-          </div>
-        </div>
 
-        <table class="items-table">
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th class="qty">Quantity</th>
-              <th class="total">Total</th>
-            </tr>
-          </thead>
-          <tbody id="itemsBody">
-            <tr v-for="(item, index) in displayItems" :key="index">
-              <td>{{ item.description }}</td>
-              <td class="qty">{{ item.quantity }}</td>
-              <td class="total">{{ item.displayTotal }}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <table class="totals" id="totalsTable">
-          <tbody>
-            <tr>
-              <td>Subtotal</td>
-              <td class="total" id="vSubtotal">{{ displaySubtotal }}</td>
-            </tr>
-            <tr>
-              <td>
-                <div class="two-lines">
-                  <span>Paid 50%</span>
-                  <span class="sub" id="vPaidDate">{{ displayPaidDate }}</span>
-                </div>
-              </td>
-              <td class="total" id="vPaid">{{ displayPaid }}</td>
-            </tr>
-            <tr>
-              <td id="large-balance">Balance Due</td>
-              <td class="total" id="vBalance">{{ displayBalance }}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="bottom-row">
-          <div class="payment">
-            <h4>PAYMENT INFORMATION</h4>
-            <div id="vBank">{{ displayBank }}</div>
-            <div>
-              Account Name : <span id="vAccName">{{ displayAccountName }}</span>
-            </div>
-            <div>
-              Account No. : <span id="vAccNo">{{ displayAccountNo }}</span>
+            <div class="meta-box">
+              <div class="meta-line">
+                <span class="k">Invoice Date :</span>
+                <span id="vInvDate">{{ displayInvoiceDate }}</span>
+              </div>
+              <div class="meta-line">
+                <span class="k">Appointment Date :</span>
+                <span id="vAppDate">{{ displayAppointmentDate }}</span>
+              </div>
+              <div class="meta-line">
+                <span class="k">Appointment Time :</span>
+                <span id="vAppTime">{{ displayAppointmentTime }}</span>
+              </div>
             </div>
           </div>
-          <div class="brand-logo">
-            <img id="footerLogo" :src="footerLogo" alt="CarolineCLS Logo" />
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th class="qty">Quantity</th>
+                <th class="total">Total</th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody">
+              <tr v-for="(item, index) in displayItems" :key="index">
+                <td>{{ item.description }}</td>
+                <td class="qty">{{ item.quantity }}</td>
+                <td class="total">{{ item.displayTotal }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table class="totals" id="totalsTable">
+            <tbody>
+              <tr>
+                <td>Subtotal</td>
+                <td class="total" id="vSubtotal">{{ displaySubtotal }}</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="two-lines">
+                    <span>Paid 50%</span>
+                    <span class="sub" id="vPaidDate">{{ displayPaidDate }}</span>
+                  </div>
+                </td>
+                <td class="total" id="vPaid">{{ displayPaid }}</td>
+              </tr>
+              <tr>
+                <td id="large-balance">Balance Due</td>
+                <td class="total" id="vBalance">{{ displayBalance }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="bottom-row">
+            <div class="payment">
+              <h4>PAYMENT INFORMATION</h4>
+              <div id="vBank">{{ displayBank }}</div>
+              <div>
+                Account Name : <span id="vAccName">{{ displayAccountName }}</span>
+              </div>
+              <div>
+                Account No. : <span id="vAccNo">{{ displayAccountNo }}</span>
+              </div>
+            </div>
+            <div class="brand-logo">
+              <img id="footerLogo" :src="footerLogo" alt="CarolineCLS Logo" />
+            </div>
           </div>
         </div>
       </div>
@@ -128,18 +131,16 @@ export default {
       this.setInitialZoom()
     },
     setInitialZoom() {
-      if (!this.isMobile) {
-        this.zoom = 1
-        return
-      }
       this.$nextTick(() => {
         const wrapper = this.$refs.paperWrapper
         if (!wrapper) return
 
-        // Scale so the visual width of the invoice exactly matches the wrapper width
-        const availableWidth = (wrapper.clientWidth || window.innerWidth) - 40 // 20px padding on each side
-        const scale = Math.min(availableWidth / 794, 0.6) // Don't scale larger than 60%
-        this.zoom = Math.max(scale, 0.35) // Don't scale smaller than 35%
+        // Fit the A4 page to its column. Desktop used to sit at 1.0 regardless,
+        // which pushed the page wider than the viewport and forced a sideways
+        // scroll to see the right-hand edge of the invoice.
+        const available = (wrapper.clientWidth || window.innerWidth) - 40
+        const cap = this.isMobile ? 0.6 : 1
+        this.zoom = Math.max(Math.min(available / 794, cap), 0.35)
       })
     },
     zoomIn() {
@@ -179,8 +180,7 @@ export default {
       return this.formData.phone || ''
     },
     displayAddress() {
-      const address =
-        this.formData.address || ''
+      const address = this.formData.address || ''
       return escapeHtml(address).replace(/, /g, ',<br/>')
     },
     displayInvoiceDate() {
@@ -251,6 +251,10 @@ export default {
   width: 100%;
   overflow-x: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+}
+
+.paper-box {
+  overflow: hidden;
 }
 
 .paper {

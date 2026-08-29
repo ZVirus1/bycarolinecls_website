@@ -147,7 +147,7 @@ async function save() {
 
 <style scoped>
 .page {
-  max-width: 1000px;
+  max-width: var(--page-w);
   margin: 0 auto;
   padding: clamp(20px, 3vw, 34px);
 }

@@ -122,6 +122,7 @@ export default {
   --field-bg: #fff;
   --field-border: #ddd8c6;
   --field-radius: 8px;
+  --page-w: 1400px;
 }
 
 body {

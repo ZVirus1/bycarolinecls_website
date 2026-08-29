@@ -19,12 +19,9 @@
         />
       </label>
 
-      <select v-model="sortKey" aria-label="Sort by" class="sel">
-        <option value="date-desc">Newest booking first</option>
-        <option value="date-asc">Oldest booking first</option>
-        <option value="total-desc">Highest value</option>
-        <option value="name-asc">Name A–Z</option>
-      </select>
+      <div class="sel">
+        <BaseSelect v-model="sortKey" :options="sortOptions" />
+      </div>
     </div>
 
     <p v-if="error" class="banner banner--bad">{{ error }}</p>
@@ -125,12 +122,19 @@
 import { computed, onMounted, ref } from 'vue'
 import { listInvoices, linkInvoiceToEvent, unlinkedEventsOn } from '../stores/invoices.js'
 import { rupiah } from '@bycarolinecls/shared/format'
+import BaseSelect from '../components/ui/BaseSelect.vue'
 
 const invoices = ref([])
 const loading = ref(true)
 const error = ref('')
 const q = ref('')
 const sortKey = ref('date-desc')
+const sortOptions = [
+  { value: 'date-desc', label: 'Newest booking first' },
+  { value: 'date-asc', label: 'Oldest booking first' },
+  { value: 'total-desc', label: 'Highest value' },
+  { value: 'name-asc', label: 'Name A to Z' },
+]
 
 const linking = ref(null)
 const candidates = ref([])
@@ -216,7 +220,7 @@ function fileName(inv) {
 
 <style scoped>
 .page {
-  max-width: 1180px;
+  max-width: var(--page-w);
   margin: 0 auto;
   padding: clamp(20px, 3vw, 34px);
 }
@@ -283,7 +287,7 @@ function fileName(inv) {
 
 .search input,
 .sel {
-  font-size: 13.5px;
+  min-width: 210px;
 }
 
 .search input {

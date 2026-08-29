@@ -348,7 +348,7 @@ export default {
 
 <style scoped>
 .app {
-  max-width: 1250px;
+  max-width: var(--page-w);
   margin: 24px auto;
   padding: 0 16px;
   display: grid;

@@ -114,22 +114,13 @@ export default {
       return this.appointments.filter((apt) => apt.appointmentDate === dateString)
     },
     getAppointmentType(appointment) {
-      if (!appointment.hasInvoice) {
-        return 'no-invoice'
-      }
-
-      const services = appointment.services || []
-      if (services.some((s) => (s.description || '').toLowerCase().includes('trial'))) {
-        return 'trial'
-      }
-      return 'makeup'
+      // Colour carries this now, so the label stays out of the way.
+      return appointment.hasInvoice ? 'invoiced' : 'pending'
     },
     getAppointmentDisplayText(appointment) {
       // clientName can be blank now that invoices no longer default it.
       const firstName = (appointment.clientName || 'Unnamed').split(' ')[0]
-      return appointment.hasInvoice
-        ? `${appointment.appointmentTime} - ${firstName}`
-        : `${appointment.appointmentTime} - ${firstName} (No Invoice)`
+      return `${appointment.appointmentTime} - ${firstName}`
     },
   },
   emits: ['appointment-click', 'appointment-delete'],
@@ -202,11 +193,12 @@ export default {
 }
 
 .appointment {
-  background: #f8f4f0; /* Peach background */
+  background: #f2eee8;
   padding: 4px 6px;
   border-radius: 6px;
   font-size: 11px;
-  border-left: 3px solid #e8b4a9; /* Peach border */
+  border-left: 3px solid #a09a90;
+  color: #4a463f;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -216,27 +208,20 @@ export default {
 
 .appointment:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(232, 180, 169, 0.3);
-  background: #f5ede6;
+  box-shadow: 0 2px 6px rgba(29, 29, 29, 0.16);
 }
 
-/* Updated color scheme to match theme */
-.appointment.makeup {
-  background: #f5ede6; /* Nude background */
-  border-left-color: #d4b8a8; /* Nude border */
-  color: #5a4b3a;
+/* Invoiced reads as solid ink; not-yet-invoiced stays quiet. */
+.appointment.invoiced {
+  background: #1d1d1d;
+  border-left-color: #1d1d1d;
+  color: #faf8f5;
 }
 
-.appointment.trial {
-  background: #f0f0f0; /* Light gray background */
-  border-left-color: #a8a8a8; /* Gray border */
-  color: #5a4b3a;
-}
-
-.appointment.no-invoice {
-  background: #fff8f0; /* Light peach background */
-  border-left-color: #e8b4a9; /* Peach border */
-  color: #5a4b3a;
+.appointment.pending {
+  background: #f2eee8;
+  border-left-color: #a09a90;
+  color: #4a463f;
 }
 
 .appointment-delete {

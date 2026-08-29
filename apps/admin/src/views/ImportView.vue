@@ -2,7 +2,7 @@
   <div class="page">
     <header class="page__head">
       <div>
-        <h1 class="page__title"><i class="fas fa-file-import"></i> Import from TimeTree</h1>
+        <h1 class="page__title">Import from TimeTree</h1>
         <p class="page__sub">
           TimeTree removed its calendar export and shut its API down in December 2023, so bookings
           come in as a <code>.ics</code> file rather than a live feed.

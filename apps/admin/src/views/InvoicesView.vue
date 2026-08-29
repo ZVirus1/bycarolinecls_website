@@ -2,7 +2,7 @@
   <div class="page">
     <header class="page__head">
       <div>
-        <h1 class="page__title"><i class="fas fa-folder-open"></i> Invoices</h1>
+        <h1 class="page__title">Invoices</h1>
         <p class="page__sub">{{ filtered.length }} of {{ invoices.length }} shown</p>
       </div>
       <router-link to="/" class="btn"><i class="fas fa-plus"></i> New invoice</router-link>

@@ -1,7 +1,19 @@
 <template>
   <div class="calendar-container">
     <div class="calendar-header">
-      <h1 class="calendar-title"><i class="fas fa-calendar-alt"></i> Appointment Calendar</h1>
+      <div class="calendar-heading">
+        <h1 class="calendar-title">Appointment Calendar</h1>
+        <div class="sync">
+          <button class="calendar-btn" :disabled="syncing" @click="runSync">
+            <i class="fas fa-rotate" :class="{ 'fa-spin': syncing }"></i>
+            {{ syncing ? 'Syncing…' : 'Sync now' }}
+          </button>
+          <p class="sync__when">
+            <template v-if="syncMessage">{{ syncMessage }}</template>
+            <template v-else>Last synced: {{ lastSynced }}</template>
+          </p>
+        </div>
+      </div>
       <div class="calendar-controls">
         <div class="month-navigation">
           <button class="calendar-btn nav-btn" @click="prevMonth">
@@ -19,16 +31,6 @@
           <button class="calendar-btn success" @click="showAddEventModal">
             <i class="fas fa-plus"></i> Add Event
           </button>
-          <div class="sync">
-            <button class="calendar-btn" :disabled="syncing" @click="runSync">
-              <i class="fas fa-rotate" :class="{ 'fa-spin': syncing }"></i>
-              {{ syncing ? 'Syncing…' : 'Sync now' }}
-            </button>
-            <p class="sync__when">
-              <template v-if="syncMessage">{{ syncMessage }}</template>
-              <template v-else>Last synced: {{ lastSynced }}</template>
-            </p>
-          </div>
         </div>
       </div>
     </div>
@@ -43,6 +45,11 @@
         <i class="fas" :class="showListView ? 'fa-calendar' : 'fa-list'"></i>
         {{ showListView ? ' Calendar View' : ' List View' }}
       </button>
+    </div>
+
+    <div class="legend" v-if="!showListView || !isMobile">
+      <span class="legend__key"><span class="legend__dot legend__dot--invoiced"></span>Invoiced</span>
+      <span class="legend__key"><span class="legend__dot legend__dot--pending"></span>Not invoiced</span>
     </div>
 
     <!-- Calendar Grid View -->
@@ -230,22 +237,10 @@ export default {
       })
     },
     getServiceType(appointment) {
-      if (!appointment.hasInvoice) return 'No Invoice'
-      const services = appointment.services || []
-      if (services.some((s) => (s.description || '').toLowerCase().includes('trial'))) {
-        return 'Trial'
-      }
-      return 'Makeup'
+      return appointment.hasInvoice ? 'Invoiced' : 'Not invoiced'
     },
     getAppointmentType(appointment) {
-      if (!appointment.hasInvoice) {
-        return 'no-invoice'
-      }
-      const services = appointment.services || []
-      if (services.some((s) => (s.description || '').toLowerCase().includes('trial'))) {
-        return 'trial'
-      }
-      return 'makeup'
+      return appointment.hasInvoice ? 'invoiced' : 'pending'
     },
     async loadAppointmentsFromFirebase() {
       try {
@@ -378,6 +373,45 @@ export default {
 .calendar-header {
   margin-bottom: 24px;
   width: 100%;
+}
+
+.calendar-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-bottom: 18px;
+}
+
+.legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 18px;
+  margin-bottom: 10px;
+  font-size: 11.5px;
+  color: #6b665e;
+}
+
+.legend__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legend__dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+
+.legend__dot--invoiced {
+  background: #1d1d1d;
+}
+
+.legend__dot--pending {
+  background: #f2eee8;
+  border: 1px solid #a09a90;
 }
 
 .calendar-controls {
@@ -622,17 +656,13 @@ export default {
   font-style: italic;
 }
 
-/* Appointment type colors for list view */
-.appointment-item.makeup {
-  border-left: 4px solid #d4b8a8;
+/* Invoiced or not is the only distinction that matters here. */
+.appointment-item.invoiced {
+  border-left: 4px solid #1d1d1d;
 }
 
-.appointment-item.trial {
-  border-left: 4px solid #a8a8a8;
-}
-
-.appointment-item.no-invoice {
-  border-left: 4px solid #e8b4a9;
+.appointment-item.pending {
+  border-left: 4px solid #a09a90;
 }
 
 /* Modal Styles */
@@ -804,8 +834,9 @@ export default {
 .sync {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 4px;
+  text-align: right;
 }
 
 .sync__when {

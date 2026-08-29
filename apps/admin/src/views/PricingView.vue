@@ -2,7 +2,7 @@
   <div class="page">
     <header class="page__head">
       <div>
-        <h1 class="page__title"><i class="fas fa-tags"></i> Pricing</h1>
+        <h1 class="page__title">Pricing</h1>
         <p class="page__sub">
           Used by the invoice generator and the public pricing page. Changes go live on the public
           site within about 5 minutes.

@@ -78,18 +78,52 @@
                 class="link-btn"
                 >Download</a
               >
+              <button v-if="!inv.timetreeUid" class="link-btn" @click="openLink(inv)">
+                Link
+              </button>
               <span v-if="!inv.pdfUrl" class="sub">No PDF</span>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <div v-if="linking" class="sheet" @click.self="closeLink">
+      <div class="sheet__card" role="dialog" aria-modal="true" aria-labelledby="link-title">
+        <button class="sheet__close" aria-label="Close" @click="closeLink">
+          <i class="fas fa-xmark"></i>
+        </button>
+
+        <p class="sheet__eyebrow">Link to calendar event</p>
+        <h2 id="link-title" class="sheet__name">{{ linking.clientName || 'Invoice' }}</h2>
+
+        <p class="sheet__note">
+          Bookings on {{ formatDate(linking.appointmentDate) }} with no invoice yet. Linking moves
+          this invoice onto the booking, so the calendar shows one entry instead of two.
+        </p>
+
+        <div v-if="candidatesLoading" class="empty">Loading…</div>
+        <div v-else-if="!candidates.length" class="empty">
+          No unlinked bookings on that date.
+        </div>
+        <ul v-else class="cand">
+          <li v-for="c in candidates" :key="c.id">
+            <button class="cand__btn" :disabled="busy" @click="confirmLink(c)">
+              <span class="cand__name">{{ c.clientName || 'Unnamed' }}</span>
+              <span v-if="c.appointmentTime" class="cand__time">{{ c.appointmentTime }}</span>
+            </button>
+          </li>
+        </ul>
+
+        <p v-if="linkError" class="banner banner--bad">{{ linkError }}</p>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { listInvoices } from '../stores/invoices.js'
+import { listInvoices, linkInvoiceToEvent, unlinkedEventsOn } from '../stores/invoices.js'
 import { rupiah } from '@bycarolinecls/shared/format'
 
 const invoices = ref([])
@@ -97,6 +131,45 @@ const loading = ref(true)
 const error = ref('')
 const q = ref('')
 const sortKey = ref('date-desc')
+
+const linking = ref(null)
+const candidates = ref([])
+const candidatesLoading = ref(false)
+const linkError = ref('')
+const busy = ref(false)
+
+async function openLink(inv) {
+  linking.value = inv
+  linkError.value = ''
+  candidates.value = []
+  candidatesLoading.value = true
+  try {
+    candidates.value = (await unlinkedEventsOn(inv.appointmentDate)).filter((c) => c.id !== inv.id)
+  } catch (err) {
+    linkError.value = `Could not load bookings: ${err.message}`
+  } finally {
+    candidatesLoading.value = false
+  }
+}
+
+function closeLink() {
+  linking.value = null
+  linkError.value = ''
+}
+
+async function confirmLink(target) {
+  busy.value = true
+  linkError.value = ''
+  try {
+    await linkInvoiceToEvent(linking.value.id, target.id)
+    invoices.value = await listInvoices()
+    closeLink()
+  } catch (err) {
+    linkError.value = err.message
+  } finally {
+    busy.value = false
+  }
+}
 
 onMounted(async () => {
   try {
@@ -333,5 +406,111 @@ function fileName(inv) {
   border: 1px solid #e6e3dc;
   border-radius: 10px;
   background: #fff;
+}
+
+/* ---------- link dialog ---------- */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(29, 29, 29, 0.45);
+}
+
+.sheet__card {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  background: #fff;
+  border: 1px solid #e6e3dc;
+  border-radius: 14px;
+  padding: 30px 28px 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+}
+
+.sheet__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #6b665e;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.sheet__close:hover {
+  background: #f2eee8;
+  color: #1d1d1d;
+}
+
+.sheet__eyebrow {
+  margin: 0 0 8px;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #a09a90;
+}
+
+.sheet__name {
+  margin: 0 0 12px;
+  font-family: 'Roxborough CF', Georgia, serif;
+  font-size: 25px;
+  font-weight: 400;
+  padding-right: 34px;
+}
+
+.sheet__note {
+  margin: 0 0 18px;
+  font-size: 12.5px;
+  color: #8a857c;
+  line-height: 1.55;
+}
+
+.cand {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cand__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e6e3dc;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cand__btn:hover:not(:disabled) {
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
+}
+
+.cand__btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cand__time {
+  color: #a09a90;
+  font-size: 12px;
 }
 </style>

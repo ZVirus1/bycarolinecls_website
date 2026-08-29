@@ -1,4 +1,16 @@
-import { db, doc, collection, getDocs, query, orderBy, runTransaction } from './firebase.js'
+import {
+  db,
+  doc,
+  collection,
+  getDocs,
+  getDoc,
+  setDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  runTransaction,
+} from './firebase.js'
 
 /**
  * Invoices live in the `appointments` collection alongside the booking they
@@ -54,4 +66,46 @@ export function invoiceTotal(a) {
     const unit = Number(s.numericTotal ?? String(s.total ?? '').replace(/[^\d]/g, '')) || 0
     return sum + unit * (Number(s.quantity) || 1)
   }, 0)
+}
+
+/**
+ * Fold a standalone invoice into a booking that came from TimeTree.
+ *
+ * The invoice's own document is the duplicate here: the TimeTree one is the
+ * booking of record. So the invoice fields move onto the booking and the
+ * standalone document goes. The PDF itself stays where it is in Storage - its
+ * download URL keeps working, and moving the object would buy nothing.
+ *
+ * Writes before it deletes: if the write fails, nothing is lost.
+ */
+export async function linkInvoiceToEvent(invoiceId, eventId) {
+  if (invoiceId === eventId) throw new Error('An invoice cannot be linked to itself.')
+
+  const invoiceRef = doc(db, 'appointments', invoiceId)
+  const eventRef = doc(db, 'appointments', eventId)
+
+  const [invoiceSnap, eventSnap] = await Promise.all([getDoc(invoiceRef), getDoc(eventRef)])
+  if (!invoiceSnap.exists()) throw new Error('That invoice no longer exists.')
+  if (!eventSnap.exists()) throw new Error('That calendar event no longer exists.')
+  if (eventSnap.data().hasInvoice) throw new Error('That event already has an invoice.')
+
+  // Everything except the identity of the booking, which TimeTree owns.
+  const { source, timetreeUid, appointmentDate, appointmentTime, createdAt, ...invoiceFields } =
+    invoiceSnap.data()
+
+  await setDoc(eventRef, { ...invoiceFields, hasInvoice: true, updatedAt: new Date() }, { merge: true })
+  await deleteDoc(invoiceRef)
+
+  return eventId
+}
+
+/** Bookings on a date that came from TimeTree and have no invoice yet. */
+export async function unlinkedEventsOn(date) {
+  if (!date) return []
+  const snap = await getDocs(
+    query(collection(db, 'appointments'), where('appointmentDate', '==', date)),
+  )
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((a) => !a.hasInvoice)
 }

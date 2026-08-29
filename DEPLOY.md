@@ -119,7 +119,68 @@ Only `www.` can point at Pages.
 
 ---
 
-## Migrating existing TimeTree bookings
+## Keeping TimeTree in sync
+
+TimeTree has no official API (shut down 22 Dec 2023) and no iCal subscription
+feed, so there is no true real-time push available from anyone. The sync polls.
+
+`.github/workflows/timetree-sync.yml` runs **every 5 minutes** and can also be
+triggered by hand from the **Actions** tab. The admin calendar and the public
+availability page read Firestore, so both pick up each sync on refresh.
+
+### Secrets to set
+
+GitHub repo → **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `TIMETREE_EMAIL` | your TimeTree login email |
+| `TIMETREE_PASSWORD` | your TimeTree password |
+| `TIMETREE_CALENDAR_CODE` | the calendar to sync (run `timetree-exporter` once locally to list them) |
+| `FIREBASE_SERVICE_ACCOUNT` | the service account JSON, pasted whole |
+
+Get the service account from Firebase console → **Project settings → Service
+accounts → Generate new private key**. Paste the entire file contents as the
+secret value.
+
+> This repo is public, but Actions secrets are encrypted and are not exposed to
+> pull requests from forks, so they are not readable by others. Never paste
+> these values into a file — only into the Secrets UI.
+
+### Two caveats about the 5-minute interval
+
+1. **GitHub schedules are best-effort.** 5 minutes is the shortest interval
+   GitHub accepts, but scheduled runs are frequently delayed and occasionally
+   skipped under load. Expect a real cadence closer to 5–20 minutes. Nothing
+   can be done about this from our side.
+2. **Each run signs in to TimeTree afresh** — roughly 288 logins a day against
+   an unofficial endpoint. If exports start failing with auth or rate-limit
+   errors, raise the cron to `*/15` or `*/30` in the workflow file. That is the
+   first thing to try if syncing goes flaky.
+
+### Safety properties
+
+- The sync **never writes to TimeTree**. It only reads an export.
+- A booking that already has an invoice is **never deleted** by the sync, even
+  if it disappears from TimeTree — the invoice is your record, not theirs.
+- Only changed documents are rewritten, so invoices attached to a booking are
+  not needlessly touched.
+- The exported `.ics` holds real client names and is deleted from the runner
+  after every run, including on failure.
+- Repeating events are not expanded; only the first occurrence syncs.
+
+### If you ever want to drop the password
+
+TimeTree's **Public Calendar** is an official free feature that can be read
+without signing in. Set `TIMETREE_PUBLIC_CALENDAR_ID` instead of the email and
+password and the workflow switches automatically. The trade-off is that a
+Public Calendar is genuinely public, so event titles would be on the open web —
+only viable if bookings are titled generically ("Booked") rather than with
+client names.
+
+## One-off import (no scheduling)
+
+
 
 TimeTree removed its calendar export and shut the public API down on
 22 Dec 2023, so there is no live feed to subscribe to. Do a **one-time** export

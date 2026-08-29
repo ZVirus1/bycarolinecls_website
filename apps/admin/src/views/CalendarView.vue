@@ -19,6 +19,9 @@
           <button class="calendar-btn success" @click="showAddEventModal">
             <i class="fas fa-plus"></i> Add Event
           </button>
+          <router-link to="/import" class="calendar-btn">
+            <i class="fas fa-file-import"></i> Import from TimeTree
+          </router-link>
         </div>
       </div>
     </div>

@@ -1,0 +1,82 @@
+name: Sync TimeTree calendar
+
+# Keeps Firestore in step with TimeTree so the admin calendar and the public
+# availability page reflect real bookings.
+#
+# TimeTree has no official API (shut down 22 Dec 2023) and no iCal subscription
+# feed, so this uses timetree-exporter, an unofficial community tool. It only
+# ever READS - nothing here writes back to TimeTree.
+#
+# Interval: every 5 minutes, the shortest GitHub allows. Two things to know:
+#   1. GitHub scheduled workflows are best-effort. Runs are frequently delayed
+#      and sometimes skipped under load, so real cadence is more like 5-20 min.
+#   2. Each run signs in to TimeTree afresh (~288/day). If exports start
+#      failing with auth or rate-limit errors, raise this to '*/15' or '*/30'.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # force a sync from the Actions tab
+
+# Never let a slow run overlap the next scheduled one.
+concurrency:
+  group: timetree-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install exporter
+        run: pip install --quiet timetree-exporter
+
+      - name: Export calendar
+        env:
+          # Private calendar (this project's setup).
+          TIMETREE_EMAIL: ${{ secrets.TIMETREE_EMAIL }}
+          TIMETREE_PASSWORD: ${{ secrets.TIMETREE_PASSWORD }}
+          TIMETREE_CALENDAR_CODE: ${{ secrets.TIMETREE_CALENDAR_CODE }}
+          # Optional: if the calendar is ever made public, set this instead and
+          # no password is needed at all.
+          TIMETREE_PUBLIC_CALENDAR_ID: ${{ secrets.TIMETREE_PUBLIC_CALENDAR_ID }}
+        run: |
+          set -euo pipefail
+          if [ -n "${TIMETREE_PUBLIC_CALENDAR_ID:-}" ]; then
+            timetree-exporter --public-calendar -c "$TIMETREE_PUBLIC_CALENDAR_ID" -o timetree.ics
+          else
+            if [ -z "${TIMETREE_EMAIL:-}" ] || [ -z "${TIMETREE_PASSWORD:-}" ]; then
+              echo "::error::Set TIMETREE_EMAIL and TIMETREE_PASSWORD in repo secrets"
+              exit 1
+            fi
+            timetree-exporter -c "$TIMETREE_CALENDAR_CODE" -o timetree.ics
+          fi
+          test -s timetree.ics || { echo "::error::export produced an empty file"; exit 1; }
+          echo "Exported $(grep -c 'BEGIN:VEVENT' timetree.ics || echo 0) event(s)"
+
+      - name: Install Firebase Admin
+        run: npm install --no-save --no-audit --no-fund firebase-admin@^13
+
+      - name: Sync into Firestore
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          BUSINESS_TIMEZONE: Asia/Jakarta
+        run: node scripts/sync-timetree.mjs timetree.ics
+
+      # The export contains real client names - never leave it on the runner.
+      - name: Shred the export
+        if: always()
+        run: rm -f timetree.ics

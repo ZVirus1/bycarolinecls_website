@@ -1,124 +1,13 @@
 /**
- * Minimal RFC 5545 reader for the TimeTree subscription feed.
+ * Date and timezone helpers for the Pages Functions.
  *
- * TimeTree shut down its public API in Dec 2023; the per-calendar iCal
- * subscription URL is the remaining read path. Recurrence rules are not
- * expanded - see expandsRecurrence below.
+ * Bookings are bucketed by the artist's local day, not UTC: an 01:00 Jakarta
+ * booking is 18:00Z the previous day, and bucketing that in UTC would grey out
+ * the wrong date on the public calendar.
  */
 
 export const DAY_MS = 86400000
 export const DEFAULT_TZ = 'Asia/Jakarta'
-
-/** True if the feed contains RRULEs, which this parser does not expand. */
-export function hasRecurrence(ics) {
-  return /^RRULE[:;]/m.test(ics)
-}
-
-/**
- * Parses VEVENTs overlapping [from, to).
- *
- * `includeDetails` gates every human-readable field. Public callers MUST leave
- * it false: summaries and locations are clients' private details.
- */
-export function parseEvents(ics, { from, to, tz = DEFAULT_TZ, includeDetails = false } = {}) {
-  const lines = unfold(ics)
-  const out = []
-  let cur = null
-
-  for (const line of lines) {
-    if (line === 'BEGIN:VEVENT') {
-      cur = {}
-      continue
-    }
-
-    if (line === 'END:VEVENT') {
-      if (cur?.start && !cur.cancelled) {
-        // All-day events often omit DTEND; treat as covering one full day.
-        const end = cur.end ?? new Date(cur.start.getTime() + DAY_MS)
-        if (end > from && cur.start < to) {
-          const event = { start: cur.start, end, allDay: !!cur.allDay }
-          if (includeDetails) {
-            event.uid = cur.uid ?? null
-            event.summary = cur.summary ?? ''
-            event.location = cur.location ?? ''
-            event.description = cur.description ?? ''
-          }
-          out.push(event)
-        }
-      }
-      cur = null
-      continue
-    }
-
-    if (!cur) continue
-
-    const idx = line.indexOf(':')
-    if (idx === -1) continue
-    const rawKey = line.slice(0, idx)
-    const value = line.slice(idx + 1)
-    const key = rawKey.split(';')[0].toUpperCase()
-
-    switch (key) {
-      case 'DTSTART':
-        cur.start = parseIcsDate(value, tz)
-        cur.allDay = /VALUE=DATE(?!-TIME)/i.test(rawKey) || /^\d{8}$/.test(value.trim())
-        break
-      case 'DTEND':
-        cur.end = parseIcsDate(value, tz)
-        break
-      case 'STATUS':
-        if (value.toUpperCase() === 'CANCELLED') cur.cancelled = true
-        break
-      case 'UID':
-        cur.uid = value
-        break
-      case 'SUMMARY':
-        cur.summary = unescapeText(value)
-        break
-      case 'LOCATION':
-        cur.location = unescapeText(value)
-        break
-      case 'DESCRIPTION':
-        cur.description = unescapeText(value)
-        break
-    }
-  }
-
-  return out.sort((a, b) => a.start - b.start)
-}
-
-/** RFC 5545 folds long lines with CRLF + a single leading space or tab. */
-function unfold(text) {
-  return text
-    .replace(/\r\n/g, '\n')
-    .replace(/\n[ \t]/g, '')
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-}
-
-const unescapeText = (s) =>
-  s.replace(/\\n/gi, '\n').replace(/\\,/g, ',').replace(/\;/g, ';').replace(/\\\\/g, '\\')
-
-/** Handles 20260315T090000Z (UTC), 20260315T090000 (floating/TZID), 20260315 (all-day). */
-export function parseIcsDate(value, tz = DEFAULT_TZ) {
-  const v = value.trim()
-  const n = Number
-
-  if (/^\d{8}$/.test(v)) {
-    return zonedToUtc(n(v.slice(0, 4)), n(v.slice(4, 6)), n(v.slice(6, 8)), 0, 0, 0, tz)
-  }
-
-  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/.exec(v)
-  if (!m) return null
-  const [, y, mo, d, h, mi, sec, z] = m
-
-  if (z) return new Date(Date.UTC(n(y), n(mo) - 1, n(d), n(h), n(mi), n(sec)))
-
-  // Floating, or carrying a TZID we do not resolve. Both read far better as
-  // the artist's local wall-clock time than as UTC.
-  return zonedToUtc(n(y), n(mo), n(d), n(h), n(mi), n(sec), tz)
-}
 
 /* ---------- timezone ---------- */
 

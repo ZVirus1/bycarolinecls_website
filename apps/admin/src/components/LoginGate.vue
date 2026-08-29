@@ -109,17 +109,11 @@ async function submit() {
   margin-bottom: 6px;
 }
 .login-input {
-  font: inherit;
   padding: 11px 12px;
-  border: 1px solid #ddd8cf;
-  border-radius: 8px;
   margin-bottom: 16px;
-  background: #fcfcfa;
 }
 .login-input:focus {
-  outline: 2px solid #1d1d1d;
-  outline-offset: 1px;
-  border-color: transparent;
+  border-color: var(--ink);
 }
 .login-error {
   background: #fdf0ef;

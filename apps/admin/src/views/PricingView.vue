@@ -259,18 +259,11 @@ async function save() {
 }
 
 .in {
-  font: inherit;
   font-size: 13.5px;
-  width: 100%;
   padding: 8px 10px;
-  border: 1px solid #e0dcd4;
-  border-radius: 6px;
-  background: #fcfcfa;
 }
 .in:focus {
-  outline: 2px solid #1d1d1d;
-  outline-offset: 1px;
-  border-color: transparent;
+  border-color: var(--ink);
 }
 .in--num {
   text-align: right;

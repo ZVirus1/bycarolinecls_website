@@ -79,7 +79,7 @@
     </button>
     <label style="margin-top: 18px">Link to Calendar Event</label>
     <select v-model="localLinkedId">
-      <option value="">Not linked yet</option>
+      <option value=""></option>
       <option v-for="ev in calendarEvents" :key="ev.id" :value="ev.id">
         {{ ev.clientName || 'Unnamed' }}
       </option>
@@ -241,119 +241,38 @@ input[type='date'],
 input[type='time'],
 input[type='number'],
 select {
-  width: 100%;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  padding: 12px;
-  font-size: 16px; /* Better for mobile touch */
-  outline: none;
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    sans-serif;
-  box-sizing: border-box;
+  /* Base look comes from the global form-control rules in App.vue. */
+  font-size: 15px;
+  padding: 11px 12px;
 }
 
-/* ===== MONOCHROMATIC DROPDOWN STYLING ===== */
 select {
-  background-color: white;
-  cursor: pointer;
-  transition: border-color 0.2s;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  padding-right: 40px;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  border: 1px solid #d4d4d4;
-  font-weight: 500;
-  color: #333;
+  padding-right: 36px;
 }
 
-select:hover {
-  border-color: #8a8a8a;
-  background-color: #fafafa;
-}
-
-select:focus {
-  border-color: #333;
-  background-color: white;
-  outline: none;
-}
-
-/* Dropdown options styling */
 select option {
   padding: 10px 12px;
   font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  background: white;
-}
-
-/* Group headers for better organization */
-select option[value=''] {
-  font-weight: 600;
-  color: #666;
-  background: #f5f5f5;
-  font-style: italic;
+  color: var(--ink);
+  background: #fff;
 }
 
 select option[value='custom'] {
   font-weight: 600;
-  color: #333;
-  background: #f8f8f8;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid #eeebe4;
 }
 
-/* Selected option state */
-select option:checked {
-  background: #f5f5f5;
-  color: #333;
-  font-weight: 600;
-}
-
-/* Custom scrollbar for dropdown */
-select::-webkit-scrollbar {
-  width: 6px;
-}
-
-select::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-select::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
-
-select::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* Special styling for the service dropdown in item rows */
 .item-row select.d-select {
-  border-radius: 8px;
   font-size: 14px;
 }
 
-.item-row select.d-select:focus {
-  border-color: #333;
-}
-
-/* Make the custom input match the dropdown styling */
 .item-row input.d-text {
-  transition: border-color 0.2s;
-  border: 1px solid #d4d4d4;
+  border: 1px solid var(--field-border);
   font-weight: 500;
 }
 
 .item-row input.d-text:focus {
-  border-color: #333;
-  outline: none;
+  border-color: var(--ink);
 }
 .items {
   margin-top: 8px;

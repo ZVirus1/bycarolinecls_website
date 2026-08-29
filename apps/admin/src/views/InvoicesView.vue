@@ -283,13 +283,7 @@ function fileName(inv) {
 
 .search input,
 .sel {
-  font: inherit;
   font-size: 13.5px;
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #e0dcd4;
-  border-radius: 8px;
-  background: #fff;
 }
 
 .search input {

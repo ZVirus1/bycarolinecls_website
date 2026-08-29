@@ -105,11 +105,51 @@ const waHref = computed(() =>
 
 .field__input {
   font: inherit;
+  font-size: 15px;
   width: 100%;
-  padding: 11px 12px;
+  padding: 12px 13px;
   border: 1px solid var(--rule);
   background: #fff;
   color: var(--ink);
+  border-radius: 0;
+  box-sizing: border-box;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(29, 29, 29, 0.07);
+}
+
+/* Draw our own chevron: native select chrome differs on every platform. */
+select.field__input {
+  appearance: none;
+  cursor: pointer;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b665e' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 14px;
+}
+
+/* Safari on iOS otherwise sizes these to its own liking. */
+input[type='date'].field__input,
+input[type='time'].field__input {
+  appearance: none;
+  min-height: 45px;
+}
+
+.field__input::-webkit-calendar-picker-indicator {
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.18s ease;
+}
+
+.field__input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
 .chosen {

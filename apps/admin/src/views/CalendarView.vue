@@ -213,8 +213,25 @@ export default {
      */
     async autoSyncIfStale() {
       const STALE_MS = 10 * 60 * 1000
+      const COOLDOWN_MS = 5 * 60 * 1000
       const last = this.syncedAt ? new Date(this.syncedAt).getTime() : 0
       if (Date.now() - last < STALE_MS) return
+
+      // A dispatched run takes ~30s to land, during which syncedAt is still
+      // old. Without this, every revisit fires another run.
+      let attempted = 0
+      try {
+        attempted = Number(localStorage.getItem('lastAutoSyncAt')) || 0
+      } catch {
+        attempted = 0
+      }
+      if (Date.now() - attempted < COOLDOWN_MS) return
+      try {
+        localStorage.setItem('lastAutoSyncAt', String(Date.now()))
+      } catch {
+        /* private mode: fall through, the staleness check still applies */
+      }
+
       const res = await requestSync().catch(() => ({ ok: false }))
       if (res.ok) {
         this.syncMessage = 'Syncing in the background…'

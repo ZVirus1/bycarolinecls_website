@@ -119,6 +119,9 @@ export default {
   --btn-bg-hover: #ded9c6;
   --btn-fg: #1d1d1d;
   --btn-border: #ddd8c6;
+  --field-bg: #fff;
+  --field-border: #ddd8c6;
+  --field-radius: 8px;
 }
 
 body {
@@ -144,6 +147,81 @@ body {
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+}
+
+/* ---------- form controls ----------
+   One look for every text, number, date, time and select field, so the admin
+   matches the public site instead of using each browser's default chrome. */
+input[type='text'],
+input[type='number'],
+input[type='date'],
+input[type='time'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+select,
+textarea {
+  font: inherit;
+  font-size: 14px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--field-radius);
+  background: var(--field-bg);
+  color: var(--ink);
+  box-sizing: border-box;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(29, 29, 29, 0.08);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: #f7f5f0;
+  color: #a09a90;
+}
+
+/* Native select chrome varies wildly by platform, so draw our own chevron. */
+select {
+  appearance: none;
+  cursor: pointer;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b665e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+}
+
+/* Safari on iOS otherwise renders date/time fields at its own height. */
+input[type='date'],
+input[type='time'] {
+  appearance: none;
+  min-height: 42px;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator:hover,
+input[type='time']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+input[type='search']::-webkit-search-cancel-button {
+  cursor: pointer;
 }
 
 .sr-only {

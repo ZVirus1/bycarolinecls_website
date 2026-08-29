@@ -216,28 +216,20 @@ in the current tree is sensitive:
 - **Payment details are no longer committed.** They come from `VITE_BANK_*`
   environment variables set in Cloudflare Pages.
 
-### What is still in git history
+### Git history has been purged
 
-Earlier commits (inherited from the invoice repo, which is also public) contain
-a BCA account number, and one client's phone number, home address and first
-name. Removing them from the current tree does not remove them from history.
+Earlier commits (inherited from the invoice repo) contained a BCA account
+number and one client's phone number, home address and first name. History was
+rewritten with `git filter-repo` and force-pushed on 2026-08-29; all four values
+now read `REDACTED-*` and appear zero times anywhere in the object store.
 
-- The account number is low-consequence — it appears on every invoice you send.
-- The client's phone and address are third-party personal data and are the part
-  worth caring about.
+Two caveats:
 
-To purge them, the history has to be rewritten and force-pushed:
-
-```sh
-pipx install git-filter-repo
-git filter-repo --replace-text <(printf '%s\n' \
-  'REDACTED-ACCOUNT-NO==>REDACTED' \
-  'REDACTED-ADDRESS==>REDACTED')
-git push --force
-```
-
-Note that GitHub may retain unreferenced commits for a while, and the same
-values remain in the separate invoice repo. Rewriting here alone is partial.
+- GitHub may retain unreferenced objects for a while, and any existing fork or
+  local clone still holds the old history.
+- **The same values remain in the separate `bycarolinecls-invoice` repo**,
+  which is also public. Purging that repo would rewrite the history its
+  GitHub Pages site is built from - ask before doing it.
 
 ### Making the repo private instead
 

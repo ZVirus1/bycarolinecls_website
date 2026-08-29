@@ -29,6 +29,19 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Booked dates only - no names, phones or addresses ever land here. This
+    // is what /api/availability reads, so the public path never needs access
+    // to the appointments collection above.
+    match /settings/availability {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Everything else under settings/ (counters, etc.) stays admin-only.
+    match /settings/{other} {
+      allow read, write: if isAdmin();
+    }
+
     // Deny anything not matched above.
     match /{document=**} {
       allow read, write: if false;

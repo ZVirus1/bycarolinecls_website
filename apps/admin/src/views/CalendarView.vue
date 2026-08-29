@@ -115,6 +115,7 @@ import {
   ref,
   deleteObject,
 } from '../stores/firebase.js'
+import { publishAvailability } from '../stores/availability.js'
 
 export default {
   name: 'CalendarView',
@@ -204,7 +205,10 @@ export default {
           id: doc.id,
           ...doc.data(),
         }))
-        console.log('Loaded appointments:', this.appointments)
+
+        // Keep the public dates-only document in step with what is actually
+        // booked. Cheap, and self-healing if a write was ever missed.
+        publishAvailability(this.appointments)
       } catch (error) {
         console.error('Error loading appointments:', error)
         this.appointments = []

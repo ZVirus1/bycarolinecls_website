@@ -13,10 +13,12 @@ export const business = {
     'Hello, I am Caroline — a professional hair and makeup artist. My passion is not only the art of makeup, but making every person feel completely themselves on the days that matter most.',
   location: 'Jakarta, Indonesia',
   email: 'hello@bycarolinecls.com',
+  domain: 'bycarolinecls.com',
 }
 
-// International format, digits only, no + or spaces. Example: 6281234567890
-export const whatsappNumber = '628XXXXXXXXX'
+// International format, digits only, no + or spaces.
+// Source: +62 895 3213 53193
+export const whatsappNumber = '62895321353193'
 
 export const socials = [
   { label: 'Instagram', href: 'https://instagram.com/bycarolinecls', icon: 'instagram' },

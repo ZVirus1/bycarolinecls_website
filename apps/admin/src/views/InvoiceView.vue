@@ -51,6 +51,7 @@ import {
   deleteDoc,
 } from '../stores/firebase.js'
 import { nextInvoiceNumber } from '../stores/invoices.js'
+import { publishAvailability, loadAllAppointments } from '../stores/availability.js'
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 
@@ -267,7 +268,14 @@ export default {
             updatedAt: new Date(),
           })
 
-          this.showStatus('Successfully saved invoice to cloud and calendar!', true)
+          // Refresh the public dates-only availability document.
+          try {
+            await publishAvailability(await loadAllAppointments())
+          } catch (e) {
+            console.error('availability refresh failed:', e)
+          }
+
+          this.showStatus(`Saved invoice ${invoiceNumber} to cloud and calendar!`, true)
 
           setTimeout(() => {
             this.$router.push('/calendar')

@@ -3,12 +3,12 @@
     <h1>Invoice Generator</h1>
 
     <label>Customer name</label>
-    <input v-model="localFormData.name" type="text" placeholder="REDACTED-NAME" />
+    <input v-model="localFormData.name" type="text" placeholder="Client name" />
 
     <div class="grid-2">
       <div>
         <label>Phone</label>
-        <input v-model="localFormData.phone" type="text" placeholder="REDACTED-PHONE" />
+        <input v-model="localFormData.phone" type="text" placeholder="+62 812 3456 7890" />
       </div>
       <div>
         <label>Invoice Date</label>
@@ -20,7 +20,7 @@
     <input
       v-model="localFormData.address"
       type="text"
-      placeholder="REDACTED-ADDRESS"
+      placeholder="Street, area, city"
     />
 
     <div class="grid-2">
@@ -80,16 +80,16 @@
     </div>
 
     <label style="margin-top: 16px">Bank</label>
-    <input v-model="localFormData.bank" type="text" value="BCA" />
+    <input v-model="localFormData.bank" type="text" />
 
     <div class="grid-2">
       <div>
         <label>Account Name</label>
-        <input v-model="localFormData.accountName" type="text" value="Caroline" />
+        <input v-model="localFormData.accountName" type="text" />
       </div>
       <div>
         <label>Account No.</label>
-        <input v-model="localFormData.accountNo" type="text" value="REDACTED-ACCOUNT-NO" />
+        <input v-model="localFormData.accountNo" type="text" />
       </div>
     </div>
 

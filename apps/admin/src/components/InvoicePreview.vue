@@ -178,14 +178,14 @@ export default {
   },
   computed: {
     displayName() {
-      return this.formData.name || 'REDACTED-NAME'
+      return this.formData.name || ''
     },
     displayPhone() {
-      return this.formData.phone || 'REDACTED-PHONE'
+      return this.formData.phone || ''
     },
     displayAddress() {
       const address =
-        this.formData.address || 'REDACTED-ADDRESS'
+        this.formData.address || ''
       return escapeHtml(address).replace(/, /g, ',<br/>')
     },
     displayInvoiceDate() {
@@ -241,7 +241,7 @@ export default {
       return this.formData.accountName || 'Caroline'
     },
     displayAccountNo() {
-      return this.formData.accountNo || 'REDACTED-ACCOUNT-NO'
+      return this.formData.accountNo || ''
     },
   },
 }

@@ -74,9 +74,11 @@ export default {
         invoiceDate: today.toISOString().split('T')[0],
         appointmentDate: tomorrow.toISOString().split('T')[0],
         appointmentTime: '02:00',
-        bank: 'BCA',
-        accountName: 'Caroline',
-        accountNo: 'REDACTED-ACCOUNT-NO',
+        // Payment details come from env config, never hardcoded - this repo
+        // is public. See .env.example.
+        bank: import.meta.env.VITE_BANK_NAME || '',
+        accountName: import.meta.env.VITE_BANK_ACCOUNT_NAME || '',
+        accountNo: import.meta.env.VITE_BANK_ACCOUNT_NO || '',
       },
       items: [
         { description: 'Makeup Bride Full Day', quantity: 1, total: '8000000', isPredefined: true },
@@ -245,9 +247,9 @@ export default {
           subtotal: this.calculateSubtotal(),
           paid: this.calculateSubtotal() / 2,
           balance: this.calculateSubtotal() / 2,
-          bank: this.formData.bank || 'BCA',
-          accountName: this.formData.accountName || 'Caroline',
-          accountNo: this.formData.accountNo || 'REDACTED-ACCOUNT-NO',
+          bank: this.formData.bank,
+          accountName: this.formData.accountName,
+          accountNo: this.formData.accountNo,
           hasInvoice: true,
           createdAt: new Date(),
         }

@@ -390,9 +390,12 @@ const SYSTEM_ACTIVITY = /creat|updat|delet|deactivat|join|leav|invit|remind|like
 function normaliseMessage(c) {
   if (!c || c.deactivated_at) return null
 
-  const text = ['message', 'comment', 'content', 'body', 'text']
-    .map((k) => (typeof c[k] === 'string' ? c[k] : ''))
-    .find((v) => v.trim())
+  // A typed message arrives as attachment.content. The other activity types
+  // carry attachment.items instead - the fields a system entry changed - which
+  // is how "Event created" and "Date updated" fall out here without a
+  // type-name allowlist.
+  const candidates = [c.attachment?.content, c.message, c.comment, c.content, c.body, c.text]
+  const text = candidates.find((v) => typeof v === 'string' && v.trim())
   if (!text) return null
 
   const type = String(c.type ?? c.kind ?? c.activity_type ?? '')

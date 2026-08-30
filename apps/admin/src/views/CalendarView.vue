@@ -143,8 +143,8 @@
         <div v-if="selected.messages && selected.messages.length" class="sheet__messages">
           <p class="sheet__label">Messages</p>
           <article v-for="m in selected.messages" :key="m.id" class="msg">
-            <header class="msg__head">
-              <span class="msg__author">{{ m.author || 'TimeTree' }}</span>
+            <header class="msg__head" v-if="m.author || m.at">
+              <span class="msg__author">{{ m.author }}</span>
               <span class="msg__at" v-if="m.at">{{ formatMessageAt(m.at) }}</span>
             </header>
             <p class="msg__text">{{ m.text }}</p>

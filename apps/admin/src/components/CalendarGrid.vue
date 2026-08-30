@@ -1,38 +1,42 @@
 <template>
   <div class="calendar">
-    <div class="calendar-weekdays">
-      <div v-for="d in weekdays" :key="d.short" class="weekday">
-        <span class="weekday__long">{{ d.long }}</span>
-        <span class="weekday__short">{{ d.short }}</span>
-      </div>
-    </div>
-    <div class="calendar-days">
-      <div
-        v-for="(day, index) in calendarDays"
-        :key="index"
-        class="calendar-day"
-        :class="{
-          'other-month': day.isOtherMonth,
-          today: day.isToday,
-        }"
-      >
-        <div class="day-number">{{ day.date.getDate() }}</div>
-        <div class="appointments">
-          <div
-            v-for="appointment in visibleFor(day.date)"
-            :key="appointment.id"
-            class="appointment"
-            :class="getAppointmentType(appointment)"
-            :title="getAppointmentDisplayText(appointment)"
-            @click="$emit('appointment-click', appointment)"
-          >
-            <span v-if="appointment.appointmentTime" class="appointment__time">
-              {{ shortTime(appointment.appointmentTime) }}
-            </span>
-            <span class="appointment__name">{{ firstName(appointment) }}</span>
+    <div class="calendar__scroll">
+      <div class="calendar__inner">
+        <div class="calendar-weekdays">
+          <div v-for="d in weekdays" :key="d.short" class="weekday">
+            <span class="weekday__long">{{ d.long }}</span>
+            <span class="weekday__short">{{ d.short }}</span>
           </div>
-          <div v-if="hiddenCountFor(day.date)" class="appointment appointment--more">
-            +{{ hiddenCountFor(day.date) }}
+        </div>
+        <div class="calendar-days">
+          <div
+            v-for="(day, index) in calendarDays"
+            :key="index"
+            class="calendar-day"
+            :class="{
+              'other-month': day.isOtherMonth,
+              today: day.isToday,
+            }"
+          >
+            <div class="day-number">{{ day.date.getDate() }}</div>
+            <div class="appointments">
+              <div
+                v-for="appointment in visibleFor(day.date)"
+                :key="appointment.id"
+                class="appointment"
+                :class="getAppointmentType(appointment)"
+                :title="getAppointmentDisplayText(appointment)"
+                @click="$emit('appointment-click', appointment)"
+              >
+                <span v-if="appointment.appointmentTime" class="appointment__time">
+                  {{ shortTime(appointment.appointmentTime) }}
+                </span>
+                <span class="appointment__name">{{ firstName(appointment) }}</span>
+              </div>
+              <div v-if="hiddenCountFor(day.date)" class="appointment appointment--more">
+                +{{ hiddenCountFor(day.date) }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -164,9 +168,22 @@ export default {
   width: 100%;
 }
 
+/* Both grids share one scroller so the weekday row can never drift out of
+   step with the days beneath it. */
+.calendar__scroll {
+  overflow-x: auto;
+}
+
+.calendar__inner {
+  min-width: 0;
+}
+
 .calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  /* minmax(0, 1fr), not 1fr: a plain 1fr track will not shrink below its
+     content, so one long booking pushed the row wider than the card and
+     overflow:hidden clipped Saturday off the end. */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   background: #f8f4f0; /* Peach background */
   border-bottom: 1px solid #e8e0d8;
 }
@@ -185,7 +202,7 @@ export default {
 
 .calendar-days {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .calendar-day {
@@ -346,6 +363,12 @@ export default {
 }
 
 @media (max-width: 480px) {
+  /* Below this, seven columns stop being legible however they are divided.
+     Scroll sideways rather than shave the last day off. */
+  .calendar__inner {
+    min-width: 336px;
+  }
+
   .calendar-day {
     min-height: 90px;
     padding: 4px 2px;

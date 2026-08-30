@@ -12,12 +12,16 @@ name: Sync TimeTree calendar
 # Interval: every 5 minutes, the shortest GitHub allows. Two things to know:
 #   1. GitHub scheduled workflows are best-effort. Runs are frequently delayed
 #      and sometimes skipped under load, so real cadence is more like 5-20 min.
-#   2. Each run signs in to TimeTree afresh (~288/day). If exports start
-#      failing with auth or rate-limit errors, raise this to '*/15' or '*/30'.
+#   2. Each run signs in to TimeTree afresh and reads one message thread per
+#      event, so the request count scales with the interval. At 30 minutes
+#      that is ~6,500 requests a day; at 5 it would be ~39,000.
+#
+# The Cloudflare Worker in workers/sync-cron keeps the real schedule, since
+# Cloudflare honours its cron. This one is a backstop.
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch: # force a sync from the Actions tab
 
 # Never let a slow run overlap the next scheduled one.

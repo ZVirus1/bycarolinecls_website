@@ -3,7 +3,12 @@
   "main": "index.js",
   "compatibility_date": "2026-08-01",
   // Cloudflare keeps this schedule, unlike GitHub's own cron.
-  "triggers": { "crons": ["*/5 * * * *"] },
+  //
+  // Every 30 minutes, not every 5: each run now reads a message thread per
+  // event, so */5 would be ~39,000 requests a day and 288 sign-ins against an
+  // undocumented API. The calendar page also syncs itself when it opens on
+  // stale data, which covers the "I just added a booking" case.
+  "triggers": { "crons": ["*/30 * * * *"] },
   "vars": { "GITHUB_REPO": "ZVirus1/bycarolinecls_website" },
   "observability": { "enabled": true }
 }

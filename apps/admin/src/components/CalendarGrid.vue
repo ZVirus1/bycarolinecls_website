@@ -189,8 +189,13 @@ export default {
 }
 
 .weekday {
+  /* Day cells carry a 1px border and the header does not, so without a
+     matching transparent one every label sits a pixel left of the column it
+     names. Left-aligned to agree with the day number below it. */
+  border-left: 1px solid transparent;
+  border-right: 1px solid transparent;
   padding: 12px 8px;
-  text-align: center;
+  text-align: left;
   font-weight: 600;
   color: #5a4b3a; /* Warm brown text */
   font-size: 14px;
@@ -225,7 +230,10 @@ export default {
 
 .calendar-day.today {
   background: #fff5f0; /* Light peach for today */
-  border: 2px solid #e8b4a9;
+  /* An inset shadow, not a thicker border: a 2px border would push this one
+     cell's contents a pixel out of line with the rest of the grid. */
+  border-color: #e8b4a9;
+  box-shadow: inset 0 0 0 1px #e8b4a9;
 }
 
 .day-number {
@@ -309,7 +317,7 @@ export default {
   }
 
   .weekday {
-    padding: 10px 4px;
+    padding: 10px 6px;
     font-size: 13px;
   }
 
@@ -337,7 +345,7 @@ export default {
   }
 
   .weekday {
-    padding: 8px 2px;
+    padding: 8px 3px;
     font-size: 12px;
   }
 
@@ -375,7 +383,7 @@ export default {
   }
 
   .weekday {
-    padding: 6px 1px;
+    padding: 6px 2px;
     font-size: 11px;
   }
 

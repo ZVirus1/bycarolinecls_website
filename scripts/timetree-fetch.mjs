@@ -28,6 +28,14 @@
 const API = 'https://timetreeapp.com/api/v1'
 const UA = 'web/2.1.0/en'
 
+// Declared up here, not beside the functions that use them: the script runs
+// its work at the top level, and `const` is not hoisted.
+const BULK_PATHS = ['activities/sync', 'comments/sync', 'messages/sync']
+const PER_EVENT_PATHS = ['activities', 'comments', 'messages']
+
+/** user id -> display name, so a message can say who typed it. */
+const people = new Map()
+
 /* ------------------------------------------------------------------ */
 
 const args = parseArgs(process.argv.slice(2))
@@ -136,9 +144,6 @@ async function signIn(uid, pw) {
   return match[1]
 }
 
-/** user id -> display name, so a message can say who typed it. */
-const people = new Map()
-
 async function getCalendars(session) {
   const body = await authedGet(`${API}/calendars?since=0`, session, 'calendar list')
   for (const u of body.users ?? []) {
@@ -177,9 +182,6 @@ async function getEvents(session, calendarId) {
  * A calendar-wide feed is tried first, because one paged request beats one
  * request per event against an API that rate limits.
  */
-const BULK_PATHS = ['activities/sync', 'comments/sync', 'messages/sync']
-const PER_EVENT_PATHS = ['activities', 'comments', 'messages']
-
 async function attachMessages(session, calendarId, list) {
   const byUid = new Map(list.map((e) => [e.uid, e]))
 

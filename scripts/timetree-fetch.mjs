@@ -31,7 +31,7 @@ const UA = 'web/2.1.0/en'
 // Declared up here, not beside the functions that use them: the script runs
 // its work at the top level, and `const` is not hoisted.
 const BULK_PATHS = ['activities/sync', 'comments/sync', 'messages/sync']
-const PER_EVENT_PATHS = ['activities', 'comments', 'messages']
+const PER_EVENT_PATHS = ['activities', 'comments', 'messages', 'chats', 'comment', 'activity']
 
 /** user id -> display name, so a message can say who typed it. */
 const people = new Map()
@@ -88,8 +88,10 @@ async function main() {
   const events = await getEvents(sessionId, args.calendar)
   console.error(`✓ fetched ${events.length} event(s)`)
 
-  if (args.inspect && events[0]) {
-    console.error('\nraw event keys:', Object.keys(events[0]).sort().join(', '))
+  if (events[0]) {
+    // Key names only. Tells us what TimeTree hands over without ever putting a
+    // client's details into a log.
+    console.error(`  event fields: ${Object.keys(events[0]).sort().join(', ')}`)
   }
 
   const normalised = events.map(normalise).filter(Boolean)
@@ -251,6 +253,7 @@ function eventUrl(calendarId, uid, path) {
 async function findEventPath(session, calendarId, list, sample = 12) {
   const keys = new Set()
   const types = new Set()
+  const bodyKeys = new Set()
   const answered = new Set()
   let rows = 0
 
@@ -259,6 +262,7 @@ async function findEventPath(session, calendarId, list, sample = 12) {
       const body = await authedTry(eventUrl(calendarId, event.uid, candidate), session)
       if (!body) continue
       answered.add(candidate)
+      Object.keys(body).forEach((k) => bodyKeys.add(`${candidate}.${k}`))
 
       const raw = pickRows(body)
       rows += raw.length
@@ -280,10 +284,29 @@ async function findEventPath(session, calendarId, list, sample = 12) {
         `across ${Math.min(sample, list.length)} event(s)`,
     )
     console.error(`  rows seen: ${rows}`)
+    if (bodyKeys.size) console.error(`  body keys: ${[...bodyKeys].sort().join(', ')}`)
     if (keys.size) console.error(`  row keys: ${[...keys].sort().join(', ')}`)
     if (types.size) console.error(`  row types: ${[...types].sort().join(', ')}`)
   }
+
+  await probeEventDetail(session, calendarId, list[0])
   return null
+}
+
+/**
+ * Last resort: ask for the event itself. If the thread is embedded in the event
+ * rather than served from its own path, its field names will say so.
+ */
+async function probeEventDetail(session, calendarId, event) {
+  if (!event) return
+  const url = `${API}/calendar/${encodeURIComponent(calendarId)}/event/${encodeURIComponent(event.uid)}`
+  const body = await authedTry(url, session)
+  if (!body) {
+    console.error('  event detail endpoint: no answer')
+    return
+  }
+  const shape = body.event ?? body
+  console.error(`  event detail fields: ${Object.keys(shape).sort().join(', ')}`)
 }
 
 /** Returns uid -> messages, or null when no calendar-wide feed exists. */

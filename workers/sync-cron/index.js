@@ -1,10 +1,14 @@
 /**
  * Fires the TimeTree sync on a schedule Cloudflare actually keeps.
  *
- * GitHub's own cron is best-effort: our '*/5' schedule produced two runs in a
- * day, because high-frequency schedules are the first thing dropped under
- * load. Cloudflare's Cron Triggers run on time, so this Worker does nothing
- * but ask GitHub to start the workflow.
+ * GitHub's own cron is best-effort: a five-minute schedule delivered about
+ * one run every three hours, because high-frequency schedules are the first
+ * thing dropped under load. Cloudflare's Cron Triggers run on time, so this
+ * Worker does nothing but ask GitHub to start the workflow.
+ *
+ * The interval lives in wrangler.jsonc. Do not write a cron expression inside
+ * a block comment: the star-slash in one closes the comment and the file
+ * stops parsing.
  *
  * No TimeTree or Firebase credentials live here. The only secret is a
  * fine-grained GitHub token whose single permission is starting Actions in one

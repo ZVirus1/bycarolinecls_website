@@ -208,34 +208,76 @@ async function attachMessages(session, calendarId, list) {
 
   console.error(`  no calendar-wide message feed; asking per event (${window.length})`)
 
-  let path = null
-  let total = 0
-  let failures = 0
+  const path = await findEventPath(session, calendarId, window)
+  if (!path) return false
 
+  let total = 0
   await inBatches(window, 3, async (event) => {
-    const base = `${API}/calendar/${encodeURIComponent(calendarId)}/event/${encodeURIComponent(event.uid)}`
-    for (const candidate of path ? [path] : PER_EVENT_PATHS) {
-      const body = await authedTry(`${base}/${candidate}?since=0`, session)
-      if (!body) continue
-      path = candidate
-      const msgs = collectMessages(body)
-      if (msgs.length) {
-        event.messages = msgs
-        total += msgs.length
-      }
-      return
-    }
-    failures++
+    const body = await authedTry(eventUrl(calendarId, event.uid, path), session)
+    if (!body) return
+    const msgs = collectMessages(body)
+    if (!msgs.length) return
+    event.messages = msgs
+    total += msgs.length
   })
 
-  if (!path) {
-    console.error('⚠ no message endpoint answered; events synced without their threads')
-    return false
-  }
-  console.error(`✓ ${total} message(s) via /${path}${failures ? ` (${failures} failed)` : ''}`)
+  console.error(`✓ ${total} message(s) via /${path}`)
   // Events outside the narrower per-event window were never asked about, so
   // this run cannot claim their threads are empty.
   return window.length === list.length
+}
+
+const eventUrl = (calendarId, uid, path) =>
+  `${API}/calendar/${encodeURIComponent(calendarId)}/event/${encodeURIComponent(uid)}/${path}?since=0`
+
+/**
+ * Finds which candidate path actually carries the chat, by probing a handful of
+ * events against all of them.
+ *
+ * A path is only accepted once it yields a real message. /activities answers
+ * 200 with nothing useful, and locking onto the first endpoint that merely
+ * responds means never trying the one that works.
+ *
+ * Diagnostics name the keys and type values that came back, never the message
+ * text - these logs are readable by anyone who can see the Actions run, and
+ * that text is a client's name, address and phone number.
+ */
+async function findEventPath(session, calendarId, list, sample = 12) {
+  const keys = new Set()
+  const types = new Set()
+  const answered = new Set()
+  let rows = 0
+
+  for (const event of list.slice(0, sample)) {
+    for (const candidate of PER_EVENT_PATHS) {
+      const body = await authedTry(eventUrl(calendarId, event.uid, candidate), session)
+      if (!body) continue
+      answered.add(candidate)
+
+      const raw = pickRows(body)
+      rows += raw.length
+      for (const r of raw) {
+        Object.keys(r ?? {}).forEach((k) => keys.add(k))
+        const t = r?.type ?? r?.kind ?? r?.activity_type
+        if (t != null) types.add(String(t))
+      }
+
+      if (raw.map(normaliseMessage).filter(Boolean).length) return candidate
+    }
+  }
+
+  if (!answered.size) {
+    console.error('⚠ no message endpoint answered; events synced without their threads')
+  } else {
+    console.error(
+      `⚠ /${[...answered].join(', /')} answered but yielded no typed messages ` +
+        `across ${Math.min(sample, list.length)} event(s)`,
+    )
+    console.error(`  rows seen: ${rows}`)
+    if (keys.size) console.error(`  row keys: ${[...keys].sort().join(', ')}`)
+    if (types.size) console.error(`  row types: ${[...types].sort().join(', ')}`)
+  }
+  return null
 }
 
 /** Returns uid -> messages, or null when no calendar-wide feed exists. */

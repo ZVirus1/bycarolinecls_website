@@ -357,16 +357,24 @@ function collectMessages(body) {
 /** The payload key varies by endpoint; take whichever array came back. */
 function pickRows(body) {
   if (Array.isArray(body)) return body
-  for (const key of ['activities', 'comments', 'messages', 'data']) {
+  for (const key of ['event_activities', 'activities', 'comments', 'messages', 'data']) {
     if (Array.isArray(body?.[key])) return body[key]
   }
-  return []
+  // Unknown wrapper: fall back to the first array-valued field rather than
+  // reporting an empty thread, which is how event_activities was missed.
+  return Object.values(body ?? {}).find(Array.isArray) ?? []
 }
 
+/** "Event created", "Date updated" and friends - never something a person typed. */
+const SYSTEM_ACTIVITY = /creat|updat|delet|deactivat|join|leav|invit|remind|like|pin|attach/i
+
 /**
- * Keeps only what a person actually typed. TimeTree interleaves system entries
- * ("Event created", "Date updated") into the same thread; those carry a type
- * of their own and no text, so both checks below drop them.
+ * Keeps only what a person actually typed.
+ *
+ * The test is inverted on purpose: keep anything carrying text unless its type
+ * says it is a system entry. Matching an allowlist of type names assumes we
+ * know what TimeTree calls a comment, and a numeric or renamed type would then
+ * silently drop every real message.
  */
 function normaliseMessage(c) {
   if (!c || c.deactivated_at) return null
@@ -376,8 +384,8 @@ function normaliseMessage(c) {
     .find((v) => v.trim())
   if (!text) return null
 
-  const type = String(c.type ?? c.kind ?? c.activity_type ?? 'comment').toLowerCase()
-  if (!/comment|message|chat|text/.test(type)) return null
+  const type = String(c.type ?? c.kind ?? c.activity_type ?? '')
+  if (SYSTEM_ACTIVITY.test(type)) return null
 
   const authorId = String(c.user_id ?? c.author_id ?? c.user?.id ?? '')
   const at = toDate(c.created_at ?? c.updated_at ?? c.at)

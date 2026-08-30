@@ -210,7 +210,7 @@ async function attachMessages(session, calendarId, list) {
   const now = Date.now()
   const window = list.filter((e) => {
     const start = Date.parse(e.start)
-    return start > now - 30 * 86400000 && start < now + 200 * 86400000
+    return start > now - 60 * 86400000 && start < now + 400 * 86400000
   })
 
   console.error(`  no calendar-wide message feed; asking per event (${window.length})`)
@@ -250,11 +250,12 @@ function eventUrl(calendarId, uid, path) {
  * text - these logs are readable by anyone who can see the Actions run, and
  * that text is a client's name, address and phone number.
  */
-async function findEventPath(session, calendarId, list, sample = 12) {
-  const keys = new Set()
-  const types = new Set()
+async function findEventPath(session, calendarId, list, sample = 30) {
   const bodyKeys = new Set()
   const answered = new Set()
+  // Keys per activity type: a comment type carries fields the system types do
+  // not, and lumping them together hides exactly that difference.
+  const byType = new Map()
   let rows = 0
 
   for (const event of list.slice(0, sample)) {
@@ -267,9 +268,18 @@ async function findEventPath(session, calendarId, list, sample = 12) {
       const raw = pickRows(body)
       rows += raw.length
       for (const r of raw) {
-        Object.keys(r ?? {}).forEach((k) => keys.add(k))
-        const t = r?.type ?? r?.kind ?? r?.activity_type
-        if (t != null) types.add(String(t))
+        const t = String(r?.type ?? r?.kind ?? r?.activity_type ?? '?')
+        if (!byType.has(t)) byType.set(t, { n: 0, keys: new Set() })
+        const seen = byType.get(t)
+        seen.n++
+        // Note the shape of nested objects too - the text may sit one level in.
+        for (const [k, v] of Object.entries(r ?? {})) {
+          if (v && typeof v === 'object' && !Array.isArray(v)) {
+            Object.keys(v).forEach((sub) => seen.keys.add(`${k}.${sub}`))
+          } else {
+            seen.keys.add(k)
+          }
+        }
       }
 
       if (raw.map(normaliseMessage).filter(Boolean).length) return candidate
@@ -285,8 +295,9 @@ async function findEventPath(session, calendarId, list, sample = 12) {
     )
     console.error(`  rows seen: ${rows}`)
     if (bodyKeys.size) console.error(`  body keys: ${[...bodyKeys].sort().join(', ')}`)
-    if (keys.size) console.error(`  row keys: ${[...keys].sort().join(', ')}`)
-    if (types.size) console.error(`  row types: ${[...types].sort().join(', ')}`)
+    for (const [type, seen] of [...byType].sort()) {
+      console.error(`  type ${type} (${seen.n}): ${[...seen.keys].sort().join(', ')}`)
+    }
   }
 
   await probeEventDetail(session, calendarId, list[0])

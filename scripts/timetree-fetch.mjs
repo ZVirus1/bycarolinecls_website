@@ -56,65 +56,70 @@ Credentials come from TIMETREE_EMAIL and TIMETREE_PASSWORD.
   process.exit(0)
 }
 
-const email = process.env.TIMETREE_EMAIL
-const password = process.env.TIMETREE_PASSWORD
+// Everything runs inside main(), called from the foot of the file. Top-level
+// await would start work before the const declarations below it had been
+// initialised, and any helper reached from here would fail on first use.
+async function main() {
+  const email = process.env.TIMETREE_EMAIL
+  const password = process.env.TIMETREE_PASSWORD
 
-if (!email || !password) {
-  fail(
-    'Set TIMETREE_EMAIL and TIMETREE_PASSWORD first.\n\n' +
-      "  export TIMETREE_EMAIL='you@example.com'\n" +
-      '  read -rs TIMETREE_PASSWORD && export TIMETREE_PASSWORD',
-  )
-}
-
-const sessionId = await signIn(email, password)
-console.error('✓ signed in')
-
-const calendars = await getCalendars(sessionId)
-
-if (args.list || !args.calendar) {
-  console.error(`\n${calendars.length} calendar(s):\n`)
-  for (const c of calendars) {
-    console.error(`  id ${String(c.id).padEnd(10)} ${c.name ?? c.alias_name ?? '(unnamed)'}`)
+  if (!email || !password) {
+    fail(
+      'Set TIMETREE_EMAIL and TIMETREE_PASSWORD first.\n\n' +
+        "  export TIMETREE_EMAIL='you@example.com'\n" +
+        '  read -rs TIMETREE_PASSWORD && export TIMETREE_PASSWORD',
+    )
   }
-  console.error('\nRe-run with:  --calendar <id> --out timetree.json')
-  process.exit(0)
-}
 
-const events = await getEvents(sessionId, args.calendar)
-console.error(`✓ fetched ${events.length} event(s)`)
+  const sessionId = await signIn(email, password)
+  console.error('✓ signed in')
 
-if (args.inspect && events[0]) {
-  console.error('\nraw event keys:', Object.keys(events[0]).sort().join(', '))
-}
+  const calendars = await getCalendars(sessionId)
 
-const normalised = events.map(normalise).filter(Boolean)
+  if (args.list || !args.calendar) {
+    console.error(`\n${calendars.length} calendar(s):\n`)
+    for (const c of calendars) {
+      console.error(`  id ${String(c.id).padEnd(10)} ${c.name ?? c.alias_name ?? '(unnamed)'}`)
+    }
+    console.error('\nRe-run with:  --calendar <id> --out timetree.json')
+    process.exit(0)
+  }
 
-// Tells the sync whether an empty thread means "no messages" or "we could not
-// ask" - without it, one bad run would wipe every message we already have.
-let messagesFetched = false
-if (!args.noMessages) {
-  messagesFetched = await attachMessages(sessionId, args.calendar, normalised)
-}
+  const events = await getEvents(sessionId, args.calendar)
+  console.error(`✓ fetched ${events.length} event(s)`)
 
-const output = JSON.stringify(
-  {
-    calendarId: args.calendar,
-    fetchedAt: new Date().toISOString(),
-    messagesFetched,
-    events: normalised,
-  },
-  null,
-  2,
-)
+  if (args.inspect && events[0]) {
+    console.error('\nraw event keys:', Object.keys(events[0]).sort().join(', '))
+  }
 
-if (args.out) {
-  const { writeFileSync } = await import('node:fs')
-  writeFileSync(args.out, output)
-  console.error(`✓ wrote ${args.out}`)
-  console.error('  This file contains real client names - delete it when done.')
-} else {
-  process.stdout.write(output + '\n')
+  const normalised = events.map(normalise).filter(Boolean)
+
+  // Tells the sync whether an empty thread means "no messages" or "we could not
+  // ask" - without it, one bad run would wipe every message we already have.
+  let messagesFetched = false
+  if (!args.noMessages) {
+    messagesFetched = await attachMessages(sessionId, args.calendar, normalised)
+  }
+
+  const output = JSON.stringify(
+    {
+      calendarId: args.calendar,
+      fetchedAt: new Date().toISOString(),
+      messagesFetched,
+      events: normalised,
+    },
+    null,
+    2,
+  )
+
+  if (args.out) {
+    const { writeFileSync } = await import('node:fs')
+    writeFileSync(args.out, output)
+    console.error(`✓ wrote ${args.out}`)
+    console.error('  This file contains real client names - delete it when done.')
+  } else {
+    process.stdout.write(output + '\n')
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -227,8 +232,9 @@ async function attachMessages(session, calendarId, list) {
   return window.length === list.length
 }
 
-const eventUrl = (calendarId, uid, path) =>
-  `${API}/calendar/${encodeURIComponent(calendarId)}/event/${encodeURIComponent(uid)}/${path}?since=0`
+function eventUrl(calendarId, uid, path) {
+  return `${API}/calendar/${encodeURIComponent(calendarId)}/event/${encodeURIComponent(uid)}/${path}?since=0`
+}
 
 /**
  * Finds which candidate path actually carries the chat, by probing a handful of
@@ -443,3 +449,7 @@ function fail(msg) {
   console.error(`\n${msg}\n`)
   process.exit(1)
 }
+
+/* ------------------------------------------------------------------ */
+
+await main()

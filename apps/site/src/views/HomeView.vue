@@ -1,13 +1,12 @@
 <template>
   <!-- Hero. Two columns rather than text-over-image: every photo in this
        portfolio is portrait, and the makeup IS the product - a full-bleed crop
-       would cut the face and a legibility scrim would dim the work. -->
-  <section class="hero">
-    <div class="hero__copy">
-      <h1 class="hero__title">{{ business.tagline }}</h1>
-      <p class="hero__meta">{{ business.location }}</p>
-    </div>
+       would cut the face and a legibility scrim would dim the work.
 
+       The photo is pinned to the right half out of flow so the copy can sit in
+       an ordinary .shell and line up with every other heading on the site.
+       Media first in the DOM so it stacks above the copy on mobile. -->
+  <section class="hero">
     <div class="hero__media">
       <img
         v-if="heroImage"
@@ -22,6 +21,13 @@
           Add a portrait photo to <code>apps/site/public/</code> and set <code>heroImage</code> in
           <code>src/content/site.js</code>
         </p>
+      </div>
+    </div>
+
+    <div class="shell hero__inner">
+      <div class="hero__copy">
+        <h1 class="hero__title">{{ business.tagline }}</h1>
+        <p class="hero__meta">{{ business.location }}</p>
       </div>
     </div>
   </section>
@@ -103,21 +109,46 @@ const pricelistHref = whatsappLink(pricelistMessage())
 
 <style scoped>
 .hero {
-  display: grid;
-  /* Copy takes the narrower column: the photo is the thing worth looking at. */
-  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-  align-items: stretch;
+  position: relative;
   background: var(--paper-alt);
   border-bottom: 1px solid var(--rule);
+}
+
+/* Out of flow and pinned right, so the copy below can be a plain .shell and
+   inherit the site's alignment for free. Aligning it with padding instead
+   would need a 100vw sum, which is out by the width of the scrollbar. */
+.hero__media {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 52%;
+}
+
+/* The photo is 4:5 and the half it sits in is wider than that, so it crops
+   top and bottom - never through the face, which object-position keeps up. */
+.hero__media img,
+.hero__placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 22%;
+}
+
+.hero__inner {
+  /* Above the photo, and it is what sets the height of the whole band. */
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: clamp(460px, 74vh, 780px);
 }
 
 .hero__copy {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
   gap: 14px;
-  padding: clamp(40px, 7vw, 96px) clamp(24px, 5vw, 72px);
+  /* Stops short of the photo's edge rather than running under it. */
+  width: min(100%, 46%);
+  padding-block: clamp(40px, 7vw, 96px);
 }
 
 .hero__title {
@@ -136,29 +167,7 @@ const pricelistHref = whatsappLink(pricelistMessage())
   margin: 2px 0 0;
 }
 
-.hero__media {
-  position: relative;
-  /* Sets the height of the whole hero row. Without this the img falls back to
-     its intrinsic 4:5 height (~980px at this column width) and the copy column
-     stretches to match, stranding a block of empty paper beside it. */
-  min-height: clamp(460px, 74vh, 780px);
-}
-
-/* Absolute so the image fills the box above rather than defining it. The photo
-   is 4:5 and the column is wider than that, so it crops from top and bottom -
-   never through the face, which the object-position keeps in frame. */
-.hero__media img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 22%;
-}
-
 .hero__placeholder {
-  width: 100%;
-  min-height: clamp(460px, 74vh, 780px);
   display: grid;
   place-items: center;
   background: linear-gradient(160deg, #3a3733, #1d1d1d);
@@ -169,32 +178,30 @@ const pricelistHref = whatsappLink(pricelistMessage())
 }
 
 @media (max-width: 760px) {
-  .hero {
-    grid-template-columns: 1fr;
-  }
-
-  /* Photo first on mobile - it does the selling before any copy is read. */
+  /* Back in flow and full width, so the photo keeps its true 4:5 and sets its
+     own height rather than being cropped into a band. */
   .hero__media {
-    order: -1;
-  }
-
-  .hero__media {
-    min-height: 0;
-  }
-
-  /* Back to static on mobile so the photo keeps its true 4:5 and sets its own
-     height, rather than being cropped into a band. */
-  .hero__media img {
     position: static;
+    width: 100%;
+  }
+
+  .hero__media img,
+  .hero__placeholder {
     aspect-ratio: 4 / 5;
     height: auto;
     max-height: 76vh;
   }
 
+  .hero__inner {
+    display: block;
+    min-height: 0;
+  }
+
   .hero__copy {
+    width: 100%;
     align-items: center;
     text-align: center;
-    padding: clamp(28px, 8vw, 44px) var(--gutter) clamp(34px, 9vw, 52px);
+    padding-block: clamp(28px, 8vw, 44px) clamp(34px, 9vw, 52px);
   }
 
   .hero__title {

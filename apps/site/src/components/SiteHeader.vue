@@ -13,7 +13,7 @@
         <img :src="logo" alt="" width="756" height="325" />
       </router-link>
 
-      <router-link to="/book" class="btn hdr__cta">Enquire</router-link>
+      <router-link to="/book" class="btn hdr__cta">Contact me</router-link>
 
       <button
         class="hdr__burger"

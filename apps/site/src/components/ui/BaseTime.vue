@@ -1,5 +1,16 @@
+<!--
+  Ported from apps/admin/src/components/ui/. The public enquiry form is meant
+  to look and behave exactly like the one Caroline uses in the admin, so this
+  is a copy rather than a reimplementation.
+
+  The only deliberate difference is icons: the admin has Font Awesome loaded,
+  the public site does not, so <i class="fas"> becomes <FieldIcon>.
+
+  NOTE: duplicated, not shared. Changing a picker means changing it in both
+  places until these move into packages/shared.
+-->
 <template>
-  <FieldPopup :display="display" placeholder="--:--" icon="fa-clock" :disabled="disabled">
+  <FieldPopup :display="display" placeholder="--:--" icon="clock" :disabled="disabled">
     <template #default="{ close }">
       <div class="tp">
         <div class="tp__cols">

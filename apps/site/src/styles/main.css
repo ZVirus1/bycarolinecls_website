@@ -39,6 +39,13 @@
      Everything small uses these two now. */
   --micro: 11.5px;
   --micro-track: 0.2em;
+
+  /* Form fields. Same values as apps/admin, so the enquiry form a client
+     fills in and the one Caroline works in read as the same product. */
+  --field-bg: #fff;
+  --field-border: #ddd8c6;
+  --field-radius: 8px;
+  --btn-bg: #ece8db;
 }
 
 *,

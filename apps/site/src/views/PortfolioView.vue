@@ -17,7 +17,7 @@
         </a>
       </div>
 
-      <InstagramGrid v-if="items.length" :items="items" :min-tile="240" />
+      <InstagramGrid v-if="items.length" :items="items" />
 
       <p v-else-if="!loading" class="empty">
         Nothing to show yet. New work goes up on

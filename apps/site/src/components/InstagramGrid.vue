@@ -1,5 +1,5 @@
 <template>
-  <ul class="ig-grid" :style="{ '--ig-min': `${minTile}px` }">
+  <ul class="ig-grid">
     <li v-for="(item, i) in items" :key="item.id">
       <!-- A post tile is a link out to Instagram; a bundled fallback image is
            not a post, so it renders as a plain figure with no dead link. -->
@@ -45,21 +45,48 @@
 <script setup>
 defineProps({
   items: { type: Array, required: true },
-  // Smallest a tile may get before the grid drops a column.
-  minTile: { type: Number, default: 240 },
   // How many leading tiles load eagerly - roughly one row.
   eager: { type: Number, default: 4 },
 })
 </script>
 
 <style scoped>
+/* Flex, not grid: a grid leaves a partial last row hanging off the left edge,
+   and ten tiles only divide evenly into some of these column counts. */
 .ig-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(var(--ig-min), 100%), 1fr));
-  gap: 14px;
+  --ig-cols: 5;
+  --ig-gap: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ig-gap);
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.ig-grid > li {
+  flex: 0 1 calc((100% - (var(--ig-cols) - 1) * var(--ig-gap)) / var(--ig-cols));
+  min-width: 0;
+}
+
+@media (max-width: 1180px) {
+  .ig-grid {
+    --ig-cols: 4;
+  }
+}
+
+@media (max-width: 900px) {
+  .ig-grid {
+    --ig-cols: 3;
+  }
+}
+
+@media (max-width: 620px) {
+  .ig-grid {
+    --ig-cols: 2;
+    --ig-gap: 10px;
+  }
 }
 
 .ig-tile {

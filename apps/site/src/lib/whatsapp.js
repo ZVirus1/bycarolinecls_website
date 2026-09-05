@@ -9,24 +9,33 @@ export function whatsappLink(message) {
   return message ? `${base}?text=${encodeURIComponent(message)}` : base
 }
 
+/**
+ * The one message the site sends. There is no separate pricelist route any
+ * more: someone who has not picked a date is asking what things cost, so the
+ * message asks for the pricelist; someone who has is asking about that date.
+ * Either way it is the same form and the same button.
+ */
 export function enquiryMessage({ service, date, time } = {}) {
-  const lines = ['Hi Caroline! I would like to enquire about a booking.']
+  const lines = ['Hi Caroline!', '']
+
+  lines.push(
+    date
+      ? 'I would like to enquire about a booking.'
+      : 'I would like to ask about your services and prices.',
+  )
+
   if (service) lines.push(`Service: ${service}`)
   if (date) lines.push(`Preferred date: ${formatDate(date)}`)
   if (time) lines.push(`Preferred time: ${time}`)
-  lines.push('', 'Could you let me know your availability? Thank you!')
-  return lines.join('\n')
-}
 
-/**
- * The pricelist request. Deliberately has no date or service in it: someone
- * asking what things cost has not chosen either yet, and asking them to would
- * be the friction we removed the public price list to avoid.
- */
-export function pricelistMessage() {
-  return ['Hi Caroline! Could you send me your latest pricelist please?', '', 'Thank you!'].join(
-    '\n',
+  lines.push(
+    '',
+    date
+      ? 'Could you let me know if you are free? Thank you!'
+      : 'Could you send me your latest pricelist? Thank you!',
   )
+
+  return lines.join('\n')
 }
 
 function formatDate(iso) {

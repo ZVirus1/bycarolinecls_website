@@ -21,7 +21,8 @@
         <!-- The mark is black artwork on transparency, so invert paints it
              white without shipping a second copy that can drift. -->
         <img :src="logo" alt="" class="hero__mark" width="756" height="325" />
-        <h1 class="hero__title">{{ heroHeadline }}</h1>
+        <h1 class="hero__title">{{ business.tagline }}</h1>
+        <p class="hero__meta">{{ business.location }}</p>
       </figcaption>
     </figure>
   </section>
@@ -40,7 +41,7 @@
     <div class="shell">
       <h2 class="featured__heading">Portfolio</h2>
 
-      <InstagramGrid v-if="featured.length" :items="featured" :min-tile="230" />
+      <InstagramGrid v-if="featured.length" :items="featured" />
       <p v-else class="empty">Loading the latest work…</p>
 
       <div class="featured__tail">
@@ -57,16 +58,12 @@
        quote can account for date, location and party size. -->
   <section class="section pricing-teaser">
     <div class="shell">
-      <p class="eyebrow">Services</p>
-      <h2 class="featured__heading">What I do</h2>
+      <h2 class="featured__heading">Services</h2>
       <ul class="teaser__list">
-        <li v-for="s in teaserServices" :key="s.id">
-          <span>{{ s.description }}</span>
-        </li>
+        <li v-for="s in services" :key="s.id">{{ s.description }}</li>
       </ul>
-      <a :href="pricelistHref" target="_blank" rel="noopener noreferrer" class="btn btn--ghost">
-        Get our latest pricelist
-      </a>
+      <p class="teaser__note">{{ pricelistNote }}</p>
+      <router-link to="/book" class="btn btn--ghost">Get our latest pricelist</router-link>
     </div>
   </section>
 
@@ -74,8 +71,7 @@
   <section class="cta">
     <div class="shell">
       <h2 class="cta__title">Ready to book?</h2>
-      <p class="cta__sub">Send me your date and service, and I reply within 24 hours.</p>
-      <router-link to="/book" class="btn btn--ondark">Enquire</router-link>
+      <router-link to="/book" class="btn btn--ondark">Contact me</router-link>
     </div>
   </section>
 </template>
@@ -85,21 +81,23 @@ import { computed, onMounted } from 'vue'
 import InstagramGrid from '../components/InstagramGrid.vue'
 import SocialIcon from '../components/SocialIcon.vue'
 import logo from '../assets/logo.png'
-import { business, heroHeadline, heroImages, instagramUrl } from '../content/site.js'
+import { business, heroImages, instagramUrl, pricelistNote } from '../content/site.js'
 import { publicServices } from '@bycarolinecls/shared/services'
 import { useInstagramFeed } from '../lib/instagram.js'
-import { whatsappLink, pricelistMessage } from '../lib/whatsapp.js'
 
 // One page only. The home grid is a taster - "View full portfolio" is what
 // leads to the feed that keeps loading.
-const { items, start } = useInstagramFeed({ pageSize: 8 })
+const { items, start } = useInstagramFeed({ pageSize: 10 })
 onMounted(start)
 
 // The fallback set is longer than one Instagram page, so trim either source
-// to the same eight tiles and the section keeps its shape.
-const featured = computed(() => items.value.slice(0, 8))
-const teaserServices = computed(() => publicServices().slice(0, 4))
-const pricelistHref = whatsappLink(pricelistMessage())
+// to the same ten tiles and the section keeps its shape.
+const featured = computed(() => items.value.slice(0, 10))
+
+// Every service, not a sample: this list and the dropdown on /book are the
+// same catalogue, and a visitor should not find options there that the
+// homepage never mentioned.
+const services = publicServices()
 </script>
 
 <style scoped>
@@ -152,7 +150,7 @@ const pricelistHref = whatsappLink(pricelistMessage())
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 14px;
   padding: var(--gutter);
   text-align: center;
 }
@@ -165,14 +163,22 @@ const pricelistHref = whatsappLink(pricelistMessage())
   filter: invert(1) drop-shadow(0 1px 12px rgba(0, 0, 0, 0.45));
 }
 
+/* The display face, as it was before the banner became three panels. White
+   rather than black only because it now sits over a photograph. */
 .hero__title {
-  font-family: var(--body);
-  font-size: clamp(11.5px, 1.15vw, 14px);
-  font-weight: 500;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  text-indent: 0.28em;
+  font-size: clamp(1.7rem, 2.7vw, 2.6rem);
+  line-height: 1.1;
   color: #fff;
+  margin: 0;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.5);
+}
+
+.hero__meta {
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
+  text-transform: uppercase;
+  text-indent: var(--micro-track);
+  color: rgba(255, 255, 255, 0.82);
   margin: 0;
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
 }
@@ -241,14 +247,24 @@ const pricelistHref = whatsappLink(pricelistMessage())
 
 .teaser__list {
   list-style: none;
-  margin: 0 0 36px;
+  margin: 0;
   padding: 0;
   max-width: 640px;
 }
 
 .teaser__list li {
-  padding: 14px 0;
+  font-family: var(--display);
+  font-size: clamp(17px, 1.5vw, 20px);
+  letter-spacing: 0.01em;
+  padding: 13px 0;
   border-bottom: 1px solid var(--rule);
+}
+
+.teaser__note {
+  max-width: 640px;
+  margin: 22px 0 30px;
+  font-size: 14px;
+  color: var(--ink-soft);
 }
 
 .cta {
@@ -260,12 +276,6 @@ const pricelistHref = whatsappLink(pricelistMessage())
 
 .cta__title {
   font-size: var(--step-h2);
-  margin-bottom: 12px;
-}
-
-.cta__sub {
-  color: rgba(255, 255, 255, 0.75);
-  margin: 0 auto 30px;
-  max-width: 48ch;
+  margin-bottom: 30px;
 }
 </style>

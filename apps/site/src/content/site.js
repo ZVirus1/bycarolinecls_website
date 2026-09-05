@@ -38,13 +38,6 @@ export const heroImages = [
   },
 ]
 
-/**
- * The single line under the mark in the banner. Deliberately not `tagline`:
- * the logo already carries "MAKEUP ARTIST" across its lower edge, and
- * repeating that directly underneath reads as a mistake rather than emphasis.
- */
-export const heroHeadline = 'Bridal Makeup in Medan, Indonesia'
-
 export const business = {
   name: 'Bycarolinecls',
   tagline: 'Bridal Makeup Artist',
@@ -76,7 +69,7 @@ export const nav = [
   { label: 'Home', to: '/' },
   { label: 'Portfolio', to: '/portfolio' },
   { label: 'About', to: '/about' },
-  { label: 'Enquire', to: '/book', cta: true },
+  { label: 'Contact me', to: '/book', cta: true },
 ]
 
 /**

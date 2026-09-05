@@ -23,7 +23,7 @@ const routes = [
     path: '/book',
     name: 'book',
     component: () => import('../views/BookView.vue'),
-    meta: { title: 'Enquire' },
+    meta: { title: 'Contact me' },
   },
   {
     path: '/:pathMatch(.*)*',

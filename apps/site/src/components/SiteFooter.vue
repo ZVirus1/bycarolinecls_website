@@ -63,9 +63,13 @@ const year = new Date().getFullYear()
   text-transform: uppercase;
 }
 
+/* Centre, not baseline. The social links are inline-flex around an svg, and
+   an svg has no baseline of its own - left to align on baselines they sit a
+   few pixels off the plain text links beside them. */
 .ftr__links {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 10px 26px;
   list-style: none;
   margin: 0;

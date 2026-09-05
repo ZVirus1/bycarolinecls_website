@@ -114,6 +114,9 @@ function altFrom(caption) {
     .split('\n')[0]
     .replace(/https?:\/\/\S+/g, '')
     .replace(/[@#][\w.]+/g, '')
+    // Emoji, skin-tone modifiers, variation selectors and ZWJ. A screen
+    // reader says "dove, sparkles" out loud, which is noise in alt text.
+    .replace(/[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{FE0F}\u{200D}]/gu, '')
     .replace(/\s{2,}/g, ' ')
     .trim()
 

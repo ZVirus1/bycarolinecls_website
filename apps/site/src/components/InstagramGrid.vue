@@ -1,6 +1,6 @@
 <template>
   <ul class="ig-grid" :style="{ '--ig-min': `${minTile}px` }">
-    <li v-for="item in items" :key="item.id">
+    <li v-for="(item, i) in items" :key="item.id">
       <!-- A post tile is a link out to Instagram; a bundled fallback image is
            not a post, so it renders as a plain figure with no dead link. -->
       <component
@@ -13,10 +13,14 @@
             : {}
         "
       >
+        <!-- The first row is above the fold on any screen, so it loads
+             eagerly. Lazy-loading what is already in view just delays the
+             largest paint. Everything after it stays lazy. -->
         <img
           :src="item.src"
           :alt="item.alt"
-          loading="lazy"
+          :loading="i < eager ? 'eager' : 'lazy'"
+          :fetchpriority="i < eager ? 'high' : 'auto'"
           decoding="async"
           referrerpolicy="no-referrer"
         />
@@ -43,6 +47,8 @@ defineProps({
   items: { type: Array, required: true },
   // Smallest a tile may get before the grid drops a column.
   minTile: { type: Number, default: 240 },
+  // How many leading tiles load eagerly - roughly one row.
+  eager: { type: Number, default: 4 },
 })
 </script>
 

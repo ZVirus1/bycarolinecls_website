@@ -100,7 +100,7 @@ const year = new Date().getFullYear()
   margin: 56px auto 0;
   text-align: center;
   font-family: var(--display);
-  font-size: clamp(15px, 1.5vw, 19px);
+  font-size: clamp(13px, 1.1vw, 15px);
   letter-spacing: 0.03em;
   color: var(--ink-soft);
 }

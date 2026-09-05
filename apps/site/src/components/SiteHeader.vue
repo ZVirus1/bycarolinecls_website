@@ -9,9 +9,8 @@
         </li>
       </ul>
 
-      <router-link to="/" class="hdr__logo">
-        <span class="hdr__wordmark">{{ business.name }}</span>
-        <span class="hdr__tagline">{{ business.tagline }}</span>
+      <router-link to="/" class="hdr__logo" aria-label="Bycarolinecls home">
+        <img :src="logo" alt="" width="756" height="325" />
       </router-link>
 
       <router-link to="/book" class="btn hdr__cta">Enquire</router-link>
@@ -41,7 +40,8 @@
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import SocialIcon from './SocialIcon.vue'
-import { business, nav, socials } from '../content/site.js'
+import logo from '../assets/logo.png'
+import { nav, socials } from '../content/site.js'
 
 const open = ref(false)
 const route = useRoute()
@@ -83,35 +83,18 @@ watch(
   color: var(--ink);
 }
 
-/* Wordmark rather than the old script logo, which read "Carolinecls". */
 .hdr__logo {
   justify-self: center;
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  text-decoration: none;
-  color: var(--ink);
+  display: block;
+  line-height: 0;
 }
 
-.hdr__wordmark {
-  font-family: var(--display);
-  font-size: clamp(18px, 2.4vw, 26px);
-  line-height: 1;
-  letter-spacing: 0.17em;
-  text-transform: uppercase;
-  /* Letter-spacing hangs off the last character, so the word sits visually
-     left of centre. Indenting by the same amount squares it back up. */
-  text-indent: 0.17em;
-  white-space: nowrap;
-}
-
-.hdr__tagline {
-  font-size: 9px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  text-indent: 0.3em;
-  white-space: nowrap;
+/* Sized by width, height auto: the mark is 756x325 and carries "MAKEUP
+   ARTIST" in its lower fifth, so forcing it into a square box (as this once
+   did, at 88x88 with object-fit) shrinks that line to nothing. */
+.hdr__logo img {
+  width: clamp(160px, 15vw, 210px);
+  height: auto;
 }
 
 .hdr__cta {
@@ -174,17 +157,9 @@ watch(
   .hdr__bar {
     padding-block: 14px;
   }
-  /* Tighter here or the nowrap wordmark pushes the burger off a 375px
-     screen once the social icons have taken their share of the bar. */
-  .hdr__wordmark {
-    font-size: 15px;
-    letter-spacing: 0.12em;
-    text-indent: 0.12em;
-  }
-  .hdr__tagline {
-    font-size: 8px;
-    letter-spacing: 0.24em;
-    text-indent: 0.24em;
+  /* Smaller here or the mark crowds the icons and burger on a 375px screen. */
+  .hdr__logo img {
+    width: 132px;
   }
   .hdr__cta {
     display: none;

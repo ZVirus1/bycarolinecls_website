@@ -4,10 +4,8 @@
        would cut the face and a legibility scrim would dim the work. -->
   <section class="hero">
     <div class="hero__copy">
-      <p class="hero__name">{{ business.artist }}</p>
       <h1 class="hero__title">{{ business.tagline }}</h1>
       <p class="hero__meta">{{ business.location }}</p>
-      <router-link to="/book" class="btn hero__cta">Enquire</router-link>
     </div>
 
     <div class="hero__media">
@@ -122,14 +120,6 @@ const pricelistHref = whatsappLink(pricelistMessage())
   padding: clamp(40px, 7vw, 96px) clamp(24px, 5vw, 72px);
 }
 
-.hero__name {
-  font-size: var(--micro);
-  letter-spacing: var(--micro-track);
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  margin: 0;
-}
-
 .hero__title {
   font-size: var(--step-hero);
   max-width: 13ch;
@@ -143,11 +133,7 @@ const pricelistHref = whatsappLink(pricelistMessage())
   letter-spacing: var(--micro-track);
   text-transform: uppercase;
   color: var(--ink-faint);
-  margin: 2px 0 10px;
-}
-
-.hero__cta {
-  margin-top: 6px;
+  margin: 2px 0 0;
 }
 
 .hero__media {

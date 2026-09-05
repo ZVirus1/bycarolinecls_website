@@ -59,8 +59,8 @@ const year = new Date().getFullYear()
 }
 
 .soon__eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.24em;
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
   text-transform: uppercase;
   color: var(--ink-faint);
   margin: 0 0 16px;
@@ -91,9 +91,9 @@ const year = new Date().getFullYear()
 .soon__btn {
   display: inline-flex;
   align-items: center;
-  font-size: 11.5px;
+  font-size: var(--micro);
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--micro-track);
   text-transform: uppercase;
   padding: 14px 28px;
   border: 1px solid var(--ink);

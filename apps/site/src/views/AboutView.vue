@@ -60,8 +60,8 @@ const waHref = whatsappLink(enquiryMessage())
 }
 
 .about__aside dt {
-  font-size: 10.5px;
-  letter-spacing: 0.18em;
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
   text-transform: uppercase;
   color: var(--ink-faint);
   margin-bottom: 4px;

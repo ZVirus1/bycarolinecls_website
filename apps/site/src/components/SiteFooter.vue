@@ -21,10 +21,7 @@
       </nav>
     </div>
 
-    <p class="ftr__legal shell">
-      Copyright © {{ year }} <span class="ftr__legal-name">{{ business.name }}</span
-      >, all rights reserved
-    </p>
+    <p class="ftr__legal shell">Copyright © {{ year }} {{ business.name }}, all rights reserved</p>
   </footer>
 </template>
 
@@ -52,13 +49,18 @@ const year = new Date().getFullYear()
 .ftr__name {
   font-family: var(--display);
   font-size: 22px;
-  margin: 0 0 6px;
+  letter-spacing: 0.03em;
+  margin: 0 0 8px;
 }
 
+/* Was 14px sentence-case sans - the one line on the page that belonged to no
+   type style at all. Now the same micro-label as the nav above it. */
 .ftr__meta {
   margin: 0;
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
+  text-transform: uppercase;
 }
 
 .ftr__links {
@@ -72,8 +74,8 @@ const year = new Date().getFullYear()
 
 .ftr__links a {
   text-decoration: none;
-  font-size: 11.5px;
-  letter-spacing: 0.16em;
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
   text-transform: uppercase;
   color: var(--ink-soft);
 }
@@ -87,22 +89,19 @@ const year = new Date().getFullYear()
   gap: 7px;
 }
 
-/* Centred and set larger than a legal footnote usually is: this is the last
-   thing on every page, and the business name is what should be left in mind. */
+/* Centred and set large: it is the last thing on every page, and the business
+   name is what should be left in mind. Set entirely in the display face - it
+   used to be sans with the name in serif mid-sentence, which read as a
+   mistake rather than emphasis. */
 .ftr__legal {
   /* `auto` sides, not 0 - this element also carries .shell, whose
-     margin-inline: auto is what centres the 1200px block itself. A margin
-     shorthand with 0 sides silently overrides it and pins it flush left. */
+     margin-inline: auto is what centres the block itself. A margin shorthand
+     with 0 sides silently overrides it and pins it flush left. */
   margin: 56px auto 0;
   text-align: center;
-  font-size: 14.5px;
-  color: var(--ink-soft);
-}
-
-.ftr__legal-name {
   font-family: var(--display);
-  font-size: 1.2em;
-  letter-spacing: 0.06em;
-  color: var(--ink);
+  font-size: clamp(15px, 1.5vw, 19px);
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
 }
 </style>

@@ -140,8 +140,8 @@ watch(
 
 .hdr__nav a {
   text-decoration: none;
-  font-size: 11.5px;
-  letter-spacing: 0.18em;
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
   text-transform: uppercase;
   color: var(--ink-soft);
   padding-bottom: 4px;

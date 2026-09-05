@@ -49,7 +49,7 @@
         <router-link to="/portfolio" class="btn btn--ghost">View full portfolio</router-link>
         <a :href="instagramUrl" target="_blank" rel="noopener noreferrer" class="btn btn--ghost">
           <SocialIcon name="instagram" :size="16" />
-          Follow on Instagram
+          Follow me on Instagram
         </a>
       </div>
     </div>
@@ -123,8 +123,8 @@ const pricelistHref = whatsappLink(pricelistMessage())
 }
 
 .hero__name {
-  font-size: 11px;
-  letter-spacing: 0.28em;
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
   text-transform: uppercase;
   color: var(--ink-soft);
   margin: 0;
@@ -139,8 +139,8 @@ const pricelistHref = whatsappLink(pricelistMessage())
 }
 
 .hero__meta {
-  font-size: 12px;
-  letter-spacing: 0.16em;
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
   text-transform: uppercase;
   color: var(--ink-faint);
   margin: 2px 0 10px;

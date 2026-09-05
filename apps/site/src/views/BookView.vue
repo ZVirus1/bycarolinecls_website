@@ -118,8 +118,8 @@ const pricelistHref = whatsappLink(pricelistMessage())
   gap: 14px;
   margin: 26px 0;
   color: var(--ink-faint);
-  font-size: 11px;
-  letter-spacing: 0.16em;
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
   text-transform: uppercase;
 }
 
@@ -138,8 +138,8 @@ const pricelistHref = whatsappLink(pricelistMessage())
 
 .field__label {
   display: block;
-  font-size: 10.5px;
-  letter-spacing: 0.16em;
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
   text-transform: uppercase;
   color: var(--ink-soft);
   margin-bottom: 7px;

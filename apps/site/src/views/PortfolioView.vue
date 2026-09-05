@@ -1,7 +1,19 @@
 <template>
   <section class="section">
     <div class="shell">
-      <h1 class="page-title">Portfolio</h1>
+      <!-- Heading and actions share a line: the grid is the page, so the
+           buttons should not cost it a whole band of vertical space. -->
+      <div class="page-head">
+        <h1 class="page-title">Portfolio</h1>
+
+        <div class="page-actions">
+          <a :href="instagramUrl" target="_blank" rel="noopener noreferrer" class="btn btn--ghost">
+            <SocialIcon name="instagram" :size="16" />
+            Follow me on Instagram
+          </a>
+          <router-link to="/book" class="btn">Enquire</router-link>
+        </div>
+      </div>
 
       <InstagramGrid v-if="items.length" :items="items" :min-tile="240" />
 
@@ -16,14 +28,6 @@
       <div v-if="!done" ref="sentinel" class="sentinel" aria-hidden="true"></div>
       <p v-if="loading" class="loading">Loading more…</p>
       <p v-else-if="done && live && items.length" class="caught-up">You are all caught up.</p>
-
-      <div class="tail">
-        <a :href="instagramUrl" target="_blank" rel="noopener noreferrer" class="btn btn--ghost">
-          <SocialIcon name="instagram" :size="16" />
-          Follow on Instagram
-        </a>
-        <router-link to="/book" class="btn">Enquire</router-link>
-      </div>
     </div>
   </section>
 </template>
@@ -80,9 +84,24 @@ onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <style scoped>
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px 24px;
+  margin-bottom: 34px;
+}
+
 .page-title {
   font-size: var(--step-h2);
-  margin-bottom: 34px;
+  margin: 0;
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .sentinel {
@@ -92,8 +111,8 @@ onBeforeUnmount(() => observer?.disconnect())
 .loading,
 .caught-up {
   text-align: center;
-  font-size: 11.5px;
-  letter-spacing: 0.16em;
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
   text-transform: uppercase;
   color: var(--ink-faint);
   margin: 32px 0 0;
@@ -104,12 +123,5 @@ onBeforeUnmount(() => observer?.disconnect())
   font-size: 14px;
   padding: 40px 0;
   border-block: 1px solid var(--rule);
-}
-
-.tail {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 48px;
 }
 </style>

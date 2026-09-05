@@ -22,16 +22,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // The public price list. World-readable on purpose: the public pricing
-    // page and /api/pricing read it without credentials. Only admins write.
-    match /settings/pricing {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Everything else under settings/ (counters, sync status, the retired
-    // availability doc) stays admin-only: nothing public reads them.
-    match /settings/{other} {
+    // Everything under settings/ - pricing, counters, sync status - is
+    // admin-only. settings/pricing used to be world-readable to feed the
+    // public pricing page and /api/pricing; both are gone, prices are sent
+    // over WhatsApp instead, so nothing public reads this database at all.
+    match /settings/{doc} {
       allow read, write: if isAdmin();
     }
 

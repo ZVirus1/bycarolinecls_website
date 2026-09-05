@@ -31,7 +31,7 @@
       </p>
 
       <div class="tail">
-        <router-link to="/book" class="btn">Book Now</router-link>
+        <router-link to="/book" class="btn">Enquire</router-link>
       </div>
     </div>
   </section>
@@ -90,7 +90,7 @@ const visible = computed(() =>
 
 .grid img {
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   object-fit: cover;
 }
 

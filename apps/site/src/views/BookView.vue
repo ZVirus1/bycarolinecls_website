@@ -2,20 +2,37 @@
   <section class="section">
     <div class="shell book">
       <div class="book__intro">
-        <p class="eyebrow">Booking</p>
-        <h1 class="page-title">Make an enquiry</h1>
+        <p class="eyebrow">Enquire</p>
+        <h1 class="page-title">Get in touch</h1>
         <p class="lede">{{ bookingNote }}</p>
       </div>
 
+      <!-- Price shoppers first: they have no date in mind yet, so asking for
+           one before they know the cost is the wrong order. -->
+      <div class="book__pricelist">
+        <h2 class="book__sub">Just after prices?</h2>
+        <p class="book__note book__note--lead">{{ pricelistNote }}</p>
+        <a
+          :href="pricelistHref"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn book__go"
+        >
+          Get our latest pricelist
+        </a>
+      </div>
+
+      <div class="book__or"><span>or</span></div>
+
       <form class="book__form" @submit.prevent>
-        <h2 class="book__sub">Your enquiry</h2>
+        <h2 class="book__sub">Enquire about a date</h2>
 
         <label class="field">
           <span class="field__label">Service</span>
           <select v-model="service" class="field__input">
             <option value="">Not sure yet</option>
             <option v-for="s in services" :key="s.id" :value="s.description">
-              {{ s.description }} ({{ rupiah(s.price) }})
+              {{ s.description }}
             </option>
           </select>
         </label>
@@ -44,10 +61,9 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { bookingNote } from '../content/site.js'
+import { bookingNote, pricelistNote } from '../content/site.js'
 import { publicServices } from '@bycarolinecls/shared/services'
-import { rupiah } from '@bycarolinecls/shared/format'
-import { whatsappLink, enquiryMessage } from '../lib/whatsapp.js'
+import { whatsappLink, enquiryMessage, pricelistMessage } from '../lib/whatsapp.js'
 
 const services = publicServices()
 const selectedDate = ref('')
@@ -62,6 +78,9 @@ const waHref = computed(() =>
     enquiryMessage({ service: service.value, date: selectedDate.value, time: time.value }),
   ),
 )
+
+// Static, so it is computed once rather than on every keystroke in the form.
+const pricelistHref = whatsappLink(pricelistMessage())
 </script>
 
 <style scoped>
@@ -83,10 +102,38 @@ const waHref = computed(() =>
   margin-bottom: 22px;
 }
 
+.book__pricelist,
 .book__form {
   border: 1px solid var(--rule);
   background: var(--paper-alt);
   padding: clamp(20px, 3vw, 30px);
+}
+
+.book__note--lead {
+  margin: 0 0 20px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+/* A rule with the word sitting in the gap, so the two routes read as
+   alternatives rather than as steps in a sequence. */
+.book__or {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 26px 0;
+  color: var(--ink-faint);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.book__or::before,
+.book__or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
 }
 
 .field {

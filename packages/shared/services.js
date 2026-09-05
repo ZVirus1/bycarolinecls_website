@@ -1,22 +1,25 @@
-// Prices in IDR (whole rupiah). Single source of truth for both the public
-// pricing page and the admin invoice generator.
+// The service catalogue: names and categories, NO PRICES.
 //
-// `public: false` hides a row from the public pricing page but keeps it
+// This module is imported by the PUBLIC site, so anything in it ships in the
+// browser bundle that anyone can read. Prices deliberately live in ./prices.js
+// instead, which only the admin imports - the public site shows service names
+// and sends the pricelist over WhatsApp, so an amount appearing here would
+// leak into the public bundle even though no page renders it.
+//
+// `public: false` keeps a row out of the site's service lists while leaving it
 // available as an invoice line item (e.g. complimentary trials).
-export const SERVICES = [
-  { id: 'party',            description: 'Makeup Party / Graduation',            price: 1_000_000, public: true,  category: 'Makeup' },
-  { id: 'bridesmaid',       description: 'Makeup Sister / Bridesmaid',           price: 1_000_000, public: true,  category: 'Makeup' },
-  { id: 'bridesmaid-retouch', description: 'Makeup Sister / Bridesmaid + Retouch', price: 1_700_000, public: true, category: 'Makeup' },
-  { id: 'mom',              description: 'Makeup Mom / Mature',                  price: 1_200_000, public: true,  category: 'Makeup' },
-  { id: 'mom-retouch',      description: 'Makeup Mom / Mature + Retouch',        price: 1_800_000, public: true,  category: 'Makeup' },
-  { id: 'wedding-half',     description: 'Makeup Wedding Half Day',              price: 3_800_000, public: true,  category: 'Wedding' },
-  { id: 'wedding-full',     description: 'Makeup Wedding Full Day',              price: 6_000_000, public: true,  category: 'Wedding' },
-  { id: 'engagement',       description: 'Makeup Engagement',                    price: 1_800_000, public: true,  category: 'Wedding' },
-  { id: 'prewedding',       description: 'Makeup Prewedding',                    price: 1_500_000, public: true,  category: 'Wedding' },
-  { id: 'trial',            description: 'Makeup Trial',                         price: 0,         public: false, category: 'Makeup' },
+export const SERVICE_CATALOGUE = [
+  { id: 'party',              description: 'Makeup Party / Graduation',            public: true,  category: 'Makeup' },
+  { id: 'bridesmaid',         description: 'Makeup Sister / Bridesmaid',           public: true,  category: 'Makeup' },
+  { id: 'bridesmaid-retouch', description: 'Makeup Sister / Bridesmaid + Retouch', public: true,  category: 'Makeup' },
+  { id: 'mom',                description: 'Makeup Mom / Mature',                  public: true,  category: 'Makeup' },
+  { id: 'mom-retouch',        description: 'Makeup Mom / Mature + Retouch',        public: true,  category: 'Makeup' },
+  { id: 'wedding-half',       description: 'Makeup Wedding Half Day',              public: true,  category: 'Wedding' },
+  { id: 'wedding-full',       description: 'Makeup Wedding Full Day',              public: true,  category: 'Wedding' },
+  { id: 'engagement',         description: 'Makeup Engagement',                    public: true,  category: 'Wedding' },
+  { id: 'prewedding',         description: 'Makeup Prewedding',                    public: true,  category: 'Wedding' },
+  { id: 'trial',              description: 'Makeup Trial',                         public: false, category: 'Makeup' },
 ]
 
-// Backwards-compatible alias for the existing invoice components.
-export const PREDEFINED_SERVICES = SERVICES.map(({ description, price }) => ({ description, price }))
-
-export const publicServices = () => SERVICES.filter((s) => s.public)
+/** Services the public site may name. Still no prices - see the note above. */
+export const publicServices = () => SERVICE_CATALOGUE.filter((s) => s.public)

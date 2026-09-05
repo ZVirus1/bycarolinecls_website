@@ -13,7 +13,7 @@
         <img :src="logo" alt="" width="88" height="88" />
       </router-link>
 
-      <router-link to="/book" class="btn hdr__cta">Book Now</router-link>
+      <router-link to="/book" class="btn hdr__cta">Enquire</router-link>
 
       <button
         class="hdr__burger"
@@ -28,11 +28,8 @@
 
     <nav id="primary-nav" class="hdr__nav" :class="{ 'is-open': open }" aria-label="Primary">
       <ul>
-        <li v-for="item in nav" :key="item.to">
+        <li v-for="item in nav" :key="item.to" :class="{ 'hdr__nav-cta': item.cta }">
           <router-link :to="item.to" @click="open = false">{{ item.label }}</router-link>
-        </li>
-        <li class="hdr__nav-cta">
-          <router-link to="/book" @click="open = false">Book Now</router-link>
         </li>
       </ul>
     </nav>

@@ -1,20 +1,30 @@
 <template>
-  <!-- Hero -->
+  <!-- Hero. Two columns rather than text-over-image: every photo in this
+       portfolio is portrait, and the makeup IS the product - a full-bleed crop
+       would cut the face and a legibility scrim would dim the work. -->
   <section class="hero">
-    <div class="hero__media">
-      <img v-if="heroImage" :src="heroImage" alt="" fetchpriority="high" />
-      <div v-else class="hero__placeholder">
-        <p>
-          Add a photo to <code>apps/site/public/</code> and set
-          <code>heroImage</code> in <code>src/content/site.js</code>
-        </p>
-      </div>
-    </div>
-
     <div class="hero__copy">
       <p class="hero__name">{{ business.artist }}</p>
       <h1 class="hero__title">{{ business.tagline }}</h1>
-      <router-link to="/book" class="btn btn--ondark">Book a Service</router-link>
+      <p class="hero__meta">{{ business.location }}</p>
+      <router-link to="/book" class="btn hero__cta">Enquire</router-link>
+    </div>
+
+    <div class="hero__media">
+      <img
+        v-if="heroImage"
+        :src="heroImage"
+        alt=""
+        width="1600"
+        height="2000"
+        fetchpriority="high"
+      />
+      <div v-else class="hero__placeholder">
+        <p>
+          Add a portrait photo to <code>apps/site/public/</code> and set
+          <code>heroImage</code> in <code>src/content/site.js</code>
+        </p>
+      </div>
     </div>
   </section>
 
@@ -47,19 +57,20 @@
     </div>
   </section>
 
-  <!-- Pricing teaser -->
+  <!-- Services. No prices: the pricelist goes out over WhatsApp so every
+       quote can account for date, location and party size. -->
   <section class="section pricing-teaser">
     <div class="shell">
       <p class="eyebrow">Services</p>
-      <h2 class="featured__heading">Pricing</h2>
+      <h2 class="featured__heading">What I do</h2>
       <ul class="teaser__list">
         <li v-for="s in teaserServices" :key="s.id">
           <span>{{ s.description }}</span>
-          <span class="teaser__dots" aria-hidden="true" />
-          <span class="teaser__price">{{ rupiah(s.price) }}</span>
         </li>
       </ul>
-      <router-link to="/pricing" class="btn btn--ghost">See all pricing</router-link>
+      <a :href="pricelistHref" target="_blank" rel="noopener noreferrer" class="btn btn--ghost">
+        Get our latest pricelist
+      </a>
     </div>
   </section>
 
@@ -68,7 +79,7 @@
     <div class="shell">
       <h2 class="cta__title">Ready to book?</h2>
       <p class="cta__sub">Send me your date and service, and I reply within 24 hours.</p>
-      <router-link to="/book" class="btn btn--ondark">Book Now</router-link>
+      <router-link to="/book" class="btn btn--ondark">Enquire</router-link>
     </div>
   </section>
 </template>
@@ -77,33 +88,83 @@
 import { computed } from 'vue'
 import { business, portfolio, heroImage } from '../content/site.js'
 import { publicServices } from '@bycarolinecls/shared/services'
-import { rupiah } from '@bycarolinecls/shared/format'
+import { whatsappLink, pricelistMessage } from '../lib/whatsapp.js'
 
 const featured = computed(() => portfolio.slice(0, 6))
 const teaserServices = computed(() => publicServices().slice(0, 4))
+const pricelistHref = whatsappLink(pricelistMessage())
 </script>
 
 <style scoped>
 .hero {
-  position: relative;
-  min-height: clamp(440px, 72vh, 720px);
   display: grid;
+  /* Copy takes the narrower column: the photo is the thing worth looking at. */
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  align-items: stretch;
+  background: var(--paper-alt);
+  border-bottom: 1px solid var(--rule);
 }
 
-.hero__media,
 .hero__copy {
-  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  padding: clamp(40px, 7vw, 96px) clamp(24px, 5vw, 72px);
 }
 
+.hero__name {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.hero__title {
+  font-size: var(--step-hero);
+  max-width: 13ch;
+  margin: 0;
+  /* Optical: the display face sits large here, so pull the tracking in. */
+  letter-spacing: -0.01em;
+}
+
+.hero__meta {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 2px 0 10px;
+}
+
+.hero__cta {
+  margin-top: 6px;
+}
+
+.hero__media {
+  position: relative;
+  /* Sets the height of the whole hero row. Without this the img falls back to
+     its intrinsic 4:5 height (~980px at this column width) and the copy column
+     stretches to match, stranding a block of empty paper beside it. */
+  min-height: clamp(460px, 74vh, 780px);
+}
+
+/* Absolute so the image fills the box above rather than defining it. The photo
+   is 4:5 and the column is wider than that, so it crops from top and bottom -
+   never through the face, which the object-position keeps in frame. */
 .hero__media img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: 50% 22%;
 }
 
 .hero__placeholder {
   width: 100%;
-  height: 100%;
+  min-height: clamp(460px, 74vh, 780px);
   display: grid;
   place-items: center;
   background: linear-gradient(160deg, #3a3733, #1d1d1d);
@@ -113,33 +174,38 @@ const teaserServices = computed(() => publicServices().slice(0, 4))
   padding: 20px;
 }
 
-.hero__copy {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 18px;
-  padding: 40px var(--gutter);
-  color: #fff;
-  /* Scrim keeps the headline legible over any photo. */
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.5));
-}
+@media (max-width: 760px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
 
-.hero__name {
-  font-size: 12px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  margin: 0;
-  opacity: 0.9;
-}
+  /* Photo first on mobile - it does the selling before any copy is read. */
+  .hero__media {
+    order: -1;
+  }
 
-.hero__title {
-  font-size: var(--step-hero);
-  max-width: 14ch;
-  margin: 0;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+  .hero__media {
+    min-height: 0;
+  }
+
+  /* Back to static on mobile so the photo keeps its true 4:5 and sets its own
+     height, rather than being cropped into a band. */
+  .hero__media img {
+    position: static;
+    aspect-ratio: 4 / 5;
+    height: auto;
+    max-height: 76vh;
+  }
+
+  .hero__copy {
+    align-items: center;
+    text-align: center;
+    padding: clamp(28px, 8vw, 44px) var(--gutter) clamp(34px, 9vw, 52px);
+  }
+
+  .hero__title {
+    max-width: 16ch;
+  }
 }
 
 .intro {
@@ -168,7 +234,7 @@ const teaserServices = computed(() => publicServices().slice(0, 4))
 
 .featured__grid img {
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   object-fit: cover;
 }
 
@@ -204,22 +270,8 @@ const teaserServices = computed(() => publicServices().slice(0, 4))
 }
 
 .teaser__list li {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
   padding: 14px 0;
   border-bottom: 1px solid var(--rule);
-}
-
-.teaser__dots {
-  flex: 1;
-  border-bottom: 1px dotted var(--ink-faint);
-  transform: translateY(-3px);
-}
-
-.teaser__price {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .cta {

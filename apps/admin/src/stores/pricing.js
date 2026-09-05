@@ -1,6 +1,6 @@
 import { ref as vueRef } from 'vue'
 import { db, doc, getDoc, setDoc } from './firebase.js'
-import { SERVICES as DEFAULT_SERVICES } from '@bycarolinecls/shared/services'
+import { SERVICES as DEFAULT_SERVICES } from '@bycarolinecls/shared/prices'
 
 /**
  * The service menu, stored in Firestore at settings/pricing.

@@ -16,17 +16,14 @@ const routes = [
     component: () => import('../views/AboutView.vue'),
     meta: { title: 'About' },
   },
-  {
-    path: '/pricing',
-    name: 'pricing',
-    component: () => import('../views/PricingView.vue'),
-    meta: { title: 'Pricing' },
-  },
+  // Prices are no longer published. Kept as a redirect so old links, any
+  // printed material and search results still land somewhere useful.
+  { path: '/pricing', redirect: '/book' },
   {
     path: '/book',
     name: 'book',
     component: () => import('../views/BookView.vue'),
-    meta: { title: 'Book Now' },
+    meta: { title: 'Enquire' },
   },
   {
     path: '/:pathMatch(.*)*',

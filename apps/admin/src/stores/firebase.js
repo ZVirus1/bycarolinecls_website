@@ -51,7 +51,8 @@ const storage = getStorage(app)
 const auth = getAuth(app)
 
 // Re-exported here so existing views keep their import paths.
-export { SERVICES, PREDEFINED_SERVICES, publicServices } from '@bycarolinecls/shared/services'
+export { publicServices } from '@bycarolinecls/shared/services'
+export { SERVICES, PREDEFINED_SERVICES } from '@bycarolinecls/shared/prices'
 export { rupiah, dmy, longDate, escapeHtml } from '@bycarolinecls/shared/format'
 
 export {

@@ -18,6 +18,19 @@ export function enquiryMessage({ service, date, time } = {}) {
   return lines.join('\n')
 }
 
+/**
+ * The pricelist request. Deliberately has no date or service in it: someone
+ * asking what things cost has not chosen either yet, and asking them to would
+ * be the friction we removed the public price list to avoid.
+ */
+export function pricelistMessage() {
+  return [
+    'Hi Caroline! Could you send me your latest pricelist please?',
+    '',
+    'Thank you!',
+  ].join('\n')
+}
+
 function formatDate(iso) {
   const d = new Date(`${iso}T00:00:00`)
   return isNaN(d)

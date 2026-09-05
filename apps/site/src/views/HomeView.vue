@@ -1,35 +1,29 @@
 <template>
-  <!-- Hero. Two columns rather than text-over-image: every photo in this
-       portfolio is portrait, and the makeup IS the product - a full-bleed crop
-       would cut the face and a legibility scrim would dim the work.
-
-       The photo is pinned to the right half out of flow so the copy can sit in
-       an ordinary .shell and line up with every other heading on the site.
-       Media first in the DOM so it stacks above the copy on mobile. -->
+  <!-- Banner: three portraits, the mark and headline over the middle one.
+       The outer two are clean - only the centre carries a scrim, and only
+       because white type has to stay legible over a photograph. -->
   <section class="hero">
-    <div class="hero__media">
+    <figure
+      v-for="(shot, i) in heroImages"
+      :key="shot.src"
+      class="hero__panel"
+      :class="{ 'is-centre': i === 1 }"
+    >
       <img
-        v-if="heroImage"
-        :src="heroImage"
-        alt=""
-        width="1600"
-        height="2000"
-        fetchpriority="high"
+        :src="shot.src"
+        :alt="i === 1 ? '' : shot.alt"
+        loading="eager"
+        :fetchpriority="i === 1 ? 'high' : 'auto'"
+        decoding="async"
       />
-      <div v-else class="hero__placeholder">
-        <p>
-          Add a portrait photo to <code>apps/site/public/</code> and set <code>heroImage</code> in
-          <code>src/content/site.js</code>
-        </p>
-      </div>
-    </div>
 
-    <div class="shell hero__inner">
-      <div class="hero__copy">
-        <h1 class="hero__title">{{ business.tagline }}</h1>
-        <p class="hero__meta">{{ business.location }}</p>
-      </div>
-    </div>
+      <figcaption v-if="i === 1" class="hero__overlay">
+        <!-- The mark is black artwork on transparency, so invert paints it
+             white without shipping a second copy that can drift. -->
+        <img :src="logo" alt="" class="hero__mark" width="756" height="325" />
+        <h1 class="hero__title">{{ heroHeadline }}</h1>
+      </figcaption>
+    </figure>
   </section>
 
   <!-- Intro -->
@@ -90,7 +84,8 @@
 import { computed, onMounted } from 'vue'
 import InstagramGrid from '../components/InstagramGrid.vue'
 import SocialIcon from '../components/SocialIcon.vue'
-import { business, heroImage, instagramUrl } from '../content/site.js'
+import logo from '../assets/logo.png'
+import { business, heroHeadline, heroImages, instagramUrl } from '../content/site.js'
 import { publicServices } from '@bycarolinecls/shared/services'
 import { useInstagramFeed } from '../lib/instagram.js'
 import { whatsappLink, pricelistMessage } from '../lib/whatsapp.js'
@@ -109,103 +104,95 @@ const pricelistHref = whatsappLink(pricelistMessage())
 
 <style scoped>
 .hero {
-  position: relative;
-  background: var(--paper-alt);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: var(--paper);
   border-bottom: 1px solid var(--rule);
 }
 
-/* Out of flow and pinned right, so the copy below can be a plain .shell and
-   inherit the site's alignment for free. Aligning it with padding instead
-   would need a 100vw sum, which is out by the width of the scrollbar. */
-.hero__media {
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: 52%;
+.hero__panel {
+  position: relative;
+  height: clamp(360px, 58vh, 620px);
+  margin: 0;
+  overflow: hidden;
+  background: var(--paper-alt);
 }
 
-/* The photo is 4:5 and the half it sits in is wider than that, so it crops
-   top and bottom - never through the face, which object-position keeps up. */
-.hero__media img,
-.hero__placeholder {
+/* Direct child only. Without the combinator this also matches the mark inside
+   the overlay and stretches it to fill the panel, cropping the wordmark. */
+.hero__panel > img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: 50% 22%;
 }
 
-.hero__inner {
-  /* Above the photo, and it is what sets the height of the whole band. */
-  position: relative;
-  display: flex;
-  align-items: center;
-  min-height: clamp(460px, 74vh, 780px);
+/* Only the centre panel. It does dim that photograph, which is the cost of
+   putting white type over a face - so the other two stay completely clean and
+   the work still gets shown undimmed either side of it. */
+.hero__panel.is-centre::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0.42) 34%,
+    rgba(0, 0, 0, 0.42) 66%,
+    rgba(0, 0, 0, 0.56) 100%
+  );
 }
 
-.hero__copy {
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 14px;
-  /* Stops short of the photo's edge rather than running under it. */
-  width: min(100%, 46%);
-  padding-block: clamp(40px, 7vw, 96px);
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: var(--gutter);
+  text-align: center;
+}
+
+.hero__mark {
+  width: clamp(170px, 20vw, 290px);
+  height: auto;
+  /* Black-on-transparent artwork; invert paints it white and keeps the alpha,
+     so there is no second file to keep in step with the header's. */
+  filter: invert(1) drop-shadow(0 1px 12px rgba(0, 0, 0, 0.45));
 }
 
 .hero__title {
-  font-size: var(--step-hero);
-  max-width: 13ch;
-  margin: 0;
-  /* Optical: the display face sits large here, so pull the tracking in. */
-  letter-spacing: -0.01em;
-}
-
-.hero__meta {
-  font-size: var(--micro);
-  letter-spacing: var(--micro-track);
+  font-family: var(--body);
+  font-size: clamp(11.5px, 1.15vw, 14px);
+  font-weight: 500;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--ink-faint);
-  margin: 2px 0 0;
+  text-indent: 0.28em;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
 }
 
-.hero__placeholder {
-  display: grid;
-  place-items: center;
-  background: linear-gradient(160deg, #3a3733, #1d1d1d);
-  color: #a09a90;
-  font-size: 13px;
-  text-align: center;
-  padding: 20px;
-}
-
-@media (max-width: 760px) {
-  /* Back in flow and full width, so the photo keeps its true 4:5 and sets its
-     own height rather than being cropped into a band. */
-  .hero__media {
-    position: static;
-    width: 100%;
+@media (max-width: 860px) {
+  /* Three panels on a narrow screen are three unreadable stripes, so the
+     outer two step aside and the centre one carries the banner alone. */
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
 
-  .hero__media img,
-  .hero__placeholder {
-    aspect-ratio: 4 / 5;
+  .hero__panel:not(.is-centre) {
+    display: none;
+  }
+
+  .hero__panel.is-centre {
     height: auto;
-    max-height: 76vh;
-  }
-
-  .hero__inner {
-    display: block;
-    min-height: 0;
-  }
-
-  .hero__copy {
-    width: 100%;
-    align-items: center;
-    text-align: center;
-    padding-block: clamp(28px, 8vw, 44px) clamp(34px, 9vw, 52px);
-  }
-
-  .hero__title {
-    max-width: 16ch;
+    aspect-ratio: 4 / 5;
+    max-height: 78vh;
   }
 }
 

@@ -10,7 +10,40 @@
  * was shot in and is never letterboxed or dimmed behind a scrim. Leave null to
  * show a placeholder instead of a broken image.
  */
-export const heroImage = '/hero.webp'
+/**
+ * The homepage banner: three portraits side by side, with the mark and
+ * headline over the middle one. Three rather than one because the work spans
+ * quite different traditions and a single photo can only argue for one of
+ * them. Order is left, centre, right - the centre panel is the one carrying
+ * the text, so it wants a composition that survives a scrim.
+ *
+ * On phones only the centre panel shows: three slivers on a 375px screen
+ * would be three unreadable stripes.
+ */
+export const heroImages = [
+  {
+    src: '/portfolio/bridal-hijab-headpiece.webp',
+    alt: 'Bridal makeup with hijab and a floral pearl headpiece',
+  },
+  // Centre deliberately: it is the darkest of the three, and it is the panel
+  // carrying white type. A bright photo here needs a scrim heavy enough to
+  // flatten the makeup before the mark becomes legible.
+  {
+    src: '/portfolio/bridal-beaded-cape.webp',
+    alt: 'Evening bridal makeup with a beaded gown and velvet cape',
+  },
+  {
+    src: '/portfolio/traditional-indian.webp',
+    alt: 'Indian bridal makeup with kundan jewellery and a soft matte base',
+  },
+]
+
+/**
+ * The single line under the mark in the banner. Deliberately not `tagline`:
+ * the logo already carries "MAKEUP ARTIST" across its lower edge, and
+ * repeating that directly underneath reads as a mistake rather than emphasis.
+ */
+export const heroHeadline = 'Bridal Makeup in Medan, Indonesia'
 
 export const business = {
   name: 'Bycarolinecls',

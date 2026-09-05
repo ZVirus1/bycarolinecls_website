@@ -1,18 +1,20 @@
 <template>
   <section class="section">
     <div class="shell">
-      <!-- Heading and actions share a line: the grid is the page, so the
-           buttons should not cost it a whole band of vertical space. -->
+      <!-- Heading and the follow link share a line: the grid is the page, so
+           this should not cost it a whole band of vertical space. -->
       <div class="page-head">
         <h1 class="page-title">Portfolio</h1>
 
-        <div class="page-actions">
-          <a :href="instagramUrl" target="_blank" rel="noopener noreferrer" class="btn btn--ghost">
-            <SocialIcon name="instagram" :size="16" />
-            Follow me on Instagram
-          </a>
-          <router-link to="/book" class="btn">Enquire</router-link>
-        </div>
+        <a
+          :href="instagramUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn--ghost page-follow"
+        >
+          <SocialIcon name="instagram" :size="16" />
+          Follow me on Instagram
+        </a>
       </div>
 
       <InstagramGrid v-if="items.length" :items="items" :min-tile="240" />
@@ -98,10 +100,8 @@ onBeforeUnmount(() => observer?.disconnect())
   margin: 0;
 }
 
-.page-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+.page-follow {
+  flex: none;
 }
 
 .sentinel {

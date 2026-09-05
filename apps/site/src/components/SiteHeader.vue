@@ -4,13 +4,14 @@
       <ul class="hdr__social">
         <li v-for="s in socials" :key="s.label">
           <a :href="s.href" target="_blank" rel="noopener noreferrer" :aria-label="s.label">
-            <span aria-hidden="true">{{ s.icon === 'instagram' ? '◎' : '✆' }}</span>
+            <SocialIcon :name="s.icon" :size="19" />
           </a>
         </li>
       </ul>
 
-      <router-link to="/" class="hdr__logo" aria-label="Bycarolinecls home">
-        <img :src="logo" alt="" width="88" height="88" />
+      <router-link to="/" class="hdr__logo">
+        <span class="hdr__wordmark">{{ business.name }}</span>
+        <span class="hdr__tagline">{{ business.tagline }}</span>
       </router-link>
 
       <router-link to="/book" class="btn hdr__cta">Enquire</router-link>
@@ -39,12 +40,15 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import logo from '../assets/logo.png'
-import { nav, socials } from '../content/site.js'
+import SocialIcon from './SocialIcon.vue'
+import { business, nav, socials } from '../content/site.js'
 
 const open = ref(false)
 const route = useRoute()
-watch(() => route.fullPath, () => (open.value = false))
+watch(
+  () => route.fullPath,
+  () => (open.value = false),
+)
 </script>
 
 <style scoped>
@@ -62,14 +66,15 @@ watch(() => route.fullPath, () => (open.value = false))
 
 .hdr__social {
   display: flex;
-  gap: 18px;
+  align-items: center;
+  gap: 16px;
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 17px;
 }
 
 .hdr__social a {
+  display: block;
   text-decoration: none;
   color: var(--ink-soft);
   transition: color 0.2s;
@@ -78,13 +83,35 @@ watch(() => route.fullPath, () => (open.value = false))
   color: var(--ink);
 }
 
+/* Wordmark rather than the old script logo, which read "Carolinecls". */
 .hdr__logo {
   justify-self: center;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--ink);
 }
-.hdr__logo img {
-  width: 88px;
-  height: 88px;
-  object-fit: contain;
+
+.hdr__wordmark {
+  font-family: var(--display);
+  font-size: clamp(18px, 2.4vw, 26px);
+  line-height: 1;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  /* Letter-spacing hangs off the last character, so the word sits visually
+     left of centre. Indenting by the same amount squares it back up. */
+  text-indent: 0.17em;
+  white-space: nowrap;
+}
+
+.hdr__tagline {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-indent: 0.3em;
+  white-space: nowrap;
 }
 
 .hdr__cta {
@@ -147,9 +174,17 @@ watch(() => route.fullPath, () => (open.value = false))
   .hdr__bar {
     padding-block: 14px;
   }
-  .hdr__logo img {
-    width: 60px;
-    height: 60px;
+  /* Tighter here or the nowrap wordmark pushes the burger off a 375px
+     screen once the social icons have taken their share of the bar. */
+  .hdr__wordmark {
+    font-size: 15px;
+    letter-spacing: 0.12em;
+    text-indent: 0.12em;
+  }
+  .hdr__tagline {
+    font-size: 8px;
+    letter-spacing: 0.24em;
+    text-indent: 0.24em;
   }
   .hdr__cta {
     display: none;

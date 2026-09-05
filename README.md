@@ -18,7 +18,7 @@ Two separate Vue apps, one repository, one deployment.
 
 ## 1. The services, and what each one actually does
 
-Five providers are involved. They each do one job, and the seams between them
+Six providers are involved. They each do one job, and the seams between them
 are where most confusion comes from, so here they are explicitly.
 
 | Service | What it does here | What breaks without it |
@@ -26,13 +26,14 @@ are where most confusion comes from, so here they are explicitly.
 | **GoDaddy** | **Domain registrar only.** It holds the registration for `bycarolinecls.com` and is where the renewal is paid. DNS *hosting* has been delegated to Cloudflare by pointing the nameservers there. | Nothing day to day. If the registration lapses, the domain is gone. |
 | **Cloudflare — DNS** | Authoritative DNS for the zone. Resolves the apex and `www` to the Pages project. | The domain stops resolving. |
 | **Cloudflare — Pages** | Builds and hosts both apps. Watches `main` on GitHub, runs `npm run build`, serves `dist/`. Also terminates TLS and provides the CDN. | The whole site goes down. |
-| **Cloudflare — Pages Functions** | Three small serverless endpoints living in `functions/`, deployed with the site: `/api/pricing`, `/api/sync`, and the `/admin/*` SPA fallback. | Public pricing falls back to the bundled list; the admin "Sync now" button stops; deep links into `/admin` 404. |
+| **Cloudflare — Pages Functions** | Three small serverless endpoints living in `functions/`, deployed with the site: `/api/instagram`, `/api/sync`, and the `/admin/*` SPA fallback. | The portfolio falls back to its bundled photos; the admin "Sync now" button stops; deep links into `/admin` 404. |
 | **Cloudflare — Worker (`bycarolinecls-sync-cron`)** | A separate Worker, deployed by hand, whose only job is a **cron trigger every 30 minutes** that asks GitHub to run the TimeTree sync. Exists because Cloudflare honours its cron schedule and GitHub does not. | Bookings stop flowing from TimeTree until the GitHub cron happens to fire or someone hits "Sync now". |
 | **Firebase — Auth** | Email/password sign-in for `/admin`. Accounts are created by hand in the console; there is no signup form. | Nobody can get into the admin. |
-| **Firebase — Firestore** | The database. Bookings, invoices, the price list, the sync timestamp. | Admin and pricing both stop working. |
+| **Firebase — Firestore** | The database. Bookings, invoices, the price list, the sync timestamp. | The admin stops working. The public site does not touch it at all. |
 | **Firebase — Storage** | Holds generated invoice PDFs at `invoices/<appointmentId>.pdf`. | Invoices still generate and download in-browser, but there is no stored copy to re-open later. |
 | **GitHub — repo** | Source of truth for code. Pushing to `main` is what deploys. | No deploys. |
 | **GitHub — Actions** | Runs the TimeTree sync job. This is the **only** place TimeTree credentials and the Firebase service account key exist. | Bookings stop syncing. |
+| **Instagram** | The portfolio. `/api/instagram` reads the account's own media through the Graph API and the site renders it as a grid that links back to each post. Read-only, and the token never leaves Cloudflare. | The portfolio falls back to the photos bundled in `apps/site/public/portfolio/`. Nothing 404s. |
 | **TimeTree** | Where Caroline actually manages her bookings, on her phone. Read-only from our side. | Bookings must be entered by hand in `/admin`. |
 | **WhatsApp** | The public booking CTA. Not an integration — the site just builds a `wa.me` deep link with the enquiry pre-filled. | The Book page's button stops opening a useful message. |
 
@@ -65,7 +66,7 @@ flowchart TB
     subgraph cf["Cloudflare"]
         DNS["DNS zone"]
         PAGES["Pages<br/>static: dist/ and dist/admin/"]
-        FN["Pages Functions<br/>/api/pricing · /api/sync · /admin/* fallback"]
+        FN["Pages Functions<br/>/api/instagram · /api/sync · /admin/* fallback"]
         CRON["Worker: bycarolinecls-sync-cron<br/>cron */30"]
     end
 
@@ -81,6 +82,7 @@ flowchart TB
     end
 
     TTAPI["timetreeapp.com<br/>undocumented endpoints"]
+    IG["graph.instagram.com<br/>me/media for this account"]
     WA["wa.me deep link"]
 
     V --> DNS
@@ -90,7 +92,8 @@ flowchart TB
     PAGES --- FN
 
     V -->|"/book"| WA
-    FN -->|"REST, no credentials<br/>settings/pricing"| FS
+    V -->|"/portfolio"| FN
+    FN -->|"GET me/media<br/>token stays server-side"| IG
 
     C -->|"sign in"| AUTH
     C -->|"read/write, authenticated"| FS
@@ -139,16 +142,24 @@ The sync Worker is *not* part of this. It deploys separately:
 ### Flow B — a visitor on the public site
 
 1. DNS resolves to Cloudflare, Pages serves `dist/index.html` and the Vue app.
-2. Client-side routing handles `/portfolio`, `/about`, `/pricing`, `/book`.
-3. `/pricing` renders the **bundled** service list immediately
-   (`packages/shared/services.js`), then fetches `/api/pricing` and swaps in the
-   live list if it comes back. The page is never empty and never blocks on the
-   network.
-4. `/api/pricing` reads `settings/pricing` from Firestore over the plain REST
-   API with **no credentials** — that one document is world-readable on purpose.
-   Cached at the edge for 5 minutes.
+2. Client-side routing handles `/portfolio`, `/about`, `/book`. `/pricing`
+   redirects to `/book` — prices are not published; see below.
+3. `/portfolio` and the home page grid fetch `/api/instagram`. Tiles are
+   thumbnails only and each one links out to its post; reels get a play mark,
+   carousels get a stacked-squares mark. `/portfolio` keeps paging as you
+   scroll, home shows eight and links onward.
+4. `/api/instagram` calls `graph.instagram.com/me/media` with a token that
+   lives in Cloudflare and never reaches the browser. Edge-cached 30 minutes.
+   With no token configured it answers `{configured: false}` and the site
+   silently uses the photos bundled in `apps/site/public/portfolio/` — an
+   unconfigured feed is not a broken page.
+   **Captions are never returned**: they routinely tag photographers and
+   clients, and nothing on this site credits anyone. They are reduced to alt
+   text with handles, hashtags and URLs stripped.
 5. `/book` collects service, date and time client-side and builds a `wa.me`
-   link. **No database write, no PII, no account.**
+   link. **No database write, no PII, no account.** Prices are not on the site
+   at all — "Get our latest pricelist" opens WhatsApp with the ask pre-filled,
+   so every quote can account for date, location and party size.
 
 Setting `VITE_SITE_MODE=coming-soon` in Cloudflare swaps the whole public site
 for a holding page. `/admin` is a separate build and is unaffected.
@@ -172,7 +183,7 @@ for a holding page. `/admin` is a separate build and is unaffected.
 5. **Calendar**: reads `appointments`. On open, if `settings/sync.lastSyncAt` is
    more than 10 minutes old it quietly nudges a sync in the background.
 6. **Pricing**: writes `settings/pricing`, which drives the invoice dropdown
-   *and* the public pricing page.
+   and the booking form. Prices are not published on the public site.
 
 ### Flow D — TimeTree → Firestore sync
 
@@ -249,12 +260,12 @@ public bundle contains no Firestore query code at all.
 | Auth | none | Firebase Auth, hand-created accounts |
 | Firestore access | none from the browser | full, via the SDK, gated by rules |
 | Reads client data | **never** | yes |
-| Server help | `/api/pricing` (uncredentialed) | `/api/sync` (token-verified) |
+| Server help | `/api/instagram` (public, token server-side) | `/api/sync` (token-verified) |
 
 **Where client PII lives:** names, phone numbers, addresses and notes are all in
 `appointments`, which `firestore.rules` makes admin-only. The public site never
-reads that collection and has no code that could. The only world-readable
-document in the entire database is `settings/pricing` — a price list.
+reads that collection and has no code that could — since prices came off the
+site, **the database has no public reads at all**.
 
 `/api/sync` is the one endpoint that acts on the admin's behalf server-side, so
 it re-verifies the Firebase ID token against Google's JWKS itself
@@ -273,7 +284,7 @@ apps/admin/           invoices, calendar, pricing      → dist/admin/
   src/lib/ics.js        .ics parsing, shared with the sync script
 packages/shared/      service menu + formatters, used by both apps
 functions/            Cloudflare Pages Functions (deploy with the site)
-  api/pricing.js        public price list
+  api/instagram.js      the public Instagram feed, token-side
   api/sync.js           admin-only "sync now" trigger
   admin/[[path]].js     SPA fallback for /admin
   _lib/auth.js          Firebase ID token verification at the edge
@@ -308,9 +319,10 @@ can never disagree about a date.
 | `hasInvoice`, `services[]`, `subtotal`, `pdfUrl` | ours — the sync never touches these |
 | `syncedAt`, `createdAt`, `updatedAt` | |
 
-**`settings/pricing`** — the service menu. The only world-readable document.
-Drives the invoice dropdown, the public pricing page and the booking form's
-service list. `packages/shared/services.js` is the seed and offline fallback.
+**`settings/pricing`** — the service menu. Admin-only, like everything else.
+Drives the invoice dropdown and the booking form's service list.
+`packages/shared/services.js` seeds the names; the amounts live separately in
+`packages/shared/prices.js`, which the public bundle never imports.
 
 **`settings/counters`** — invoice sequence per year, incremented transactionally.
 
@@ -337,6 +349,7 @@ Nothing sensitive is in the repo. Which system holds which value matters, so:
 | `VITE_FIREBASE_APP_ID` | |
 | `VITE_BANK_NAME`, `VITE_BANK_ACCOUNT_NAME`, `VITE_BANK_ACCOUNT_NO` | invoice payment details — kept out of the public repo |
 | `VITE_SITE_MODE` | `live`, or `coming-soon` for a holding page |
+| `IG_ACCESS_TOKEN` | runtime, for `/api/instagram`. A long-lived Instagram Graph API token for the `bycarolinecls` account. **Expires after 60 days** — refresh via `GET graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token`. Without it the portfolio uses its bundled fallback. |
 | `FIREBASE_PROJECT_ID` | runtime, for the Functions (no `VITE_` prefix) |
 | `GITHUB_REPO` | `ZVirus1/bycarolinecls_website` |
 | `GITHUB_SYNC_TOKEN` | fine-grained PAT, **Actions: read and write** on this repo only |
@@ -392,9 +405,9 @@ too, build and serve through Wrangler:
 npm run build && npm run preview   # wrangler pages dev dist
 ```
 
-Without that, `/pricing` just uses its bundled fallback — which is the correct
-production behaviour when the endpoint is unavailable, so it is fine for most
-work.
+Without that, the portfolio just uses its bundled fallback — which is the
+correct production behaviour when the feed is unavailable, so it is fine for
+most work.
 
 ---
 
@@ -402,9 +415,11 @@ work.
 
 - **Copy, portfolio, social links, WhatsApp number** — `apps/site/src/content/site.js`.
   You should never need to touch a component to change the site's words.
-- **Photos** — drop into `apps/site/public/portfolio/`, then list them in that file.
-- **Prices** — edit in `/admin → Pricing`. That one save updates the invoice
-  dropdown, the public pricing page and the booking form together.
+- **Portfolio** — it is the live Instagram feed; post there and the site
+  follows within 30 minutes. The files in `apps/site/public/portfolio/` are
+  only the fallback for when the feed is unavailable.
+- **Prices** — edit in `/admin → Pricing`. Prices are not published on the
+  site; that save drives the invoice dropdown and the booking form.
 - **Bank details on invoices** — Cloudflare env vars, not the repo.
 
 ---
@@ -432,7 +447,8 @@ Or check "Last synced" on the admin calendar, or the Actions tab.
 | Bookings not appearing | Check Actions for a failed run. TimeTree rate-limits sign-ins (`-495`) — raise the cron interval if so. |
 | "Sync now" says not configured | `GITHUB_SYNC_TOKEN` / `GITHUB_REPO` missing on the Pages project. It returns 501 rather than pretending to work. |
 | Admin login fails | The domain is not in Firebase → Authentication → Settings → **Authorized domains**. Needs `bycarolinecls.com`, `www.`, and the `.pages.dev`. |
-| `/pricing` shows stale prices | `/api/pricing` is edge-cached for 5 minutes. |
+| Portfolio shows the old bundled photos | `/api/instagram` returned `configured: false` or an error. Check `IG_ACCESS_TOKEN` on the Pages project and the Function logs. Instagram long-lived tokens expire after 60 days. |
+| A new post is not on the site | `/api/instagram` is edge-cached for 30 minutes. |
 | `/admin/calendar` serves the public site | The `functions/admin/[[path]].js` fallback isn't deploying. |
 | Firebase throws at admin startup | Config incomplete — it fails loudly on purpose, because placeholder config once failed silently for months. |
 

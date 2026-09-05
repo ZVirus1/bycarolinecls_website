@@ -24,11 +24,9 @@ export function enquiryMessage({ service, date, time } = {}) {
  * be the friction we removed the public price list to avoid.
  */
 export function pricelistMessage() {
-  return [
-    'Hi Caroline! Could you send me your latest pricelist please?',
-    '',
-    'Thank you!',
-  ].join('\n')
+  return ['Hi Caroline! Could you send me your latest pricelist please?', '', 'Thank you!'].join(
+    '\n',
+  )
 }
 
 function formatDate(iso) {

@@ -1,36 +1,27 @@
 <template>
   <section class="section">
     <div class="shell">
-      <p class="eyebrow">Selected work</p>
       <h1 class="page-title">Portfolio</h1>
 
-      <div v-if="portfolio.length" class="filters" role="tablist">
-        <button
-          v-for="cat in portfolioCategories"
-          :key="cat"
-          role="tab"
-          class="filter"
-          :class="{ 'is-active': cat === active }"
-          :aria-selected="String(cat === active)"
-          @click="active = cat"
-        >
-          {{ cat }}
-        </button>
-      </div>
+      <InstagramGrid v-if="items.length" :items="items" :min-tile="240" />
 
-      <div v-if="visible.length" class="grid">
-        <figure v-for="item in visible" :key="item.src">
-          <img :src="item.src" :alt="item.alt" loading="lazy" />
-          <figcaption v-if="item.caption">{{ item.caption }}</figcaption>
-        </figure>
-      </div>
-
-      <p v-else class="empty">
-        No images yet. Drop photos into <code>apps/site/public/portfolio/</code> and list them in the
-        <code>portfolio</code> array in <code>src/content/site.js</code>.
+      <p v-else-if="!loading" class="empty">
+        Nothing to show yet. New work goes up on
+        <a :href="instagramUrl" target="_blank" rel="noopener noreferrer">Instagram</a> first.
       </p>
 
+      <!-- Infinite scroll: the sentinel sits below the grid and asks for the
+           next page while it is still 600px off screen, so the grid fills in
+           before the reader reaches the bottom of it. -->
+      <div v-if="!done" ref="sentinel" class="sentinel" aria-hidden="true"></div>
+      <p v-if="loading" class="loading">Loading more…</p>
+      <p v-else-if="done && live && items.length" class="caught-up">You are all caught up.</p>
+
       <div class="tail">
+        <a :href="instagramUrl" target="_blank" rel="noopener noreferrer" class="btn btn--ghost">
+          <SocialIcon name="instagram" :size="16" />
+          Follow on Instagram
+        </a>
         <router-link to="/book" class="btn">Enquire</router-link>
       </div>
     </div>
@@ -38,66 +29,74 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { portfolio, portfolioCategories } from '../content/site.js'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import InstagramGrid from '../components/InstagramGrid.vue'
+import SocialIcon from '../components/SocialIcon.vue'
+import { instagramUrl } from '../content/site.js'
+import { useInstagramFeed } from '../lib/instagram.js'
 
-const active = ref('All')
-const visible = computed(() =>
-  active.value === 'All' ? portfolio : portfolio.filter((p) => p.category === active.value),
-)
+const { items, loading, done, live, loadMore, start } = useInstagramFeed({ pageSize: 12 })
+
+const sentinel = ref(null)
+let observer = null
+
+/**
+ * Re-arm the observer.
+ *
+ * IntersectionObserver only reports *changes*, and observing an element makes
+ * it report the current state once. Both of those matter here: the very first
+ * callback arrives while page one is still in flight and gets dropped, and a
+ * page of tiles may not be tall enough to push the sentinel back out of view,
+ * so no further change is ever reported. Re-observing after each load asks the
+ * question again instead of waiting for a change that will not come.
+ */
+function rearm() {
+  if (!observer || !sentinel.value || done.value) return
+  observer.unobserve(sentinel.value)
+  observer.observe(sentinel.value)
+}
+
+// A load finishing is the cue to ask again - see rearm().
+watch(loading, async (busy) => {
+  if (busy || done.value) return
+  await nextTick()
+  rearm()
+})
+
+onMounted(async () => {
+  start()
+  await nextTick()
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((e) => e.isIntersecting)) loadMore()
+    },
+    { rootMargin: '600px 0px' },
+  )
+  if (sentinel.value) observer.observe(sentinel.value)
+})
+
+onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <style scoped>
 .page-title {
   font-size: var(--step-h2);
-  margin-bottom: 30px;
+  margin-bottom: 34px;
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 32px;
+.sentinel {
+  height: 1px;
 }
 
-.filter {
-  font: inherit;
+.loading,
+.caught-up {
+  text-align: center;
   font-size: 11.5px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  padding: 9px 18px;
-  border: 1px solid var(--rule);
-  background: transparent;
-  color: var(--ink-soft);
-  cursor: pointer;
-}
-
-.filter.is-active {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
-  gap: 16px;
-}
-
-.grid figure {
-  margin: 0;
-}
-
-.grid img {
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-}
-
-.grid figcaption {
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  padding-top: 8px;
+  color: var(--ink-faint);
+  margin: 32px 0 0;
 }
 
 .empty {
@@ -106,12 +105,11 @@ const visible = computed(() =>
   padding: 40px 0;
   border-block: 1px solid var(--rule);
 }
-.empty code {
-  background: rgba(0, 0, 0, 0.05);
-  padding: 1px 5px;
-}
 
 .tail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
   margin-top: 48px;
 }
 </style>

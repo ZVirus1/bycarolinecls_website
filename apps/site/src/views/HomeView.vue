@@ -21,8 +21,8 @@
       />
       <div v-else class="hero__placeholder">
         <p>
-          Add a portrait photo to <code>apps/site/public/</code> and set
-          <code>heroImage</code> in <code>src/content/site.js</code>
+          Add a portrait photo to <code>apps/site/public/</code> and set <code>heroImage</code> in
+          <code>src/content/site.js</code>
         </p>
       </div>
     </div>
@@ -40,20 +40,18 @@
   <!-- Featured work -->
   <section class="section featured">
     <div class="shell">
-      <p class="eyebrow">Selected work</p>
       <h2 class="featured__heading">Portfolio</h2>
 
-      <div v-if="featured.length" class="featured__grid">
-        <figure v-for="item in featured" :key="item.src">
-          <img :src="item.src" :alt="item.alt" loading="lazy" />
-        </figure>
-      </div>
-      <p v-else class="empty">
-        Portfolio images go in <code>apps/site/public/portfolio/</code>, then list them in
-        <code>src/content/site.js</code>.
-      </p>
+      <InstagramGrid v-if="featured.length" :items="featured" :min-tile="230" />
+      <p v-else class="empty">Loading the latest work…</p>
 
-      <router-link to="/portfolio" class="btn btn--ghost">View full portfolio</router-link>
+      <div class="featured__tail">
+        <router-link to="/portfolio" class="btn btn--ghost">View full portfolio</router-link>
+        <a :href="instagramUrl" target="_blank" rel="noopener noreferrer" class="btn btn--ghost">
+          <SocialIcon name="instagram" :size="16" />
+          Follow on Instagram
+        </a>
+      </div>
     </div>
   </section>
 
@@ -85,12 +83,22 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { business, portfolio, heroImage } from '../content/site.js'
+import { computed, onMounted } from 'vue'
+import InstagramGrid from '../components/InstagramGrid.vue'
+import SocialIcon from '../components/SocialIcon.vue'
+import { business, heroImage, instagramUrl } from '../content/site.js'
 import { publicServices } from '@bycarolinecls/shared/services'
+import { useInstagramFeed } from '../lib/instagram.js'
 import { whatsappLink, pricelistMessage } from '../lib/whatsapp.js'
 
-const featured = computed(() => portfolio.slice(0, 6))
+// One page only. The home grid is a taster - "View full portfolio" is what
+// leads to the feed that keeps loading.
+const { items, start } = useInstagramFeed({ pageSize: 8 })
+onMounted(start)
+
+// The fallback set is longer than one Instagram page, so trim either source
+// to the same eight tiles and the section keeps its shape.
+const featured = computed(() => items.value.slice(0, 8))
 const teaserServices = computed(() => publicServices().slice(0, 4))
 const pricelistHref = whatsappLink(pricelistMessage())
 </script>
@@ -225,21 +233,11 @@ const pricelistHref = whatsappLink(pricelistMessage())
   margin-bottom: 36px;
 }
 
-.featured__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+.featured__tail {
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
-  margin-bottom: 36px;
-}
-
-.featured__grid img {
-  width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-}
-
-.featured__grid figure {
-  margin: 0;
+  margin-top: 36px;
 }
 
 .empty {
@@ -251,7 +249,6 @@ const pricelistHref = whatsappLink(pricelistMessage())
   margin-bottom: 32px;
 }
 
-.empty code,
 .hero__placeholder code {
   font-size: 0.9em;
   background: rgba(0, 0, 0, 0.05);

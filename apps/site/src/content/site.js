@@ -14,11 +14,11 @@ export const heroImage = '/hero.webp'
 
 export const business = {
   name: 'Bycarolinecls',
-  tagline: 'Professional Hair and Makeup Artist',
+  tagline: 'Bridal Makeup Artist',
   artist: 'Caroline',
   // Shown under the hero headline
   intro:
-    'Hello, I am Caroline, a professional hair and makeup artist. My passion is not only the art of makeup, but making every person feel completely themselves on the days that matter most.',
+    'Hello, I am Caroline, a bridal makeup artist. My passion is not only the art of makeup, but making every bride feel completely herself on the day that matters most.',
   location: 'Medan, Indonesia',
   email: 'hello@bycarolinecls.com',
   domain: 'bycarolinecls.com',
@@ -28,8 +28,11 @@ export const business = {
 // Source: +62 895 3213 53193
 export const whatsappNumber = '62895321353193'
 
+export const instagramHandle = 'bycarolinecls'
+export const instagramUrl = `https://www.instagram.com/${instagramHandle}/`
+
 export const socials = [
-  { label: 'Instagram', href: 'https://instagram.com/bycarolinecls', icon: 'instagram' },
+  { label: 'Instagram', href: instagramUrl, icon: 'instagram' },
   { label: 'WhatsApp', href: `https://wa.me/${whatsappNumber}`, icon: 'whatsapp' },
 ]
 
@@ -44,7 +47,13 @@ export const nav = [
 ]
 
 /**
- * Portfolio entries.
+ * Portfolio FALLBACK.
+ *
+ * The portfolio is normally the live Instagram feed (see /api/instagram). This
+ * bundled set is what shows when the feed is not configured yet or Instagram
+ * is unreachable, so the page is never empty - it is not the primary source
+ * and does not need to stay in step with the account.
+ *
  * Images live in apps/site/public/portfolio/ as 900x1125 WebP (4:5, the shape
  * they were shot in - nothing is cropped to a landscape it was never framed
  * for). To add one, drop the file in and add a line here.
@@ -54,29 +63,78 @@ export const nav = [
  * what Google Images indexes, so keep it specific about the makeup.
  */
 export const portfolio = [
-  { src: '/portfolio/bridal-hijab-headpiece.webp', alt: 'Bridal makeup with hijab and a floral pearl headpiece', category: 'Bridal' },
-  { src: '/portfolio/traditional-indian.webp', alt: 'Indian bridal makeup with kundan jewellery and a braided finish', category: 'Traditional' },
-  { src: '/portfolio/evening-gold.webp', alt: 'Evening makeup in gold with a veiled fascinator', category: 'Evening' },
-  { src: '/portfolio/editorial-monochrome.webp', alt: 'Monochrome editorial makeup with sculpted brows and glossed lips', category: 'Editorial' },
-  { src: '/portfolio/bridal-ball-gown.webp', alt: 'Soft bridal makeup with a beaded ball gown and loose waves', category: 'Bridal' },
-  { src: '/portfolio/traditional-chindian.webp', alt: 'Traditional bridal makeup with maang tikka and statement eyes', category: 'Traditional' },
-  { src: '/portfolio/evening-teal.webp', alt: 'Party makeup with ombre curls and a soft warm eye', category: 'Evening' },
-  { src: '/portfolio/editorial-beret.webp', alt: 'Polished daytime makeup with a soft flush and a pink beret', category: 'Editorial' },
-  { src: '/portfolio/bridal-feather.webp', alt: 'Luminous bridal makeup with a feathered bodice and soft updo', category: 'Bridal' },
-  { src: '/portfolio/traditional-gold.webp', alt: 'Traditional makeup with a gold headpiece and warm gilded tones', category: 'Traditional' },
-  { src: '/portfolio/evening-glow.webp', alt: 'Glowing evening makeup with a sculpted eye and gold jewellery', category: 'Evening' },
-  { src: '/portfolio/editorial-waves.webp', alt: 'Warm honeyed makeup with blonde waves and a feathered neckline', category: 'Editorial' },
-  { src: '/portfolio/bridal-beaded-cape.webp', alt: 'Evening bridal makeup with a beaded gown and velvet cape', category: 'Bridal' },
-  { src: '/portfolio/traditional-sangjit.webp', alt: 'Sangjit ceremony makeup with gold hairpins and a floral bodice', category: 'Traditional' },
-  { src: '/portfolio/evening-silver.webp', alt: 'Evening makeup with a high ponytail and smoked liner', category: 'Evening' },
-  { src: '/portfolio/editorial-tailored.webp', alt: 'Clean tailored makeup with a satin skin finish', category: 'Editorial' },
-  { src: '/portfolio/bridal-lace-pearls.webp', alt: 'Bridal makeup with lace bodice, pearls and brushed-out waves', category: 'Bridal' },
-  { src: '/portfolio/traditional-kebaya.webp', alt: 'Kebaya makeup in soft daylight with a sleek low chignon', category: 'Traditional' },
-  { src: '/portfolio/evening-velvet.webp', alt: 'Sleek evening makeup with graphic liner and a high chignon', category: 'Evening' },
-  { src: '/portfolio/evening-lace.webp', alt: 'Evening makeup with black lace and a warm bronzed eye', category: 'Evening' },
+  {
+    src: '/portfolio/bridal-hijab-headpiece.webp',
+    alt: 'Bridal makeup with hijab and a floral pearl headpiece',
+  },
+  {
+    src: '/portfolio/traditional-indian.webp',
+    alt: 'Indian bridal makeup with kundan jewellery and a soft matte base',
+  },
+  { src: '/portfolio/evening-gold.webp', alt: 'Evening makeup in gold with a veiled fascinator' },
+  {
+    src: '/portfolio/editorial-monochrome.webp',
+    alt: 'Monochrome editorial makeup with sculpted brows and glossed lips',
+  },
+  {
+    src: '/portfolio/bridal-ball-gown.webp',
+    alt: 'Soft bridal makeup with a beaded ball gown and a dewy skin finish',
+  },
+  {
+    src: '/portfolio/traditional-chindian.webp',
+    alt: 'Traditional bridal makeup with maang tikka and statement eyes',
+  },
+  { src: '/portfolio/evening-teal.webp', alt: 'Party makeup with a soft warm eye and a peach lip' },
+  {
+    src: '/portfolio/editorial-beret.webp',
+    alt: 'Polished daytime makeup with a soft flush and a pink beret',
+  },
+  {
+    src: '/portfolio/bridal-feather.webp',
+    alt: 'Luminous bridal makeup with a feathered bodice and a soft rose lip',
+  },
+  {
+    src: '/portfolio/traditional-gold.webp',
+    alt: 'Traditional makeup with a gold headpiece and warm gilded tones',
+  },
+  {
+    src: '/portfolio/evening-glow.webp',
+    alt: 'Glowing evening makeup with a sculpted eye and gold jewellery',
+  },
+  {
+    src: '/portfolio/editorial-waves.webp',
+    alt: 'Warm honeyed makeup with a bronzed eye and a feathered neckline',
+  },
+  {
+    src: '/portfolio/bridal-beaded-cape.webp',
+    alt: 'Evening bridal makeup with a beaded gown and velvet cape',
+  },
+  {
+    src: '/portfolio/traditional-sangjit.webp',
+    alt: 'Sangjit ceremony makeup with warm gold tones and a floral bodice',
+  },
+  { src: '/portfolio/evening-silver.webp', alt: 'Evening makeup with smoked liner and a nude lip' },
+  {
+    src: '/portfolio/editorial-tailored.webp',
+    alt: 'Clean tailored makeup with a satin skin finish',
+  },
+  {
+    src: '/portfolio/bridal-lace-pearls.webp',
+    alt: 'Bridal makeup with a lace bodice, pearls and a luminous base',
+  },
+  {
+    src: '/portfolio/traditional-kebaya.webp',
+    alt: 'Kebaya makeup in soft daylight with a satin skin finish',
+  },
+  {
+    src: '/portfolio/evening-velvet.webp',
+    alt: 'Sleek evening makeup with graphic liner and a berry lip',
+  },
+  {
+    src: '/portfolio/evening-lace.webp',
+    alt: 'Evening makeup with black lace and a warm bronzed eye',
+  },
 ]
-
-export const portfolioCategories = ['All', 'Bridal', 'Traditional', 'Evening', 'Editorial']
 
 export const about = {
   heading: 'About',

@@ -16,7 +16,7 @@ export default defineConfig({
   },
   server: {
     // Proxy /api to a local `wrangler pages dev` during development so the
-    // pricing page reads live prices instead of the bundled fallback.
+    // portfolio reads the live Instagram feed instead of the bundled fallback.
     proxy: { '/api': 'http://127.0.0.1:8788' },
   },
 })

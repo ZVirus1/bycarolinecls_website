@@ -12,12 +12,7 @@
       <div class="book__pricelist">
         <h2 class="book__sub">Just after prices?</h2>
         <p class="book__note book__note--lead">{{ pricelistNote }}</p>
-        <a
-          :href="pricelistHref"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn book__go"
-        >
+        <a :href="pricelistHref" target="_blank" rel="noopener noreferrer" class="btn book__go">
           Get our latest pricelist
         </a>
       </div>
@@ -218,5 +213,4 @@ input[type='time'].field__input {
   margin: 14px 0 0;
   line-height: 1.55;
 }
-
 </style>

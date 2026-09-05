@@ -140,7 +140,12 @@ defineExpose({ close })
   flex: 0 0 auto;
 }
 
+/* The display face, so a service name reads the same here as it does in the
+   list on the homepage. The control around it is still the admin's. */
 .fp__value {
+  font-family: var(--display);
+  font-size: 15.5px;
+  letter-spacing: 0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

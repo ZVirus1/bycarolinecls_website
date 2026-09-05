@@ -29,8 +29,8 @@ export const heroImages = [
   // carrying white type. A bright photo here needs a scrim heavy enough to
   // flatten the makeup before the mark becomes legible.
   {
-    src: '/portfolio/bridal-beaded-cape.webp',
-    alt: 'Evening bridal makeup with a beaded gown and velvet cape',
+    src: '/portfolio/bridal-ball-gown.webp',
+    alt: 'Soft bridal makeup with a beaded ball gown and a dewy skin finish',
   },
   {
     src: '/portfolio/traditional-indian.webp',
@@ -132,8 +132,8 @@ export const portfolio = [
     alt: 'Warm honeyed makeup with a bronzed eye and a feathered neckline',
   },
   {
-    src: '/portfolio/bridal-beaded-cape.webp',
-    alt: 'Evening bridal makeup with a beaded gown and velvet cape',
+    src: '/portfolio/bridal-ball-gown.webp',
+    alt: 'Soft bridal makeup with a beaded ball gown and a dewy skin finish',
   },
   {
     src: '/portfolio/traditional-sangjit.webp',
@@ -174,9 +174,3 @@ export const about = {
 // enquiry - so it must not assume the reader already has a date in mind.
 export const bookingNote =
   'Prices, availability, or a date you already have in mind - it all comes to me on WhatsApp, and I reply within 24 hours.'
-
-// Shown above the "Get our latest pricelist" button. Prices are not published
-// on the site - every look is quoted on the day, the location and the party
-// size, so the pricelist goes out over WhatsApp instead.
-export const pricelistNote =
-  'Every look is quoted to the date, the location and the size of your party, so I send the current pricelist over WhatsApp. Ask and it comes straight back to you.'

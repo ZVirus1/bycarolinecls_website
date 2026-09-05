@@ -104,6 +104,9 @@ function pick(value, close) {
 }
 
 .opt__label {
+  font-family: var(--display);
+  font-size: 15.5px;
+  letter-spacing: 0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

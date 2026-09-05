@@ -62,7 +62,6 @@
       <ul class="teaser__list">
         <li v-for="s in services" :key="s.id">{{ s.description }}</li>
       </ul>
-      <p class="teaser__note">{{ pricelistNote }}</p>
       <router-link to="/book" class="btn btn--ghost">Get our latest pricelist</router-link>
     </div>
   </section>
@@ -81,7 +80,7 @@ import { computed, onMounted } from 'vue'
 import InstagramGrid from '../components/InstagramGrid.vue'
 import SocialIcon from '../components/SocialIcon.vue'
 import logo from '../assets/logo.png'
-import { business, heroImages, instagramUrl, pricelistNote } from '../content/site.js'
+import { business, heroImages, instagramUrl } from '../content/site.js'
 import { publicServices } from '@bycarolinecls/shared/services'
 import { useInstagramFeed } from '../lib/instagram.js'
 
@@ -247,7 +246,7 @@ const services = publicServices()
 
 .teaser__list {
   list-style: none;
-  margin: 0;
+  margin: 0 0 36px;
   padding: 0;
   max-width: 640px;
 }
@@ -258,13 +257,6 @@ const services = publicServices()
   letter-spacing: 0.01em;
   padding: 13px 0;
   border-bottom: 1px solid var(--rule);
-}
-
-.teaser__note {
-  max-width: 640px;
-  margin: 22px 0 30px;
-  font-size: 14px;
-  color: var(--ink-soft);
 }
 
 .cta {

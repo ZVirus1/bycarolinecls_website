@@ -12,9 +12,14 @@
             <router-link :to="item.to">{{ item.label }}</router-link>
           </li>
           <li v-for="s in socials" :key="s.label">
-            <a :href="s.href" target="_blank" rel="noopener noreferrer" class="ftr__social">
-              <SocialIcon :name="s.icon" :size="15" />
-              {{ s.label }}
+            <a
+              :href="s.href"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="ftr__social"
+              :aria-label="s.label"
+            >
+              <SocialIcon :name="s.icon" :size="17" />
             </a>
           </li>
         </ul>
@@ -87,10 +92,10 @@ const year = new Date().getFullYear()
   color: var(--ink);
 }
 
+/* Icon only - the mark says Instagram and WhatsApp more quickly than the word
+   does, and the label lives on aria-label for anyone who cannot see it. */
 .ftr__social {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
+  display: block;
 }
 
 /* Centred and set large: it is the last thing on every page, and the business

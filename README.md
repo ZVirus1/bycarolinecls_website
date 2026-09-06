@@ -538,12 +538,20 @@ no `og:image` anywhere, so every shared link rendered as bare text.
   `VITE_SITE_MODE=coming-soon` the robots file disallows everything and no
   sitemap is written at all — a sitemap full of `noindex` URLs is an error in
   Search Console, once per URL.
+- Three strings stay English on the Indonesian pages by choice, not by
+  omission: the `Bridal Makeup Artist` strapline, the copyright line, and the
+  Indonesian home `<title>`. The title still leads with `MUA Medan`, the
+  higher-volume of the two search terms, and `makeup pengantin` still carries
+  the description, the body copy and the other three Indonesian titles. See the
+  note at the top of `src/i18n/messages.js`.
 - The `noindex` switch lives **only** in the prerenderer. It used to also be a
   Vite plugin, which shipped two contradictory `<meta name="robots">` tags.
-- `og:image` is `public/og-image.png` (and `-id`), 1200×630, generated once and
-  committed. It is the logo on the site's paper ground rather than a client
-  photograph, deliberately: nothing on this site credits anyone, and the
-  portfolio images are clients' faces.
+- `og:image` is `public/og-image.png`, 1200×630, generated once and committed.
+  It is the logo on the site's paper ground rather than a client photograph,
+  deliberately: nothing on this site credits anyone, and the portfolio images
+  are clients' faces. One card serves both languages — there was an
+  `og-image-id.png` reading "MAKEUP ARTIST PENGANTIN" until the strapline on
+  the page itself became English in both.
 - `/admin` is excluded three ways: `Disallow` in robots.txt, an
   `X-Robots-Tag: noindex, nofollow` response header from `public/_headers`, and
   a `<meta name="robots">` in its own `index.html`.

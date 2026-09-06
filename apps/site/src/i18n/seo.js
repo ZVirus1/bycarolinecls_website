@@ -26,6 +26,12 @@ export const PAGES = [
  * brides in Medan actually type: "MUA Medan", "makeup pengantin Medan",
  * "makeup artist pengantin". Translating the English titles literally would
  * have produced pages that rank for nothing.
+ *
+ * The one exception is the Indonesian home title, which carries "Bridal Makeup
+ * Artist" rather than "Makeup Artist Pengantin" so that it matches the heading
+ * on the page. "MUA Medan" - by far the higher-volume of the two terms - is
+ * still first in the title, and "makeup pengantin" is still in the description,
+ * the body copy and the other three Indonesian titles.
  */
 export const SEO = {
   en: {
@@ -52,7 +58,7 @@ export const SEO = {
   },
   id: {
     home: {
-      title: 'MUA Medan | Makeup Artist Pengantin - Bycarolinecls',
+      title: 'MUA Medan | Bridal Makeup Artist - Bycarolinecls',
       description:
         'Jasa makeup pengantin oleh Caroline di Medan - wedding, engagement, dan prewedding. Lihat karya terbaru dan tanyakan harga lewat WhatsApp.',
     },
@@ -74,9 +80,16 @@ export const SEO = {
   },
 }
 
-/** The social card image. Per-locale so the strapline matches the page. */
-export const ogImage = (locale) =>
-  `${ORIGIN}${locale === 'id' ? '/og-image-id.png' : '/og-image.png'}`
+/**
+ * The social card image.
+ *
+ * One image for both languages. It was two, until the strapline on the page
+ * itself became English in both - a card reading "MAKEUP ARTIST PENGANTIN"
+ * over a page headed "Bridal Makeup Artist" is a mismatch a visitor sees.
+ * Callers still pass a locale; it is ignored here so a second card can come
+ * back later without touching every call site.
+ */
+export const ogImage = () => `${ORIGIN}/og-image.png`
 
 export const canonicalFor = (locale, path) => `${ORIGIN}${localePath(locale, path)}`
 
@@ -117,7 +130,7 @@ export function jsonLd(locale, services) {
     founder: {
       '@type': 'Person',
       name: 'Caroline',
-      jobTitle: isID ? 'Makeup Artist Pengantin' : 'Bridal Makeup Artist',
+      jobTitle: 'Bridal Makeup Artist',
     },
     hasOfferCatalog: {
       '@type': 'OfferCatalog',

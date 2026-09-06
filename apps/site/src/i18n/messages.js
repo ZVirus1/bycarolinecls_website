@@ -10,6 +10,13 @@
  *   Indonesian invoice disagree with an English one for the same booking.
  * - "Instagram", "WhatsApp", "@bycarolinecls", "Bycarolinecls". Brand nouns.
  * - "Medan, Indonesia". Identical in both languages.
+ * - `hero.tagline` and `footer.rights`. Both keys still exist in the Indonesian
+ *   catalogue, but both hold the English string. "Bridal Makeup Artist" is how
+ *   Caroline bills herself and sits under her name as a title rather than as a
+ *   sentence, and the copyright line is a legal formula that reads as boilerplate
+ *   in either language. Keeping the keys (rather than deleting them and letting
+ *   the fallback handle it) makes the choice visible here instead of looking
+ *   like a missing translation.
  *
  * Keys are flat and dotted. A missing key falls back to English rather than
  * rendering the key itself - a visitor should never see `nav.about` on a page.
@@ -108,7 +115,8 @@ export const MESSAGES = {
     'header.openMenu': 'Buka menu',
     'header.closeMenu': 'Tutup menu',
 
-    'hero.tagline': 'Makeup Artist Pengantin',
+    // Left in English on purpose - see the note at the top of this file.
+    'hero.tagline': 'Bridal Makeup Artist',
 
     'soon.body':
       'Situs baru sedang dalam perjalanan. Sementara itu, hubungi saya langsung untuk pemesanan dan pertanyaan. Saya membalas dalam 24 jam.',
@@ -123,7 +131,7 @@ export const MESSAGES = {
     'home.viewAll': 'Lihat portofolio lengkap',
     'home.follow': 'Ikuti saya di Instagram',
     'home.services': 'Layanan',
-    'home.pricelist': 'Minta daftar harga terbaru',
+    'home.pricelist': 'Lihat daftar harga terbaru',
     'home.ctaTitle': 'Siap memesan tanggal Anda?',
 
     'portfolio.title': 'Portofolio',
@@ -154,7 +162,8 @@ export const MESSAGES = {
     'book.footnote':
       'Isi yang sudah Anda ketahui, sisanya boleh dikosongkan — WhatsApp akan terbuka dengan detail Anda siap dikirim. Belum ada yang dipesan sebelum kita membicarakannya, dan saya selalu membalas dalam 24 jam.',
 
-    'footer.rights': 'Hak cipta © {year} {name}, seluruh hak cipta dilindungi',
+    // Left in English on purpose - see the note at the top of this file.
+    'footer.rights': 'Copyright © {year} {name}, all rights reserved',
 
     'notfound.eyebrow': '404',
     'notfound.title': 'Halaman ini tidak ditemukan',

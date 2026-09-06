@@ -17,7 +17,8 @@
         <!-- A plain link, not a state toggle: the two languages are two URLs,
              which is the only reason Google can rank the Indonesian pages. -->
         <router-link :to="swap" class="hdr__lang" :title="t('locale.switch')" :hreflang="other">
-          <span aria-hidden="true">{{ t('locale.other') }}</span>
+          <FlagIcon :locale="other" />
+          <span class="hdr__lang-code" aria-hidden="true">{{ t('locale.other') }}</span>
           <span class="visually-hidden">{{ t('locale.switch') }}</span>
         </router-link>
 
@@ -53,6 +54,7 @@
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import SocialIcon from './SocialIcon.vue'
+import FlagIcon from './FlagIcon.vue'
 import logo from '../assets/logo.png'
 import { nav, socials } from '../content/site.js'
 import { useI18n } from '../i18n/index.js'
@@ -87,31 +89,43 @@ watch(
   gap: 14px;
 }
 
-/* Same micro voice as the nav, with a rule so it reads as a control rather
-   than another nav word. */
+/* Flag plus code, in the same micro voice as the nav. The flag is the
+   language you are switching TO, which is why the pill reads "ID" on the
+   English pages: it is a link to somewhere, not a label for where you are. */
 .hdr__lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  /* Sized for a thumb, not for the two letters inside it. */
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  /* A pill rather than the square this used to be. It is the one control in
+     the header that is neither a word nor an icon, and the shape is what
+     separates it from both. */
+  border-radius: 999px;
   font-size: var(--micro);
-  letter-spacing: var(--micro-track);
-  text-indent: var(--micro-track);
   text-transform: uppercase;
   color: var(--ink-soft);
   text-decoration: none;
-  /* Sized for a thumb, not for the two letters inside it. */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  min-width: 42px;
-  padding: 0 10px;
-  border: 1px solid var(--rule);
   transition:
     color 0.2s ease,
-    border-color 0.2s ease;
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+/* Tracking on the span, not the link: on the link it would also push the flag
+   away from the text. The negative margin eats the trailing letter's space so
+   the pill looks optically centred. */
+.hdr__lang-code {
+  letter-spacing: var(--micro-track);
+  margin-right: calc(var(--micro-track) * -1);
 }
 
 .hdr__lang:hover {
   color: var(--ink);
   border-color: var(--ink);
+  background: var(--paper-alt);
 }
 
 /* The gap moved inside the links. A 19px icon with a 16px gap is a 19x19 tap
@@ -235,9 +249,17 @@ watch(
   .hdr__end {
     gap: 8px;
   }
+  /* Measured at 375px: the right-hand column has 109px of usable width and
+     this pill plus the burger comes to 106px. Every part of that budget is
+     spent, which is why the paddings here are odd numbers. */
   .hdr__lang {
-    min-width: 40px;
-    padding: 0 7px;
+    gap: 5px;
+    min-height: 40px;
+    padding: 0 8px;
+  }
+  .hdr__lang :deep(.flag) {
+    width: 16px;
+    height: 11px;
   }
   .hdr__nav {
     display: none;
@@ -287,8 +309,35 @@ watch(
     gap: 6px;
   }
   .hdr__lang {
+    padding: 0 7px;
+  }
+}
+
+/* 374 and not 380: 375px is the iPhone SE and 13 mini, and at 375 the code
+   still clears the logo by 9px. At 360 - the common Android width - it does
+   not, so below that the flag carries the language on its own. It is the part
+   of the pill that reads at a glance anyway, and the link keeps its
+   "Read in English" label for anyone who cannot see it. */
+@media (max-width: 374px) {
+  /* The pill goes with the code. An empty pill around a 16px flag reads as a
+     stray circle, so here the flag becomes the control itself - bigger, and
+     carrying its own hairline ring - inside an unchanged 40px tap area. */
+  .hdr__lang {
+    gap: 0;
     min-width: 40px;
-    padding: 0 5px;
+    padding: 0 9px;
+    border-color: transparent;
+  }
+  .hdr__lang:hover {
+    background: none;
+    border-color: transparent;
+  }
+  .hdr__lang :deep(.flag) {
+    width: 22px;
+    height: 15px;
+  }
+  .hdr__lang-code {
+    display: none;
   }
 }
 </style>

@@ -3,15 +3,12 @@
     <img :src="logo" alt="" class="soon__mark" width="96" height="96" />
 
     <p class="soon__eyebrow">{{ business.location }}</p>
-    <h1 class="soon__title">{{ business.tagline }}</h1>
-    <p class="soon__body">
-      A new site is on its way. In the meantime, message me directly for bookings and enquiries. I
-      reply within 24 hours.
-    </p>
+    <h1 class="soon__title">{{ t('hero.tagline') }}</h1>
+    <p class="soon__body">{{ t('soon.body') }}</p>
 
     <div class="soon__actions">
       <a :href="waHref" class="soon__btn" target="_blank" rel="noopener noreferrer">
-        Message on WhatsApp
+        {{ t('soon.whatsapp') }}
       </a>
       <a
         v-if="instagram"
@@ -30,10 +27,13 @@
 
 <script setup>
 import logo from '../assets/logo.png'
+import { computed } from 'vue'
 import { business, socials } from '../content/site.js'
+import { useI18n } from '../i18n/index.js'
 import { whatsappLink, enquiryMessage } from '../lib/whatsapp.js'
 
-const waHref = whatsappLink(enquiryMessage())
+const { t, locale } = useI18n()
+const waHref = computed(() => whatsappLink(enquiryMessage({ locale: locale.value })))
 const instagram = socials.find((s) => s.icon === 'instagram')?.href
 const year = new Date().getFullYear()
 </script>

@@ -3,13 +3,13 @@
     <div class="shell ftr__inner">
       <div>
         <p class="ftr__name">{{ business.name }}</p>
-        <p class="ftr__meta">{{ business.tagline }} · {{ business.location }}</p>
+        <p class="ftr__meta">{{ t('hero.tagline') }} · {{ business.location }}</p>
       </div>
 
       <nav aria-label="Footer">
         <ul class="ftr__links">
           <li v-for="item in nav" :key="item.to">
-            <router-link :to="item.to">{{ item.label }}</router-link>
+            <router-link :to="lp(item.to)">{{ t(`nav.${item.key}`) }}</router-link>
           </li>
           <li v-for="s in socials" :key="s.label">
             <a
@@ -26,13 +26,16 @@
       </nav>
     </div>
 
-    <p class="ftr__legal shell">Copyright © {{ year }} {{ business.name }}, all rights reserved</p>
+    <p class="ftr__legal shell">{{ t('footer.rights', { year, name: business.name }) }}</p>
   </footer>
 </template>
 
 <script setup>
 import SocialIcon from './SocialIcon.vue'
 import { business, nav, socials } from '../content/site.js'
+import { useI18n } from '../i18n/index.js'
+
+const { t, lp } = useI18n()
 const year = new Date().getFullYear()
 </script>
 

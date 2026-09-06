@@ -141,9 +141,13 @@ The sync Worker is *not* part of this. It deploys separately:
 
 ### Flow B — a visitor on the public site
 
-1. DNS resolves to Cloudflare, Pages serves `dist/index.html` and the Vue app.
-2. Client-side routing handles `/portfolio`, `/about`, `/book`. `/pricing`
-   redirects to `/book` — prices are not published; see below.
+1. DNS resolves to Cloudflare, Pages serves a **prerendered HTML file for that
+   exact URL** (`dist/portfolio.html` for `/portfolio`), then the Vue app boots
+   and takes over. See §13 — the head tags are why this is not one file.
+2. The same four pages exist twice: English at `/portfolio`, Indonesian at
+   `/id/portfolio`. The header toggle is a plain link between the two, because
+   one URL can only rank in one language. `/pricing` 301s to `/book` — prices
+   are not published; see below.
 3. `/portfolio` and the home page grid fetch `/api/instagram`. Tiles are
    thumbnails only and each one links out to its post; reels get a play mark,
    carousels get a stacked-squares mark. `/portfolio` keeps paging as you
@@ -278,7 +282,10 @@ because anything the browser sends can be forged.
 
 ```
 apps/site/            public site                      → dist/
-  src/content/site.js   all editable copy, links, portfolio
+  src/content/site.js   links, portfolio fallback, non-prose content
+  src/i18n/messages.js  every word a visitor reads, EN + ID
+  src/i18n/seo.js       per-page titles, descriptions, structured data
+  scripts/prerender.js  writes one HTML file per page per language
 apps/admin/           invoices, calendar, pricing      → dist/admin/
   src/stores/           firebase, auth, invoices, pricing, sync
   src/lib/ics.js        .ics parsing, shared with the sync script
@@ -413,7 +420,12 @@ most work.
 
 ## 9. Editing content
 
-- **Copy, portfolio, social links, WhatsApp number** — `apps/site/src/content/site.js`.
+- **Any words a visitor reads** — `apps/site/src/i18n/messages.js`, which holds
+  English and Indonesian side by side. Change both, or the toggle shows one
+  language falling back to the other.
+- **Page titles and search descriptions** — `apps/site/src/i18n/seo.js`. These
+  are what Google and link previews show; they are *not* the on-page headings.
+- **Social links, WhatsApp number, portfolio fallback** — `apps/site/src/content/site.js`.
   You should never need to touch a component to change the site's words.
 - **Portfolio** — it is the live Instagram feed; post there and the site
   follows within 30 minutes. The files in `apps/site/public/portfolio/` are
@@ -486,3 +498,52 @@ Storage if PDFs pile up — Spark includes 5 GB, which is thousands of invoices.
   `scripts/timetree-fetch.mjs` is ~500 lines, has zero dependencies, and talks
   only to `timetreeapp.com` — so when it does break, there is no third party
   to wait on.
+
+---
+
+## 13. Search and social previews
+
+The site is a client-rendered Vue app. That is survivable for Google, which
+runs JavaScript, but the crawlers behind link previews — `facebookexternalhit`,
+`LinkedInBot`, `Twitterbot`, WhatsApp, Slack — do not run any. They read the
+HTML that came off the wire and stop.
+
+So `apps/site/scripts/prerender.js` runs after every Vite build and writes a
+real file per page per language, each with its own head:
+
+```
+dist/index.html   /portfolio.html   /about.html   /book.html
+dist/id.html      /id/portfolio.html   /id/about.html   /id/book.html
+dist/404.html
+```
+
+Each carries its own `<title>`, description, canonical, `hreflang` pair,
+Open Graph and Twitter tags, and `BeautySalon` structured data. Vue still boots
+on top and handles in-app navigation; it just no longer has to be *running* for
+a page to describe itself.
+
+**What this fixed.** Every route used to serve
+`<link rel="canonical" href="https://bycarolinecls.com/">` — telling Google
+that `/portfolio`, `/about` and `/book` were duplicates of the home page and
+should not be indexed — while `sitemap.xml` submitted all four. There was also
+no `og:image` anywhere, so every shared link rendered as bare text.
+
+**Rules of the road**
+
+- Pages are **flat files, not directories**. Cloudflare serves `portfolio.html`
+  at `/portfolio`, but serves `portfolio/index.html` by 308-redirecting
+  `/portfolio` → `/portfolio/`. The directory form would point every canonical
+  tag and internal link at a URL that immediately redirects.
+- `robots.txt` and `sitemap.xml` are **generated**, not committed. While
+  `VITE_SITE_MODE=coming-soon` the robots file disallows everything and no
+  sitemap is written at all — a sitemap full of `noindex` URLs is an error in
+  Search Console, once per URL.
+- The `noindex` switch lives **only** in the prerenderer. It used to also be a
+  Vite plugin, which shipped two contradictory `<meta name="robots">` tags.
+- `og:image` is `public/og-image.png` (and `-id`), 1200×630, generated once and
+  committed. It is the logo on the site's paper ground rather than a client
+  photograph, deliberately: nothing on this site credits anyone, and the
+  portfolio images are clients' faces.
+- `/admin` is excluded three ways: `Disallow` in robots.txt, an
+  `X-Robots-Tag: noindex, nofollow` response header from `public/_headers`, and
+  a `<meta name="robots">` in its own `index.html`.

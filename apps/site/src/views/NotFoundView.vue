@@ -1,16 +1,24 @@
 <template>
   <section class="section">
     <div class="shell nf">
-      <p class="eyebrow">404</p>
-      <h1>This page doesn't exist</h1>
-      <p class="lede">The link may be out of date. Try the portfolio or get in touch.</p>
+      <p class="eyebrow">{{ t('notfound.eyebrow') }}</p>
+      <h1>{{ t('notfound.title') }}</h1>
+      <p class="lede">{{ t('notfound.body') }}</p>
       <div class="nf__actions">
-        <router-link to="/" class="btn">Back home</router-link>
-        <router-link to="/portfolio" class="btn btn--ghost">Portfolio</router-link>
+        <router-link :to="lp('/')" class="btn">{{ t('notfound.home') }}</router-link>
+        <router-link :to="lp('/portfolio')" class="btn btn--ghost">{{
+          t('nav.portfolio')
+        }}</router-link>
       </div>
     </div>
   </section>
 </template>
+
+<script setup>
+import { useI18n } from '../i18n/index.js'
+
+const { t, lp } = useI18n()
+</script>
 
 <style scoped>
 .nf h1 {

@@ -2,17 +2,17 @@
   <section class="section">
     <div class="shell about">
       <div>
-        <p class="eyebrow">{{ about.heading }}</p>
-        <h1 class="about__title">Hello, I am {{ business.artist }}</h1>
-        <p v-for="(para, i) in about.body" :key="i" class="about__para">{{ para }}</p>
-        <router-link to="/book" class="btn">Book Now</router-link>
+        <p class="eyebrow">{{ t('about.eyebrow') }}</p>
+        <h1 class="about__title">{{ t('about.title', { artist: business.artist }) }}</h1>
+        <p v-for="k in ['about.p1', 'about.p2']" :key="k" class="about__para">{{ t(k) }}</p>
+        <router-link :to="lp('/book')" class="btn">{{ t('about.book') }}</router-link>
       </div>
 
       <aside class="about__aside">
         <dl>
-          <dt>Based in</dt>
+          <dt>{{ t('about.basedIn') }}</dt>
           <dd>{{ business.location }}</dd>
-          <dt>Enquiries</dt>
+          <dt>{{ t('about.enquiries') }}</dt>
           <dd><a :href="waHref">WhatsApp</a></dd>
           <dt>Instagram</dt>
           <dd>
@@ -25,10 +25,15 @@
 </template>
 
 <script setup>
-import { about, business, socials } from '../content/site.js'
+import { computed } from 'vue'
+import { business, socials } from '../content/site.js'
+import { useI18n } from '../i18n/index.js'
 import { whatsappLink, enquiryMessage } from '../lib/whatsapp.js'
 
-const waHref = whatsappLink(enquiryMessage())
+const { t, lp, locale } = useI18n()
+// The prefilled WhatsApp text follows the page, so an Indonesian visitor does
+// not land in a chat that opens in English.
+const waHref = computed(() => whatsappLink(enquiryMessage({ locale: locale.value })))
 </script>
 
 <style scoped>

@@ -21,7 +21,7 @@
         <!-- The mark is black artwork on transparency, so invert paints it
              white without shipping a second copy that can drift. -->
         <img :src="logo" alt="" class="hero__mark" width="756" height="325" />
-        <h1 class="hero__title">{{ business.tagline }}</h1>
+        <h1 class="hero__title">{{ t('hero.tagline') }}</h1>
         <p class="hero__meta">{{ business.location }}</p>
       </figcaption>
     </figure>
@@ -30,25 +30,27 @@
   <!-- Intro -->
   <section class="section intro">
     <div class="shell">
-      <h2 class="intro__heading">Hello, I am {{ business.artist }}</h2>
-      <p class="lede intro__body">{{ business.intro }}</p>
-      <router-link to="/about" class="btn btn--ghost">More about me</router-link>
+      <h2 class="intro__heading">{{ t('home.introHeading', { artist: business.artist }) }}</h2>
+      <p class="lede intro__body">{{ t('home.intro') }}</p>
+      <router-link :to="lp('/about')" class="btn btn--ghost">{{ t('home.aboutCta') }}</router-link>
     </div>
   </section>
 
   <!-- Featured work -->
   <section class="section featured">
     <div class="shell">
-      <h2 class="featured__heading">Portfolio</h2>
+      <h2 class="featured__heading">{{ t('home.portfolio') }}</h2>
 
       <InstagramGrid v-if="featured.length" :items="featured" />
-      <p v-else class="empty">Loading the latest work…</p>
+      <p v-else class="empty">{{ t('home.portfolioLoading') }}</p>
 
       <div class="featured__tail">
-        <router-link to="/portfolio" class="btn btn--ghost">View full portfolio</router-link>
+        <router-link :to="lp('/portfolio')" class="btn btn--ghost">{{
+          t('home.viewAll')
+        }}</router-link>
         <a :href="instagramUrl" target="_blank" rel="noopener noreferrer" class="btn btn--ghost">
           <SocialIcon name="instagram" :size="16" />
-          Follow me on Instagram
+          {{ t('home.follow') }}
         </a>
       </div>
     </div>
@@ -58,19 +60,19 @@
        quote can account for date, location and party size. -->
   <section class="section pricing-teaser">
     <div class="shell">
-      <h2 class="featured__heading">Services</h2>
+      <h2 class="featured__heading">{{ t('home.services') }}</h2>
       <ul class="teaser__list">
         <li v-for="s in services" :key="s.id">{{ s.description }}</li>
       </ul>
-      <router-link to="/book" class="btn btn--ghost">Get our latest pricelist</router-link>
+      <router-link :to="lp('/book')" class="btn btn--ghost">{{ t('home.pricelist') }}</router-link>
     </div>
   </section>
 
   <!-- CTA -->
   <section class="cta">
     <div class="shell">
-      <h2 class="cta__title">Ready to book?</h2>
-      <router-link to="/book" class="btn btn--ondark">Contact me</router-link>
+      <h2 class="cta__title">{{ t('home.ctaTitle') }}</h2>
+      <router-link :to="lp('/book')" class="btn btn--ondark">{{ t('nav.contact') }}</router-link>
     </div>
   </section>
 </template>
@@ -83,6 +85,9 @@ import logo from '../assets/logo.png'
 import { business, heroImages, instagramUrl } from '../content/site.js'
 import { publicServices } from '@bycarolinecls/shared/services'
 import { useInstagramFeed } from '../lib/instagram.js'
+import { useI18n } from '../i18n/index.js'
+
+const { t, lp } = useI18n()
 
 // One page only. The home grid is a taster - "View full portfolio" is what
 // leads to the feed that keeps loading.

@@ -38,13 +38,12 @@ export const heroImages = [
   },
 ]
 
+// Only the things that read the same in both languages. Anything a visitor
+// reads as a sentence - the tagline, the intro, the about copy - lives in
+// src/i18n/messages.js instead, once per language.
 export const business = {
   name: 'Bycarolinecls',
-  tagline: 'Bridal Makeup Artist',
   artist: 'Caroline',
-  // Shown under the hero headline
-  intro:
-    'Hello, I am Caroline, a bridal makeup artist. My passion is not only the art of makeup, but making every bride feel completely herself on the day that matters most.',
   location: 'Medan, Indonesia',
   email: 'hello@bycarolinecls.com',
   domain: 'bycarolinecls.com',
@@ -65,11 +64,14 @@ export const socials = [
 // `cta: true` marks the item that gets button styling in the header and the
 // mobile menu, so the call to action lives in one list rather than being
 // hardcoded into the header twice.
+//
+// Paths are the ENGLISH ones; the header runs each through lp() so the same
+// list serves both languages. `key` resolves to `nav.<key>` in the catalogue.
 export const nav = [
-  { label: 'Home', to: '/' },
-  { label: 'Portfolio', to: '/portfolio' },
-  { label: 'About', to: '/about' },
-  { label: 'Contact me', to: '/book', cta: true },
+  { key: 'home', to: '/' },
+  { key: 'portfolio', to: '/portfolio' },
+  { key: 'about', to: '/about' },
+  { key: 'contact', to: '/book', cta: true },
 ]
 
 /**
@@ -161,16 +163,3 @@ export const portfolio = [
     alt: 'Evening makeup with black lace and a warm bronzed eye',
   },
 ]
-
-export const about = {
-  heading: 'About',
-  body: [
-    'Replace this with your story: how you started, what you specialise in, and what a client can expect when they book with you.',
-    'A second paragraph works well for training, certifications, or the products you use.',
-  ],
-}
-
-// Sits above BOTH routes on /book - the pricelist request and the date
-// enquiry - so it must not assume the reader already has a date in mind.
-export const bookingNote =
-  'Prices, availability, or a date you already have in mind - it all comes to me on WhatsApp, and I reply within 24 hours.'

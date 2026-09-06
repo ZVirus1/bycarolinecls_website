@@ -4,7 +4,7 @@
       <!-- Heading and the follow link share a line: the grid is the page, so
            this should not cost it a whole band of vertical space. -->
       <div class="page-head">
-        <h1 class="page-title">Portfolio</h1>
+        <h1 class="page-title">{{ t('portfolio.title') }}</h1>
 
         <a
           :href="instagramUrl"
@@ -13,23 +13,26 @@
           class="btn btn--ghost page-follow"
         >
           <SocialIcon name="instagram" :size="16" />
-          Follow me on Instagram
+          {{ t('home.follow') }}
         </a>
       </div>
 
       <InstagramGrid v-if="items.length" :items="items" />
 
       <p v-else-if="!loading" class="empty">
-        Nothing to show yet. New work goes up on
-        <a :href="instagramUrl" target="_blank" rel="noopener noreferrer">Instagram</a> first.
+        {{ t('portfolio.emptyBefore') }}
+        <a :href="instagramUrl" target="_blank" rel="noopener noreferrer">Instagram</a
+        >{{ t('portfolio.emptyAfter') }}
       </p>
 
       <!-- Infinite scroll: the sentinel sits below the grid and asks for the
            next page while it is still 600px off screen, so the grid fills in
            before the reader reaches the bottom of it. -->
       <div v-if="!done" ref="sentinel" class="sentinel" aria-hidden="true"></div>
-      <p v-if="loading" class="loading">Loading more…</p>
-      <p v-else-if="done && live && items.length" class="caught-up">You are all caught up.</p>
+      <p v-if="loading" class="loading">{{ t('portfolio.loading') }}</p>
+      <p v-else-if="done && live && items.length" class="caught-up">
+        {{ t('portfolio.caughtUp') }}
+      </p>
     </div>
   </section>
 </template>
@@ -40,6 +43,9 @@ import InstagramGrid from '../components/InstagramGrid.vue'
 import SocialIcon from '../components/SocialIcon.vue'
 import { instagramUrl } from '../content/site.js'
 import { useInstagramFeed } from '../lib/instagram.js'
+import { useI18n } from '../i18n/index.js'
+
+const { t } = useI18n()
 
 const { items, loading, done, live, loadMore, start } = useInstagramFeed({ pageSize: 12 })
 

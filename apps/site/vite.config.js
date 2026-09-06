@@ -4,26 +4,11 @@ import vue from '@vitejs/plugin-vue'
 
 // Public site: served at the domain root, built into the shared dist/.
 // Built FIRST (it empties dist/), then the admin build writes into dist/admin/.
-/**
- * Keeps the holding page out of search results.
- *
- * index.html has long claimed this happened at build time; nothing actually
- * did it, so "A new site is on its way" was indexable as the site's front
- * door. Only applies while VITE_SITE_MODE=coming-soon - the live site is
- * indexed normally.
- */
-function noindexWhileComingSoon(mode) {
-  return {
-    name: 'noindex-while-coming-soon',
-    transformIndexHtml: (html) =>
-      mode === 'coming-soon'
-        ? html.replace('<head>', '<head>\n    <meta name="robots" content="noindex, nofollow" />')
-        : html,
-  }
-}
-
 export default defineConfig({
-  plugins: [vue(), noindexWhileComingSoon(process.env.VITE_SITE_MODE)],
+  // The noindex/robots story now lives entirely in scripts/prerender.js, which
+  // runs after this build. It was here too, which meant every page shipped two
+  // <meta name="robots"> tags - and on 404.html they disagreed with each other.
+  plugins: [vue()],
   base: '/',
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },

@@ -1,0 +1,8 @@
+# Prices are no longer published as a page. A real 301 so search engines move
+# any accumulated authority to /book rather than following a client-side hop.
+/pricing     /book     301
+/id/pricing  /id/book  301
+
+# The site is bycarolinecls.com. Without this the www host serves a full
+# duplicate of every page, and Google has to guess which one is canonical.
+https://www.bycarolinecls.com/*  https://bycarolinecls.com/:splat  301

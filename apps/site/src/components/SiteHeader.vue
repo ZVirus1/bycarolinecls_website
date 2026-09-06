@@ -9,27 +9,40 @@
         </li>
       </ul>
 
-      <router-link to="/" class="hdr__logo" aria-label="Bycarolinecls home">
+      <router-link :to="lp('/')" class="hdr__logo" :aria-label="t('header.home')">
         <img :src="logo" alt="" width="756" height="325" />
       </router-link>
 
-      <router-link to="/book" class="btn hdr__cta">Contact me</router-link>
+      <div class="hdr__end">
+        <!-- A plain link, not a state toggle: the two languages are two URLs,
+             which is the only reason Google can rank the Indonesian pages. -->
+        <router-link :to="swap" class="hdr__lang" :title="t('locale.switch')" :hreflang="other">
+          <span aria-hidden="true">{{ t('locale.other') }}</span>
+          <span class="visually-hidden">{{ t('locale.switch') }}</span>
+        </router-link>
 
-      <button
-        class="hdr__burger"
-        :aria-expanded="String(open)"
-        aria-controls="primary-nav"
-        @click="open = !open"
-      >
-        <span class="visually-hidden">{{ open ? 'Close menu' : 'Open menu' }}</span>
-        <span aria-hidden="true">{{ open ? '✕' : '☰' }}</span>
-      </button>
+        <router-link :to="lp('/book')" class="btn hdr__cta">{{ t('nav.contact') }}</router-link>
+
+        <button
+          class="hdr__burger"
+          :aria-expanded="String(open)"
+          aria-controls="primary-nav"
+          @click="open = !open"
+        >
+          <span class="visually-hidden">{{
+            open ? t('header.closeMenu') : t('header.openMenu')
+          }}</span>
+          <span aria-hidden="true">{{ open ? '✕' : '☰' }}</span>
+        </button>
+      </div>
     </div>
 
     <nav id="primary-nav" class="hdr__nav" :class="{ 'is-open': open }" aria-label="Primary">
       <ul>
         <li v-for="item in nav" :key="item.to" :class="{ 'hdr__nav-cta': item.cta }">
-          <router-link :to="item.to" @click="open = false">{{ item.label }}</router-link>
+          <router-link :to="lp(item.to)" @click="open = false">{{
+            t(`nav.${item.key}`)
+          }}</router-link>
         </li>
       </ul>
     </nav>
@@ -42,6 +55,9 @@ import { useRoute } from 'vue-router'
 import SocialIcon from './SocialIcon.vue'
 import logo from '../assets/logo.png'
 import { nav, socials } from '../content/site.js'
+import { useI18n } from '../i18n/index.js'
+
+const { t, lp, swap, other } = useI18n()
 
 const open = ref(false)
 const route = useRoute()
@@ -62,6 +78,34 @@ watch(
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding-block: 22px;
+}
+
+.hdr__end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+/* Same micro voice as the nav, with a rule so it reads as a control rather
+   than another nav word. */
+.hdr__lang {
+  font-size: var(--micro);
+  letter-spacing: var(--micro-track);
+  text-indent: var(--micro-track);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 7px 10px;
+  border: 1px solid var(--rule);
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.hdr__lang:hover {
+  color: var(--ink);
+  border-color: var(--ink);
 }
 
 .hdr__social {
@@ -97,13 +141,8 @@ watch(
   height: auto;
 }
 
-.hdr__cta {
-  justify-self: end;
-}
-
 .hdr__burger {
   display: none;
-  justify-self: end;
   background: none;
   border: 0;
   font-size: 20px;

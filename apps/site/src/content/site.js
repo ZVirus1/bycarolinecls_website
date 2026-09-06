@@ -29,12 +29,12 @@ export const heroImages = [
   // carrying white type. A bright photo here needs a scrim heavy enough to
   // flatten the makeup before the mark becomes legible.
   {
-    src: '/portfolio/bridal-ball-gown.webp',
-    alt: 'Soft bridal makeup with a beaded ball gown and a dewy skin finish',
+    src: '/portfolio/bridal-beaded-cape.webp',
+    alt: 'Evening bridal makeup with a velvet cape and a beaded gown',
   },
   {
-    src: '/portfolio/traditional-indian.webp',
-    alt: 'Indian bridal makeup with kundan jewellery and a soft matte base',
+    src: '/portfolio/bridal-feather.webp',
+    alt: 'Luminous bridal makeup with a feathered bodice and a soft rose lip',
   },
 ]
 

@@ -206,6 +206,29 @@ watch(
   .hdr__burger {
     display: block;
   }
+  /* The toggle and the burger share the right-hand column once the CTA drops
+     out. They fit from 375px up with room to spare; this keeps them from
+     colliding with the mark on the narrow old handsets below that. */
+  .hdr__end {
+    gap: 8px;
+  }
+  .hdr__lang {
+    padding: 6px 7px;
+  }
+}
+
+/* Measured, not guessed: at 375px the right-hand column has ~20px of slack,
+   but a 320px handset is 8px short. The mark gives that back. */
+@media (max-width: 380px) {
+  .hdr__logo img {
+    width: 118px;
+  }
+  .hdr__end {
+    gap: 6px;
+  }
+  .hdr__lang {
+    padding: 5px 6px;
+  }
   .hdr__nav {
     display: none;
   }

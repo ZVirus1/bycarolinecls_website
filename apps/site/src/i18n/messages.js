@@ -24,7 +24,6 @@
 export const MESSAGES = {
   en: {
     'locale.label': 'EN',
-    'locale.other': 'ID',
     'locale.switch': 'Baca dalam Bahasa Indonesia',
 
     'nav.home': 'Home',
@@ -103,7 +102,6 @@ export const MESSAGES = {
 
   id: {
     'locale.label': 'ID',
-    'locale.other': 'EN',
     'locale.switch': 'Read in English',
 
     'nav.home': 'Beranda',

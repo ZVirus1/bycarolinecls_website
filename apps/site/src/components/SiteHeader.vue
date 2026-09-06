@@ -15,10 +15,13 @@
 
       <div class="hdr__end">
         <!-- A plain link, not a state toggle: the two languages are two URLs,
-             which is the only reason Google can rank the Indonesian pages. -->
+             which is the only reason Google can rank the Indonesian pages.
+             The flag and code name the language you are READING, the way a
+             language menu does; where the link goes is in its title and in the
+             label underneath. -->
         <router-link :to="swap" class="hdr__lang" :title="t('locale.switch')" :hreflang="other">
-          <FlagIcon :locale="other" />
-          <span class="hdr__lang-code" aria-hidden="true">{{ t('locale.other') }}</span>
+          <FlagIcon :locale="locale" />
+          <span class="hdr__lang-code" aria-hidden="true">{{ t('locale.label') }}</span>
           <span class="visually-hidden">{{ t('locale.switch') }}</span>
         </router-link>
 
@@ -59,7 +62,7 @@ import logo from '../assets/logo.png'
 import { nav, socials } from '../content/site.js'
 import { useI18n } from '../i18n/index.js'
 
-const { t, lp, swap, other } = useI18n()
+const { t, lp, swap, locale, other } = useI18n()
 
 const open = ref(false)
 const route = useRoute()
@@ -89,16 +92,15 @@ watch(
   gap: 14px;
 }
 
-/* Flag plus code, in the same micro voice as the nav. The flag is the
-   language you are switching TO, which is why the pill reads "ID" on the
-   English pages: it is a link to somewhere, not a label for where you are. */
+/* Flag plus code, in the same micro voice as the nav. */
 .hdr__lang {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  /* Sized for a thumb, not for the two letters inside it. */
-  min-height: 42px;
-  padding: 0 12px;
+  /* 14px is .btn's vertical padding, and both boxes inherit the same
+     line-height, so the pill and the Contact button end up the same height
+     without either one hard-coding a number the other has to chase. */
+  padding: 14px;
   border: 1px solid var(--rule);
   /* A pill rather than the square this used to be. It is the one control in
      the header that is neither a word nor an icon, and the shape is what
@@ -226,6 +228,26 @@ watch(
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Just above the mobile breakpoint the gutter is at its widest and the logo at
+   its narrowest, and the Indonesian CTA ("Hubungi Saya") is longer than the
+   English one - enough, between 722 and 735px, to wrap it onto two lines and
+   make the whole bar taller. Tighten both controls rather than let the longer
+   of the two languages set the header's height.
+   This block must stay ABOVE the 720px one: they overlap, the selectors have
+   equal specificity, and the later rule would otherwise win on phones. */
+@media (max-width: 860px) {
+  .hdr__end {
+    gap: 10px;
+  }
+  .hdr__lang {
+    padding: 14px 10px;
+  }
+  .hdr__cta {
+    padding: 14px 20px;
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 720px) {

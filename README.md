@@ -547,3 +547,39 @@ no `og:image` anywhere, so every shared link rendered as bare text.
 - `/admin` is excluded three ways: `Disallow` in robots.txt, an
   `X-Robots-Tag: noindex, nofollow` response header from `public/_headers`, and
   a `<meta name="robots">` in its own `index.html`.
+
+---
+
+## 14. Responsive rules
+
+Both apps are audited across eight viewports from 320px up — every public page
+in both languages, and every admin view. The audit drives a real headless
+browser and checks four things: whether the page pans sideways, whether any
+element escapes the viewport, whether any tap target is under 40px in its
+smaller dimension, and whether any visible text is under 11px.
+
+Three rules came out of the bugs it found, and breaking any of them reintroduces
+one of them:
+
+- **A grid or flex track that holds something fixed-width needs `minmax(0, 1fr)`
+  or `min-width: 0`.** The default is `auto`, which refuses to shrink below the
+  content's intrinsic width. The invoice generator holds a fixed 794px A4 page,
+  so its column never went below 794px and the page panned sideways on a laptop.
+- **`transform: scale()` does not change layout size.** Anything scaled that way
+  needs its container sized to the _scaled_ dimensions, and `transform-origin`
+  set to a corner rather than the centre — otherwise the element scales about a
+  point outside its box and gets clipped on one side.
+- **A visually-hidden element must be pinned to its containing block's origin.**
+  `position: absolute` with no offsets leaves the element at its static
+  position, which for a label inside a wide scrolling table was 1047px out. A
+  1px invisible span widened the whole page.
+
+Two more worth knowing:
+
+- Wide content — tables, the month calendar — scrolls inside its own
+  `overflow-x: auto` container rather than being squeezed. Column widths there
+  follow what is legible, not what divides evenly into the screen.
+- `document.documentElement.scrollWidth` is not a test for horizontal overflow.
+  Chrome reports the unclipped extent of descendants even when an intermediate
+  scroll container is clipping them correctly. Scroll the window and read
+  `scrollX` instead.

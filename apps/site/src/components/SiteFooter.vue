@@ -74,17 +74,22 @@ const year = new Date().getFullYear()
 /* Centre, not baseline. The social links are inline-flex around an svg, and
    an svg has no baseline of its own - left to align on baselines they sit a
    few pixels off the plain text links beside them. */
+/* Row gap goes to zero because each link now carries its own 44px height;
+   keeping both would space the wrapped rows twice. */
 .ftr__links {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 26px;
+  gap: 0 26px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .ftr__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   text-decoration: none;
   font-size: var(--micro);
   letter-spacing: var(--micro-track);
@@ -97,8 +102,15 @@ const year = new Date().getFullYear()
 
 /* Icon only - the mark says Instagram and WhatsApp more quickly than the word
    does, and the label lives on aria-label for anyone who cannot see it. */
+/* A 17px icon needs a box around it, and a tighter one than the 26px word gap
+   or the two icons drift apart from each other. */
 .ftr__social {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin-inline: -13px;
 }
 
 /* Centred and set large: it is the last thing on every page, and the business

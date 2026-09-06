@@ -96,7 +96,13 @@ watch(
   text-transform: uppercase;
   color: var(--ink-soft);
   text-decoration: none;
-  padding: 7px 10px;
+  /* Sized for a thumb, not for the two letters inside it. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  min-width: 42px;
+  padding: 0 10px;
   border: 1px solid var(--rule);
   transition:
     color 0.2s ease,
@@ -108,17 +114,23 @@ watch(
   border-color: var(--ink);
 }
 
+/* The gap moved inside the links. A 19px icon with a 16px gap is a 19x19 tap
+   target; padding makes it 41x41 without moving the icon, and the negative
+   margin keeps the first one flush with the page gutter. */
 .hdr__social {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 0;
   list-style: none;
-  margin: 0;
+  margin: 0 0 0 -11px;
   padding: 0;
 }
 
 .hdr__social a {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px;
   text-decoration: none;
   color: var(--ink-soft);
   transition: color 0.2s;
@@ -160,7 +172,17 @@ watch(
   padding: 0 var(--gutter) 22px;
 }
 
+/* An overlay extends the touch area without moving the underline, which is
+   this element's own border. The row gap never drops below 20px, so these do
+   not collide with one another. */
+.hdr__nav a::after {
+  content: '';
+  position: absolute;
+  inset: -14px -8px;
+}
+
 .hdr__nav a {
+  position: relative;
   text-decoration: none;
   font-size: var(--micro);
   letter-spacing: var(--micro-track);
@@ -205,29 +227,17 @@ watch(
   }
   .hdr__burger {
     display: block;
+    min-width: 42px;
+    min-height: 42px;
   }
   /* The toggle and the burger share the right-hand column once the CTA drops
-     out. They fit from 375px up with room to spare; this keeps them from
-     colliding with the mark on the narrow old handsets below that. */
+     out. They fit from 375px up with room to spare. */
   .hdr__end {
     gap: 8px;
   }
   .hdr__lang {
-    padding: 6px 7px;
-  }
-}
-
-/* Measured, not guessed: at 375px the right-hand column has ~20px of slack,
-   but a 320px handset is 8px short. The mark gives that back. */
-@media (max-width: 380px) {
-  .hdr__logo img {
-    width: 118px;
-  }
-  .hdr__end {
-    gap: 6px;
-  }
-  .hdr__lang {
-    padding: 5px 6px;
+    min-width: 40px;
+    padding: 0 7px;
   }
   .hdr__nav {
     display: none;
@@ -237,17 +247,48 @@ watch(
   }
   .hdr__nav ul {
     flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    padding-bottom: 28px;
+    align-items: stretch;
+    /* Real padding rather than the desktop overlay: stacked 42px targets only
+       20px apart would overlap each other. */
+    gap: 0;
+    padding-bottom: 20px;
+  }
+  .hdr__nav li {
+    display: flex;
+    justify-content: center;
+  }
+  .hdr__nav a {
+    padding: 15px 12px 11px;
+  }
+  .hdr__nav a::after {
+    inset: 0;
   }
   .hdr__nav-cta {
-    display: block;
+    display: flex;
   }
   .hdr__nav-cta a {
     border: 1px solid var(--ink);
     color: var(--ink);
-    padding: 12px 26px;
+    padding: 13px 26px;
+    margin-top: 8px;
+  }
+}
+
+/* Measured, not guessed: at 375px the right-hand column has ~20px of slack,
+   but a 320px handset is 8px short. The mark gives that back.
+   Nothing about the menu belongs here - it broke once already by living in
+   this block instead of the one above, which left every phone wider than
+   380px with a desktop nav row and no Contact button. */
+@media (max-width: 380px) {
+  .hdr__logo img {
+    width: 118px;
+  }
+  .hdr__end {
+    gap: 6px;
+  }
+  .hdr__lang {
+    min-width: 40px;
+    padding: 0 5px;
   }
 }
 </style>

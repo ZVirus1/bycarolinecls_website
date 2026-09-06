@@ -77,6 +77,16 @@ const waHref = computed(() => whatsappLink(enquiryMessage({ locale: locale.value
   font-size: 15px;
 }
 
+/* These two are the page's actual contact points. As bare inline links they
+   were 19px tall - a thumb's worth of box, with the row spacing absorbed so
+   the list keeps its rhythm. */
+.about__aside dd a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-block: -12px;
+}
+
 @media (max-width: 800px) {
   .about {
     grid-template-columns: 1fr;

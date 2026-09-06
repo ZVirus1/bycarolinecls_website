@@ -535,6 +535,7 @@ export default {
 }
 
 .calendar-btn {
+  min-height: 42px;
   background: #fff;
   border: 1px solid var(--btn-border);
   border-radius: 8px;
@@ -588,6 +589,7 @@ export default {
 }
 
 .toggle-btn {
+  min-height: 40px;
   width: 100%;
   padding: 12px 16px;
   background: var(--btn-bg);

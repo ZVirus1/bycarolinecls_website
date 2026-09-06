@@ -239,6 +239,9 @@ select {
   /* Base look comes from the global form-control rules in App.vue. */
   font-size: 15px;
   padding: 11px 12px;
+  /* Clears 40px with room for sub-pixel rounding. Also stops iOS zooming the
+     page on focus, which it does for any field under 16px without a floor. */
+  min-height: 42px;
 }
 
 select {
@@ -299,6 +302,7 @@ select option[value='custom'] {
 }
 
 .item-row .remove {
+  min-height: 40px;
   display: grid;
   place-items: center;
   border: 1px solid #e6e3dc;

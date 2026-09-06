@@ -322,12 +322,16 @@ export default {
   }
 
   .appointment {
-    font-size: 10px;
+    font-size: 11px;
     padding: 3px 4px;
   }
 }
 
 @media (max-width: 768px) {
+  .calendar__inner {
+    min-width: 588px;
+  }
+
   .weekday__long {
     display: none;
   }
@@ -354,9 +358,13 @@ export default {
     margin-bottom: 3px;
   }
 
+  /* The grid scrolls sideways from here down, so the column width is chosen
+     by legibility rather than by whatever is left after dividing the screen
+     by seven. It was squeezing the type to 8.5-9.5px, which is below what
+     anyone can read on a phone. */
   .appointment {
-    font-size: 9.5px;
-    padding: 2px 3px;
+    font-size: 11px;
+    padding: 3px 4px;
     gap: 3px;
     border-radius: 4px;
   }
@@ -374,7 +382,7 @@ export default {
   /* Below this, seven columns stop being legible however they are divided.
      Scroll sideways rather than shave the last day off. */
   .calendar__inner {
-    min-width: 336px;
+    min-width: 560px;
   }
 
   .calendar-day {
@@ -392,8 +400,8 @@ export default {
   }
 
   .appointment {
-    font-size: 9px;
-    padding: 2px;
+    font-size: 11px;
+    padding: 3px 4px;
   }
 
   .calendar-weekdays,
@@ -402,15 +410,9 @@ export default {
   }
 }
 
-/* Very small screens: the time is what has to give, not the name. */
 @media (max-width: 360px) {
   .calendar-day {
     min-height: 84px;
-  }
-
-  .appointment {
-    font-size: 8.5px;
-    padding: 1px 2px;
   }
 }
 </style>

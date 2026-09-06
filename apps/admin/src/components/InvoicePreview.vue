@@ -7,12 +7,22 @@
       <button class="reset-btn" @click="resetZoom">Reset</button>
     </div>
 
-    <!-- transform does not shrink layout height, so the box is sized to match -->
-    <div class="paper-box" :style="{ height: `${Math.round(1123 * zoom) + 2}px` }">
+    <!-- A transform does not change layout size, so the box is sized to the
+         SCALED page - width as well as height. Width used to be left out, which
+         only looked right while the column happened to be exactly 794px wide;
+         in any narrower column the page scaled about its own centre and its
+         left-hand edge was clipped away. -->
+    <div
+      class="paper-box"
+      :style="{
+        width: `${Math.round(794 * zoom) + 2}px`,
+        height: `${Math.round(1123 * zoom) + 2}px`,
+      }"
+    >
       <div
         id="paper"
         class="paper"
-        :style="{ transform: `scale(${zoom})`, transformOrigin: 'center top' }"
+        :style="{ transform: `scale(${zoom})`, transformOrigin: 'left top' }"
       >
         <div class="page-pad" id="invoicePage">
           <div class="inv-title">INVOICE</div>
@@ -246,7 +256,7 @@ export default {
 .paper-wrap {
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
   flex-direction: column;
   width: 100%;
   overflow-x: hidden;
@@ -254,6 +264,8 @@ export default {
 }
 
 .paper-box {
+  margin: 0 auto;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -280,7 +292,7 @@ export default {
   }
   .paper {
     margin: 0;
-    transform-origin: center top;
+    transform-origin: left top;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
   }
 }

@@ -239,6 +239,10 @@ function fileName(inv) {
 }
 
 .btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font: inherit;
   font-size: 13.5px;
   font-weight: 600;
@@ -305,7 +309,7 @@ function fileName(inv) {
 
 .tbl th {
   text-align: left;
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #8a857c;
@@ -367,6 +371,7 @@ function fileName(inv) {
 }
 
 .link-btn {
+  min-height: 40px;
   font-size: 12.5px;
   color: #1d1d1d;
   text-decoration: none;

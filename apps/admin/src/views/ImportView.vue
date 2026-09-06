@@ -269,6 +269,10 @@ code {
 }
 .btn {
   font: inherit;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 13.5px;
   font-weight: 600;
   padding: 9px 16px;

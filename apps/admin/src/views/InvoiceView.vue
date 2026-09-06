@@ -347,15 +347,26 @@ export default {
 </script>
 
 <style scoped>
+/* minmax(0, 1fr) rather than 1fr: a grid track's default min-width is `auto`,
+   which refuses to shrink below its content. The preview holds a fixed 794px
+   A4 page, so the track never dropped below 794px and the whole page panned
+   sideways on anything narrower than about 1400px - including a laptop. */
 .app {
   max-width: var(--page-w);
   margin: 24px auto;
   padding: 0 16px;
   display: grid;
-  grid-template-columns: 560px 1fr;
+  grid-template-columns: 560px minmax(0, 1fr);
   gap: 24px;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Same reason: these sit between the track and the paper, and each one would
+   otherwise re-assert the paper's intrinsic width on the way back up. */
+.preview-section,
+.form-section {
+  min-width: 0;
 }
 
 .mobile-preview-toggle {
@@ -378,6 +389,7 @@ export default {
 
 .toggle-btn {
   width: 100%;
+  min-height: 40px;
   padding: 12px 16px;
   background: var(--btn-bg);
   color: var(--btn-fg);
@@ -403,14 +415,14 @@ export default {
 /* Enhanced Responsive Design */
 @media (max-width: 1200px) {
   .app {
-    grid-template-columns: 460px 1fr;
+    grid-template-columns: 460px minmax(0, 1fr);
     gap: 20px;
   }
 }
 
 @media (max-width: 1024px) {
   .app {
-    grid-template-columns: 380px 1fr;
+    grid-template-columns: 380px minmax(0, 1fr);
     gap: 16px;
   }
 }

@@ -187,6 +187,10 @@ async function save() {
 }
 
 .btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font: inherit;
   font-size: 13.5px;
   font-weight: 600;

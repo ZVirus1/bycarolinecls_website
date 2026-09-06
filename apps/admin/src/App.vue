@@ -236,12 +236,23 @@ button {
   color: var(--ink);
 }
 
+/* Absolutely positioned with no offsets, this sat at its static position -
+   which for the label inside the invoice table's header was 1047px, outside
+   the viewport and outside the table's own scroll container. A 1px invisible
+   span was widening the whole page by 24px. Pinning it to the containing
+   block's origin keeps it out of the layout entirely. */
 .sr-only {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 1px;
   height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
   overflow: hidden;
   clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
 }
 
@@ -315,7 +326,10 @@ button {
   gap: 3px;
 }
 
+/* Every control in the admin clears 40px in its smaller dimension. Caroline
+   uses this on a phone between jobs, and a 26px button is a mis-tap. */
 .side-link {
+  min-height: 40px;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -361,6 +375,7 @@ button {
 }
 
 .signout {
+  min-height: 40px;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -401,6 +416,9 @@ button {
 }
 
 .topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
   display: block;
   min-width: 0;
 }

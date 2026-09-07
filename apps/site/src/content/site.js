@@ -56,8 +56,17 @@ export const whatsappNumber = '62895321353193'
 export const instagramHandle = 'bycarolinecls'
 export const instagramUrl = `https://www.instagram.com/${instagramHandle}/`
 
+export const tiktokHandle = 'bycarolinecls'
+export const tiktokUrl = `https://www.tiktok.com/@${tiktokHandle}`
+
+// Order is deliberate: Instagram is where the work lives, TikTok is second,
+// and WhatsApp stays last because it is the one that starts a conversation
+// rather than showing something. Adding to this list adds the icon to the
+// header and the footer at once - both iterate it - so anything new also
+// needs a mark in SocialIcon.vue and a line in the `sameAs` list in seo.js.
 export const socials = [
   { label: 'Instagram', href: instagramUrl, icon: 'instagram' },
+  { label: 'TikTok', href: tiktokUrl, icon: 'tiktok' },
   { label: 'WhatsApp', href: `https://wa.me/${whatsappNumber}`, icon: 'whatsapp' },
 ]
 

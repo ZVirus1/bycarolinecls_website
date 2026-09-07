@@ -70,7 +70,7 @@
 
   <!-- CTA -->
   <section class="cta">
-    <div class="shell">
+    <div class="shell cta__inner">
       <h2 class="cta__title">{{ t('home.ctaTitle') }}</h2>
       <router-link :to="lp('/book')" class="btn btn--ondark">{{ t('nav.contact') }}</router-link>
     </div>
@@ -271,8 +271,35 @@ const services = publicServices()
   padding-block: clamp(56px, 8vw, 100px);
 }
 
+/* Question and answer on one line, the way they would be said. Centred as a
+   pair rather than each on its own axis, so the button reads as the reply to
+   the question rather than as a separate block underneath it. */
+.cta__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(20px, 3vw, 40px);
+}
+
 .cta__title {
   font-size: var(--step-h2);
-  margin-bottom: 30px;
+  margin: 0;
+}
+
+/* The button never shrinks; the question gives way first. */
+.cta .btn {
+  flex: none;
+}
+
+/* Stacked below this, and it is the Indonesian line that sets the number:
+   "Siap memesan tanggal Anda?" is half again as long as "Ready to book?" and
+   is the first of the two to run out of room beside the button. Wrapping the
+   heading onto two lines next to the button reads as an accident, so the pair
+   goes back to a column instead. */
+@media (max-width: 780px) {
+  .cta__inner {
+    flex-direction: column;
+    gap: 30px;
+  }
 }
 </style>

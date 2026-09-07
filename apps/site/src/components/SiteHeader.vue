@@ -250,6 +250,23 @@ watch(
   }
 }
 
+/* Three marks, not two: TikTok joined the row, and on a phone the left column
+   is min-content wide - so the extra 41px box was pushing the logo off centre
+   and then crushing it. The gap between marks is what gives way, not the marks
+   themselves, and never the height: a thumb misses sideways far less often
+   than it misses up and down, so these stay 41px tall throughout.
+   Each step below was measured at the width it names rather than picked to
+   look tidy, which is why the numbers are not round. The negative margin
+   tracks the padding so the first mark stays flush with the page gutter. */
+@media (max-width: 430px) {
+  .hdr__social {
+    margin-left: -10px;
+  }
+  .hdr__social a {
+    padding: 11px 10px;
+  }
+}
+
 @media (max-width: 720px) {
   .hdr__bar {
     padding-block: 14px;
@@ -327,6 +344,12 @@ watch(
   .hdr__logo img {
     width: 118px;
   }
+  .hdr__social {
+    margin-left: -9px;
+  }
+  .hdr__social a {
+    padding: 11px 9px;
+  }
   .hdr__end {
     gap: 6px;
   }
@@ -360,6 +383,29 @@ watch(
   }
   .hdr__lang-code {
     display: none;
+  }
+}
+
+/* 360px is the commonest Android width and the logo is at its full 118px here,
+   so the marks give the next few pixels rather than the mark. */
+@media (max-width: 360px) {
+  .hdr__social {
+    margin-left: -7px;
+  }
+  .hdr__social a {
+    padding: 11px 7px;
+  }
+}
+
+/* The last of the room. A 320px handset has nothing left to give: the marks
+   sit 8px apart here, which is as close as three of them can come before they
+   read as one smudge. */
+@media (max-width: 330px) {
+  .hdr__social {
+    margin-left: -4px;
+  }
+  .hdr__social a {
+    padding: 11px 4px;
   }
 }
 </style>

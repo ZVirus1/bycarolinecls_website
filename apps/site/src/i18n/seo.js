@@ -126,7 +126,10 @@ export function jsonLd(locale, services) {
       { '@type': 'AdministrativeArea', name: isID ? 'Sumatera Utara' : 'North Sumatra' },
     ],
     knowsLanguage: ['id-ID', 'en'],
-    sameAs: ['https://www.instagram.com/bycarolinecls/'],
+    // Spelled out rather than imported from content/site.js: this file is also
+    // run by scripts/prerender.js in Node, and it stays free of the site's
+    // content module on purpose. Keep in step with `socials` there.
+    sameAs: ['https://www.instagram.com/bycarolinecls/', 'https://www.tiktok.com/@bycarolinecls'],
     founder: {
       '@type': 'Person',
       name: 'Caroline',

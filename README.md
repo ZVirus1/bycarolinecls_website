@@ -427,6 +427,11 @@ most work.
   are what Google and link previews show; they are _not_ the on-page headings.
 - **Social links, WhatsApp number, portfolio fallback** — `apps/site/src/content/site.js`.
   You should never need to touch a component to change the site's words.
+  Adding a social account means three files, not one: the entry in `socials`
+  there, a mark in `apps/site/src/components/SocialIcon.vue` (the header and
+  footer both iterate `socials`, so a missing mark falls back to Instagram's),
+  and the profile URL in `sameAs` in `apps/site/src/i18n/seo.js`, which is how
+  Google is told the accounts and the business are the same entity.
 - **Portfolio** — it is the live Instagram feed; post there and the site
   follows within 30 minutes. The files in `apps/site/public/portfolio/` are
   only the fallback for when the feed is unavailable.

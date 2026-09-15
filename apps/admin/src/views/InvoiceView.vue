@@ -57,8 +57,7 @@ import {
   where,
 } from '../stores/firebase.js'
 import { nextInvoiceNumber } from '../stores/invoices.js'
-import { jsPDF } from 'jspdf'
-import html2canvas from 'html2canvas'
+import { buildInvoicePdfBlob, invoiceFileName, showPdfBlob } from '../lib/invoicePdf.js'
 
 export default {
   name: 'InvoiceView',
@@ -156,45 +155,16 @@ export default {
       }, 5000)
     },
 
-    async capturePdfCanvas() {
-      const paperEl = document.getElementById('paper')
-      if (!paperEl) {
-        throw new Error('Invoice preview not found')
-      }
-
-      // Temporarily remove shadow/border to avoid dark halo/shade in the PDF (especially on iOS)
-      const originalBoxShadow = paperEl.style.boxShadow
-      const originalBorder = paperEl.style.border
-      paperEl.style.boxShadow = 'none'
-      paperEl.style.border = 'none'
-
-      try {
-        // Give layout/fonts a moment to settle
-        await new Promise((resolve) => setTimeout(resolve, 500))
-
-        if (document.fonts && document.fonts.ready) {
-          await document.fonts.ready
-        }
-
-        const canvas = await html2canvas(paperEl, {
-          scale: 2,
-          backgroundColor: '#f5f5ef',
-          logging: false,
-          useCORS: true,
-        })
-
-        return canvas
-      } finally {
-        // Restore original visuals for the live preview
-        paperEl.style.boxShadow = originalBoxShadow
-        paperEl.style.border = originalBorder
-      }
-    },
-
     /**
      * One action: build the PDF, attach it to a booking (linking to an existing
      * one where chosen, so a synced TimeTree event never gets duplicated), then
      * show it.
+     *
+     * The PDF is shown from the copy in memory, not from Storage. It used to be
+     * shown from its download URL, which made the upload a step everything else
+     * waited on - and when Storage started refusing writes (see the note on
+     * uploadPdf below) the invoice could not be produced at all, even though
+     * the browser was holding a finished PDF the whole time.
      */
     async generateInvoice() {
       if (this.busy) return
@@ -212,6 +182,14 @@ export default {
 
         // Reserved before the write so the number is unique even if two tabs save at once.
         const invoiceNumber = await nextInvoiceNumber()
+
+        // Into the tab before the record is written. Whatever happens next,
+        // Caroline has the invoice she asked for.
+        showPdfBlob(
+          viewer,
+          pdfBlob,
+          invoiceFileName({ invoiceNumber, clientName: this.formData.name }),
+        )
 
         const invoiceData = {
           invoiceNumber,
@@ -244,25 +222,22 @@ export default {
           createdId = appointmentId
         }
 
-        const storageRef = ref(storage, `invoices/${appointmentId}.pdf`)
-        await uploadBytes(storageRef, pdfBlob, { contentType: 'application/pdf' })
-        const pdfUrl = await getDownloadURL(storageRef)
+        // Past the point of no return: the booking is now marked invoiced, so
+        // nothing below may throw its way into the rollback.
+        const stored = await this.uploadPdf(appointmentId, pdfBlob)
 
-        await updateDoc(doc(db, 'appointments', appointmentId), {
-          pdfUrl,
-          pdfFileName: `invoice_${appointmentId}.pdf`,
-          updatedAt: new Date(),
-        })
-
-        if (viewer && !viewer.closed) viewer.location.href = pdfUrl
-        else window.open(pdfUrl, '_blank', 'noopener')
-
-        this.showStatus(`Invoice ${invoiceNumber} generated.`, true)
+        this.showStatus(
+          stored
+            ? `Invoice ${invoiceNumber} generated.`
+            : `Invoice ${invoiceNumber} generated. It is saved and open in the other tab, but the ` +
+                `permanent copy could not be stored - Firebase Storage is turning writes away. ` +
+                `Download it from that tab to keep it.`,
+          true,
+        )
         this.linkedEventId = ''
         await this.loadCalendarEvents()
       } catch (error) {
         console.error('Error generating invoice:', error)
-        if (viewer && !viewer.closed) viewer.close()
         // Only ever undo a booking we created; never delete one we linked to.
         if (createdId) {
           await deleteDoc(doc(db, 'appointments', createdId)).catch(() => {})
@@ -273,43 +248,51 @@ export default {
       }
     },
 
+    /**
+     * Keep a permanent copy in Storage, and carry on if that is not possible.
+     *
+     * Cloud Storage for Firebase needs an open billing account for any bucket
+     * made after October 2024, and this one was made in November 2025. When the
+     * project's billing account closed, every upload started coming back 402,
+     * which the SDK reports as `storage/quota-exceeded` - a misleading message,
+     * since the bucket holds 14 MB of a 5 GB allowance.
+     *
+     * So the upload is best-effort: it records pdfUrl when it works, and the
+     * invoice list rebuilds the PDF from the saved record when it does not.
+     * Nothing here needs changing when billing is restored - it simply starts
+     * succeeding again.
+     */
+    async uploadPdf(appointmentId, pdfBlob) {
+      try {
+        const storageRef = ref(storage, `invoices/${appointmentId}.pdf`)
+        await uploadBytes(storageRef, pdfBlob, { contentType: 'application/pdf' })
+        const pdfUrl = await getDownloadURL(storageRef)
+
+        await updateDoc(doc(db, 'appointments', appointmentId), {
+          pdfUrl,
+          pdfFileName: `invoice_${appointmentId}.pdf`,
+          updatedAt: new Date(),
+        })
+        return pdfUrl
+      } catch (error) {
+        console.warn('Invoice saved, but the PDF could not be stored:', error)
+        return null
+      }
+    },
+
+    /**
+     * The preview is the source of the PDF, so on a phone - where the preview
+     * is hidden behind a toggle - it has to be on screen and laid out before
+     * the capture runs.
+     */
     async generatePDFBlob() {
       const previousShowPreview = this.showPreview
-
       try {
         if (this.isMobile) {
           this.showPreview = true
           await this.$nextTick()
         }
-
-        const canvas = await this.capturePdfCanvas()
-        const imgData = canvas.toDataURL('image/png')
-
-        const pdf = new jsPDF({
-          unit: 'pt',
-          format: 'a4',
-          compress: true,
-        })
-
-        const pageW = pdf.internal.pageSize.getWidth()
-        const pageH = pdf.internal.pageSize.getHeight()
-        const imgW = pageW
-        const imgH = (canvas.height * imgW) / canvas.width
-
-        const scale = Math.min(1, pageH / imgH)
-        const finalHeight = imgH * scale
-        const finalWidth = imgW * scale
-        const offsetY = (pageH - finalHeight) / 2
-
-        pdf.addImage(imgData, 'PNG', 0, offsetY, finalWidth, finalHeight)
-
-        const pdfBlob = pdf.output('blob')
-
-        if (!pdfBlob || pdfBlob.size === 0) {
-          throw new Error('Generated PDF is empty')
-        }
-
-        return pdfBlob
+        return await buildInvoicePdfBlob(document.getElementById('paper'))
       } finally {
         if (this.isMobile) {
           this.showPreview = previousShowPreview

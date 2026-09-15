@@ -160,6 +160,17 @@
         >
           View invoice
         </a>
+
+        <!-- Invoiced, but the PDF never reached Storage. The list is where it
+             gets drawn again, so send Caroline there with this one already
+             filtered rather than repeating the machinery here. -->
+        <router-link
+          v-else-if="selected.hasInvoice"
+          :to="{ path: '/invoices', query: { q: selected.invoiceNumber || selected.clientName } }"
+          class="calendar-btn primary sheet__go"
+        >
+          Rebuild invoice PDF
+        </router-link>
       </div>
     </div>
   </div>

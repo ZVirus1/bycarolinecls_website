@@ -12,7 +12,7 @@
       </div>
       <div>
         <label>Invoice Date</label>
-        <BaseDate v-model="localFormData.invoiceDate" />
+        <NativeDate v-model="localFormData.invoiceDate" />
       </div>
     </div>
 
@@ -22,11 +22,11 @@
     <div class="grid-2">
       <div>
         <label>Appointment Date</label>
-        <BaseDate v-model="localFormData.appointmentDate" />
+        <NativeDate v-model="localFormData.appointmentDate" />
       </div>
       <div>
         <label>Appointment Time</label>
-        <BaseTime v-model="localFormData.appointmentTime" />
+        <NativeTime v-model="localFormData.appointmentTime" />
       </div>
     </div>
 
@@ -83,13 +83,13 @@
 
 <script>
 import { services, loadPricing } from '../stores/pricing.js'
-import BaseDate from './ui/BaseDate.vue'
-import BaseTime from './ui/BaseTime.vue'
+import NativeDate from './ui/NativeDate.vue'
+import NativeTime from './ui/NativeTime.vue'
 import BaseSelect from './ui/BaseSelect.vue'
 
 export default {
   name: 'InvoiceForm',
-  components: { BaseDate, BaseTime, BaseSelect },
+  components: { NativeDate, NativeTime, BaseSelect },
   props: {
     formData: Object,
     items: Array,
@@ -206,19 +206,17 @@ export default {
   margin: 2px 0 14px;
   letter-spacing: 0.2px;
 }
+/* No margin of its own. It used to carry margin-right: 8px, which pulled every
+   two-column row 8px short of the full-width fields above and below it and left
+   the form's right edge looking ragged. The card's padding is what sets the
+   margins, once, for everything inside it. */
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-right: 8px; /* Added - matches left margin */
 }
 
 @media (max-width: 768px) {
-  .grid-2 {
-    grid-template-columns: 1fr 1fr; /* Keep 2 columns on mobile */
-    gap: 12px; /* Keep the same gap as desktop */
-    margin-right: 8px; /* Keep the same margin as desktop */
-  }
   .card {
     margin-bottom: 0; /* Remove bottom margin since preview follows immediately */
   }

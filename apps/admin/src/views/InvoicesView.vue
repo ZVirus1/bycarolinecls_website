@@ -72,12 +72,31 @@
                 >Download</a
               >
               <button v-if="!inv.timetreeUid" class="link-btn" @click="openLink(inv)">Link</button>
-              <span v-if="!inv.pdfUrl" class="sub">No PDF</span>
+              <!-- No stored PDF: the record still holds everything the invoice
+                   was made of, so it can be drawn again from that rather than
+                   telling Caroline the invoice is gone. -->
+              <button
+                v-if="!inv.pdfUrl"
+                class="link-btn"
+                :disabled="rebuilding === inv.id"
+                @click="rebuild(inv)"
+              >
+                {{ rebuilding === inv.id ? 'Rebuilding…' : 'Rebuild PDF' }}
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Off-screen, and only while a rebuild is running. The capture needs a
+         laid-out page at full size; `display: none` would have no box to
+         photograph, and `visibility: hidden` would still take up the column. -->
+    <div v-if="rebuildProps" class="offscreen" aria-hidden="true">
+      <InvoicePreview :form-data="rebuildProps.formData" :items="rebuildProps.items" />
+    </div>
+
+    <p v-if="rebuildError" class="banner banner--bad">{{ rebuildError }}</p>
 
     <div v-if="linking" class="sheet" @click.self="closeLink">
       <div class="sheet__card" role="dialog" aria-modal="true" aria-labelledby="link-title">
@@ -111,15 +130,25 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { listInvoices, linkInvoiceToEvent, unlinkedEventsOn } from '../stores/invoices.js'
 import { rupiah } from '@bycarolinecls/shared/format'
 import BaseSelect from '../components/ui/BaseSelect.vue'
+import InvoicePreview from '../components/InvoicePreview.vue'
+import {
+  buildInvoicePdfBlob,
+  invoiceFileName,
+  invoiceToPreviewProps,
+  showPdfBlob,
+} from '../lib/invoicePdf.js'
 
 const invoices = ref([])
 const loading = ref(true)
 const error = ref('')
-const q = ref('')
+// Prefilled when the calendar sends us here for one particular invoice.
+const route = useRoute()
+const q = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const sortKey = ref('date-desc')
 const sortOptions = [
   { value: 'date-desc', label: 'Newest booking first' },
@@ -167,6 +196,38 @@ async function confirmLink(target) {
   }
 }
 
+const rebuildProps = ref(null)
+const rebuilding = ref('')
+const rebuildError = ref('')
+
+/**
+ * Draw the invoice again from the saved record.
+ *
+ * Needed because the PDF is no longer guaranteed to reach Storage - see the
+ * note on uploadPdf in InvoiceView. The record is the invoice; the PDF is a
+ * rendering of it, and can be made again at any time.
+ */
+async function rebuild(inv) {
+  if (rebuilding.value) return
+  rebuilding.value = inv.id
+  rebuildError.value = ''
+  // Opened on the click, before any await, or iOS Safari blocks it.
+  const viewer = window.open('', '_blank')
+  try {
+    rebuildProps.value = invoiceToPreviewProps(inv)
+    await nextTick()
+    const paper = document.querySelector('.offscreen #paper')
+    const blob = await buildInvoicePdfBlob(paper)
+    showPdfBlob(viewer, blob, invoiceFileName(inv))
+  } catch (err) {
+    if (viewer && !viewer.closed) viewer.close()
+    rebuildError.value = `Could not rebuild that PDF: ${err.message}`
+  } finally {
+    rebuildProps.value = null
+    rebuilding.value = ''
+  }
+}
+
 onMounted(async () => {
   try {
     invoices.value = await listInvoices()
@@ -211,6 +272,16 @@ function fileName(inv) {
 </script>
 
 <style scoped>
+/* Off to the side rather than hidden: html2canvas photographs a real box, so
+   the page has to be laid out at its true 794px even though nobody sees it. */
+.offscreen {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 834px;
+  pointer-events: none;
+}
+
 .page {
   max-width: var(--page-w);
   margin: 0 auto;

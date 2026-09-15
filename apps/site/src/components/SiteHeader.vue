@@ -327,8 +327,12 @@ watch(
   .hdr__nav-cta {
     display: flex;
   }
+  /* The menu's Contact button is not a .btn - it is a nav link wearing a
+     border - so it needs the radius spelled out or it stays the one square
+     button on the site. */
   .hdr__nav-cta a {
     border: 1px solid var(--ink);
+    border-radius: var(--field-radius);
     color: var(--ink);
     padding: 13px 26px;
     margin-top: 8px;

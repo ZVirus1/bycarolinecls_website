@@ -145,6 +145,10 @@ h3 {
   text-transform: uppercase;
   padding: 14px 26px;
   border: 1px solid var(--ink);
+  /* The same radius the form fields carry, deliberately: on the booking page a
+     field and the button under it sit in the same column, and two different
+     roundnesses there read as two different kit parts. */
+  border-radius: var(--field-radius);
   background: var(--ink);
   color: var(--paper);
   text-decoration: none;

@@ -97,6 +97,7 @@ const year = new Date().getFullYear()
   text-transform: uppercase;
   padding: 14px 28px;
   border: 1px solid var(--ink);
+  border-radius: var(--field-radius);
   background: var(--ink);
   color: var(--paper);
   text-decoration: none;

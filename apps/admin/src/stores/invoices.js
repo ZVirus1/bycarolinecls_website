@@ -6,6 +6,8 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
+  deleteField,
+  updateDoc,
   query,
   where,
   orderBy,
@@ -109,26 +111,86 @@ export async function linkInvoiceToEvent(invoiceId, eventId) {
 }
 
 /**
- * Mark an invoice settled, or put it back to half-paid.
+ * Mark an invoice settled, or put it back to the 50% deposit.
  *
- * `paidDate` is stored as a plain YYYY-MM-DD string rather than a timestamp:
- * it is printed on the invoice as a calendar date, and a timestamp would be
- * read back in whatever timezone the browser happens to be in, which can move
- * it by a day.
+ * `settled`, not `paid`: generating an invoice already writes `paid` as a
+ * NUMBER - the deposit amount - so a boolean of the same name would have read
+ * as truthy on every invoice ever made and shown the lot as settled.
+ *
+ * `settledDate` is a plain YYYY-MM-DD string rather than a timestamp: it is
+ * printed on the invoice as a calendar date, and a timestamp read back in
+ * whatever timezone the browser happens to be in can move it by a day.
  */
-export async function setInvoicePaid(id, paid, paidDate = todayISO()) {
+export async function setInvoiceSettled(id, settled, settledDate = todayISO()) {
   await setDoc(
     doc(db, 'appointments', id),
     {
-      paid,
+      settled,
       // Written either way. Unmarking leaves the date on the record so that
       // re-marking offers the one it had rather than silently moving it to
-      // today, and nothing reads paidDate unless `paid` is true.
-      paidDate,
+      // today, and nothing reads settledDate unless `settled` is true.
+      settledDate,
       updatedAt: new Date(),
     },
     { merge: true },
   )
+}
+
+/**
+ * Everything the invoice put on the record, and nothing the booking owns.
+ *
+ * `clientName`, `appointmentDate` and `appointmentTime` are absent on purpose:
+ * on a booking that came from TimeTree they are the booking, and TimeTree is
+ * what maintains them.
+ */
+const INVOICE_FIELDS = [
+  'hasInvoice',
+  'invoiceNumber',
+  'invoiceDate',
+  'services',
+  'subtotal',
+  'paid',
+  'balance',
+  'settled',
+  'settledDate',
+  'bank',
+  'accountName',
+  'accountNo',
+  'pdfUrl',
+  'phone',
+  'address',
+]
+
+/**
+ * Remove an invoice.
+ *
+ * Two different things depending on where the record came from. A standalone
+ * invoice is its own document and goes entirely. An invoice written onto a
+ * TimeTree booking is only some of that document's fields, so those are
+ * stripped and the booking stays - deleting it would take a real appointment
+ * out of the calendar, and the next sync would put it back without the invoice
+ * anyway.
+ *
+ * Returns 'deleted' or 'cleared' so the caller can say which happened.
+ */
+export async function deleteInvoice(id) {
+  const invoiceRef = doc(db, 'appointments', id)
+  const snap = await getDoc(invoiceRef)
+  if (!snap.exists()) return 'deleted'
+
+  if (snap.data().timetreeUid) {
+    await updateDoc(
+      invoiceRef,
+      Object.fromEntries([
+        ...INVOICE_FIELDS.map((f) => [f, deleteField()]),
+        ['updatedAt', new Date()],
+      ]),
+    )
+    return 'cleared'
+  }
+
+  await deleteDoc(invoiceRef)
+  return 'deleted'
 }
 
 /** Today where the user is standing, as YYYY-MM-DD. */

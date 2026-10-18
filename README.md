@@ -290,6 +290,11 @@ apps/admin/           invoices, calendar, pricing      → dist/admin/
   src/stores/           firebase, auth, invoices, pricing, sync
   src/lib/ics.js        .ics parsing, shared with the sync script
 packages/shared/      service menu + formatters, used by both apps
+  ui/                   the date, time and select controls, used by both apps.
+                        They were a copy in each until October 2026, with a
+                        comment in both asking whoever changed one to change
+                        the other. Icons are inline SVG (FieldIcon) rather than
+                        Font Awesome, because only the admin loads a font.
 functions/            Cloudflare Pages Functions (deploy with the site)
   api/instagram.js      the public Instagram feed, token-side
   api/sync.js           admin-only "sync now" trigger

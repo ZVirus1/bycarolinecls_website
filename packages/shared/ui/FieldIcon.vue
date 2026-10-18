@@ -1,6 +1,7 @@
 <template>
-  <!-- The admin draws these with Font Awesome. The public site loads no icon
-       font and should not start for six glyphs, so they are inline here. -->
+  <!-- Inline rather than an icon font. The public site loads no icon font and
+       should not start for six glyphs, and the admin's Font Awesome is not
+       available here - these components are shared by both apps. -->
   <svg
     class="ficon"
     :width="size"

@@ -23,6 +23,7 @@
         :key="item.label"
         type="button"
         class="am__item"
+        :class="{ 'am__item--danger': item.tone === 'danger' }"
         role="menuitem"
         :disabled="item.disabled"
         @click="choose(item)"
@@ -45,7 +46,7 @@ import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps({
   label: { type: String, default: 'Actions' },
-  /** [{ label, icon?, disabled?, onSelect }] */
+  /** [{ label, icon?, tone?: 'danger', disabled?, onSelect }] */
   items: { type: Array, required: true },
 })
 
@@ -199,6 +200,26 @@ onBeforeUnmount(() => {
 .am__item:disabled {
   color: #a09a90;
   cursor: default;
+}
+
+/* Red, and separated by a rule. The destructive item sits in the same list as
+   the harmless ones, so colour alone is doing the work of telling them apart -
+   the rule gives a second signal and a moment's pause before the last row. */
+.am__item--danger {
+  margin-top: 5px;
+  padding-top: 11px;
+  border-top: 1px solid #eeebe4;
+  border-radius: 0 0 6px 6px;
+  color: #a3382f;
+}
+
+.am__item--danger .am__icon {
+  color: #c07268;
+}
+
+.am__item--danger:hover:not(:disabled) {
+  background: #fdf0ef;
+  color: #8d2f27;
 }
 
 /* A fixed column so the labels line up whether or not every item has a mark. */

@@ -210,7 +210,7 @@ export function invoiceToPreviewProps(invoice = {}) {
     // Whether the invoice IS settled is the record's business; which version
     // to draw is the caller's, so `paid` is passed separately at the call site
     // and only the date travels with the record.
-    paidDate: invoice.paidDate || invoice.invoiceDate || invoice.appointmentDate || '',
+    paidDate: invoice.settledDate || invoice.invoiceDate || invoice.appointmentDate || '',
   }
 }
 

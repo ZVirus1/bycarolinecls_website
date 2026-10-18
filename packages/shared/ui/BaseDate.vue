@@ -2,19 +2,23 @@
   <FieldPopup
     :display="display"
     placeholder="dd/mm/yyyy"
-    icon="fa-calendar"
-    panel-class="cal-panel"
+    icon="calendar"
+    panel-class="is-sized cal-panel"
+    editable
+    inputmode="numeric"
+    pick-label="Open the calendar"
     :disabled="disabled"
+    @commit="typed"
   >
     <template #default="{ close }">
       <div class="cal">
         <div class="cal__head">
           <button type="button" class="cal__nav" aria-label="Previous month" @click="shift(-1)">
-            <i class="fas fa-chevron-left"></i>
+            <FieldIcon name="chevron-left" :size="13" />
           </button>
           <span class="cal__month">{{ monthLabel }}</span>
           <button type="button" class="cal__nav" aria-label="Next month" @click="shift(1)">
-            <i class="fas fa-chevron-right"></i>
+            <FieldIcon name="chevron-right" :size="13" />
           </button>
         </div>
 
@@ -51,6 +55,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import FieldPopup from './FieldPopup.vue'
+import FieldIcon from './FieldIcon.vue'
 
 const props = defineProps({
   /** YYYY-MM-DD */
@@ -122,6 +127,53 @@ function shift(delta) {
 function pick(value, close) {
   emit('update:modelValue', value)
   close()
+}
+
+/**
+ * Read a date the way somebody would actually write one.
+ *
+ * Accepts 19/10/2026 and 19-10-2026 and 19.10.2026 and 19 10 2026, the same
+ * with a single-digit day or month, a two-digit year, a bare run of digits
+ * (19102026 - which is all an iOS number pad can produce), and the ISO form
+ * the model itself uses.
+ *
+ * Returns '' to clear, or null for anything it cannot read - and null means
+ * the field snaps back to the value it had, which is the whole reason this
+ * does not try to be clever about half-finished input.
+ */
+function parseTyped(raw) {
+  const s = String(raw).trim()
+  if (!s) return ''
+
+  let y, m, d
+  const asIso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (asIso) {
+    ;[, y, m, d] = asIso
+  } else {
+    const hit =
+      s.match(/^(\d{1,2})\s*[/\-. ]\s*(\d{1,2})\s*[/\-. ]\s*(\d{2}|\d{4})$/) ||
+      s.match(/^(\d{2})(\d{2})(\d{4})$/)
+    if (!hit) return null
+    ;[, d, m, y] = hit
+  }
+
+  y = Number(y)
+  m = Number(m)
+  d = Number(d)
+  if (y < 100) y += 2000
+
+  // Round-tripped through Date, which silently rolls 31/02 forward into March
+  // rather than rejecting it.
+  const dt = new Date(y, m - 1, d)
+  if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null
+
+  return iso(y, m, d)
+}
+
+function typed(raw) {
+  const next = parseTyped(raw)
+  if (next === null) return
+  emit('update:modelValue', next)
 }
 </script>
 

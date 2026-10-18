@@ -12,7 +12,7 @@
             @click="pick(opt.value, close)"
           >
             <span class="opt__label">{{ opt.label }}</span>
-            <i v-if="opt.value === modelValue" class="fas fa-check" aria-hidden="true"></i>
+            <FieldIcon v-if="opt.value === modelValue" name="check" :size="13" />
           </button>
         </li>
         <li v-if="!options.length" class="opts__empty">{{ emptyText }}</li>
@@ -24,6 +24,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import FieldPopup from './FieldPopup.vue'
+import FieldIcon from './FieldIcon.vue'
 
 const props = defineProps({
   modelValue: { type: [String, Number], default: '' },
@@ -86,12 +87,15 @@ function pick(value, close) {
   border-radius: 0 0 7px 7px;
 }
 
-.opt i {
+.opt :deep(.ficon) {
   font-size: 11px;
   color: var(--ink-soft, #6b665e);
 }
 
 .opt__label {
+  font-family: var(--fp-font, var(--display, inherit));
+  font-size: var(--fp-fs, 15.5px);
+  letter-spacing: 0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

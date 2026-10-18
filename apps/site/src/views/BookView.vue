@@ -42,9 +42,9 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import BaseDate from '../components/ui/BaseDate.vue'
-import BaseSelect from '../components/ui/BaseSelect.vue'
-import BaseTime from '../components/ui/BaseTime.vue'
+import BaseDate from '@bycarolinecls/shared/ui/BaseDate.vue'
+import BaseSelect from '@bycarolinecls/shared/ui/BaseSelect.vue'
+import BaseTime from '@bycarolinecls/shared/ui/BaseTime.vue'
 import { useI18n } from '../i18n/index.js'
 import { publicServices } from '@bycarolinecls/shared/services'
 import { whatsappLink, enquiryMessage } from '../lib/whatsapp.js'

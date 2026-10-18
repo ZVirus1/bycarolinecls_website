@@ -1,5 +1,14 @@
 <template>
-  <FieldPopup :display="display" placeholder="--:--" icon="fa-clock" :disabled="disabled">
+  <FieldPopup
+    :display="display"
+    placeholder="hh:mm am"
+    icon="clock"
+    panel-class="is-sized"
+    editable
+    pick-label="Open the time picker"
+    :disabled="disabled"
+    @commit="typed"
+  >
     <template #default="{ close }">
       <div class="tp">
         <div class="tp__cols">
@@ -107,6 +116,64 @@ function set({ h, m, p }) {
 function clear(close) {
   emit('update:modelValue', '')
   close()
+}
+
+const pad = (n) => String(n).padStart(2, '0')
+
+/**
+ * Read a time the way somebody would actually write one.
+ *
+ * Accepts 2pm, 2 pm, 2p, 14, 2:30pm, 14:30, 14.30, 1430 and 930. A bare hour
+ * means o'clock. Without a meridiem the hour is read as given, so 14 is the
+ * afternoon and 2 is the morning.
+ *
+ * Returns '' to clear, or null for anything it cannot read, which leaves the
+ * field showing the value it had.
+ */
+function parseTyped(raw) {
+  let s = String(raw).trim().toLowerCase()
+  if (!s) return ''
+
+  let meridiem = ''
+  const tail = s.match(/(a\.?m\.?|p\.?m\.?|a|p)$/)
+  if (tail) {
+    meridiem = tail[1][0]
+    s = s.slice(0, tail.index).trim()
+  }
+
+  let H, M
+  const split = s.match(/^(\d{1,2})\s*[:.\s]\s*(\d{1,2})$/)
+  if (split) {
+    H = Number(split[1])
+    M = Number(split[2])
+  } else if (/^\d{1,2}$/.test(s)) {
+    H = Number(s)
+    M = 0
+  } else if (/^\d{3}$/.test(s)) {
+    // 930 - what a number pad gives for half past nine.
+    H = Number(s[0])
+    M = Number(s.slice(1))
+  } else if (/^\d{4}$/.test(s)) {
+    H = Number(s.slice(0, 2))
+    M = Number(s.slice(2))
+  } else {
+    return null
+  }
+
+  if (meridiem === 'p' && H < 12) H += 12
+  if (meridiem === 'a' && H === 12) H = 0
+  if (!(H >= 0 && H <= 23 && M >= 0 && M <= 59)) return null
+
+  // Deliberately not snapped to `step`. The wheel offers five-minute marks
+  // because that is how bookings are made; typing is how you reach the one
+  // that is not on it.
+  return `${pad(H)}:${pad(M)}`
+}
+
+function typed(raw) {
+  const next = parseTyped(raw)
+  if (next === null) return
+  emit('update:modelValue', next)
 }
 </script>
 

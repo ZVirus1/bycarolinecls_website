@@ -12,7 +12,7 @@
       </div>
       <div>
         <label>Invoice Date</label>
-        <NativeDate v-model="localFormData.invoiceDate" />
+        <BaseDate v-model="localFormData.invoiceDate" />
       </div>
     </div>
 
@@ -22,11 +22,11 @@
     <div class="grid-2">
       <div>
         <label>Appointment Date</label>
-        <NativeDate v-model="localFormData.appointmentDate" />
+        <BaseDate v-model="localFormData.appointmentDate" />
       </div>
       <div>
         <label>Appointment Time</label>
-        <NativeTime v-model="localFormData.appointmentTime" />
+        <BaseTime v-model="localFormData.appointmentTime" />
       </div>
     </div>
 
@@ -83,13 +83,13 @@
 
 <script>
 import { services, loadPricing } from '../stores/pricing.js'
-import NativeDate from './ui/NativeDate.vue'
-import NativeTime from './ui/NativeTime.vue'
-import BaseSelect from './ui/BaseSelect.vue'
+import BaseDate from '@bycarolinecls/shared/ui/BaseDate.vue'
+import BaseTime from '@bycarolinecls/shared/ui/BaseTime.vue'
+import BaseSelect from '@bycarolinecls/shared/ui/BaseSelect.vue'
 
 export default {
   name: 'InvoiceForm',
-  components: { NativeDate, NativeTime, BaseSelect },
+  components: { BaseDate, BaseTime, BaseSelect },
   props: {
     formData: Object,
     items: Array,
@@ -230,8 +230,6 @@ label {
   font-weight: 600;
 }
 input[type='text'],
-input[type='date'],
-input[type='time'],
 input[type='number'],
 select {
   /* Base look comes from the global form-control rules in App.vue. */
@@ -240,6 +238,17 @@ select {
   /* Clears 40px with room for sub-pixel rounding. Also stops iOS zooming the
      page on focus, which it does for any field under 16px without a floor. */
   min-height: 42px;
+}
+
+/* The date, time and service controls are shared with the public booking form
+   and know nothing about this page. They read their metrics from these, which
+   inherit, so the three of them line up with the plain text fields beside them
+   at every width below without this file reaching inside the component. The
+   numbers are the same ones the rule above sets. */
+.card {
+  --fp-fs: 15px;
+  --fp-pad: 11px 12px;
+  --fp-h: 42px;
 }
 
 select {
@@ -388,12 +397,15 @@ select option[value='custom'] {
   }
 
   input[type='text'],
-  input[type='date'],
-  input[type='time'],
   input[type='number'],
   select {
     padding: 14px;
     font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .card {
+    --fp-pad: 14px;
+    --fp-fs: 16px;
   }
 
   .item-row {
@@ -422,12 +434,15 @@ select option[value='custom'] {
   }
 
   input[type='text'],
-  input[type='date'],
-  input[type='time'],
   input[type='number'],
   select {
     padding: 12px;
     font-size: 14px;
+  }
+
+  .card {
+    --fp-pad: 12px;
+    --fp-fs: 14px;
   }
 
   .items {
@@ -450,12 +465,15 @@ select option[value='custom'] {
   }
 
   input[type='text'],
-  input[type='date'],
-  input[type='time'],
   input[type='number'],
   select {
     padding: 10px;
     font-size: 13px;
+  }
+
+  .card {
+    --fp-pad: 10px;
+    --fp-fs: 13px;
   }
 }
 </style>

@@ -61,11 +61,11 @@
             <td class="services" :title="inv.serviceSummary">{{ inv.serviceSummary || '-' }}</td>
             <td class="num">{{ rupiah(inv.total) }}</td>
             <td>
-              <span class="pill" :class="inv.paid ? 'pill--paid' : 'pill--due'">{{
-                inv.paid ? 'Paid' : '50% paid'
+              <span class="pill" :class="inv.settled ? 'pill--paid' : 'pill--due'">{{
+                inv.settled ? 'Paid' : '50% paid'
               }}</span>
-              <span v-if="inv.paid && inv.paidDate" class="sub">{{
-                formatDate(inv.paidDate)
+              <span v-if="inv.settled && inv.settledDate" class="sub">{{
+                formatDate(inv.settledDate)
               }}</span>
             </td>
             <td class="actions">
@@ -90,6 +90,46 @@
     </div>
 
     <p v-if="rebuildError" class="banner banner--bad">{{ rebuildError }}</p>
+    <p v-if="notice" class="banner banner--ok">{{ notice }}</p>
+
+    <div v-if="deleting" class="sheet" @click.self="cancelDelete">
+      <div class="sheet__card" role="dialog" aria-modal="true" aria-labelledby="del-title">
+        <button class="sheet__close" aria-label="Close" @click="cancelDelete">
+          <i class="fas fa-xmark"></i>
+        </button>
+
+        <p class="sheet__eyebrow">Delete invoice</p>
+        <h2 id="del-title" class="sheet__name">
+          {{ deleting.invoiceNumber || deleting.clientName || 'This invoice' }}
+        </h2>
+
+        <!-- Spells out which of the two things is about to happen, because
+             they are very different and the row gives no clue which. -->
+        <p class="sheet__note">
+          <template v-if="deleting.timetreeUid">
+            This invoice was written onto a booking from TimeTree. The invoice is removed and the
+            appointment stays in the calendar, free to be invoiced again.
+          </template>
+          <template v-else>
+            This invoice has no booking behind it, so the whole record goes. It cannot be undone,
+            and the PDF cannot be rebuilt afterwards.
+          </template>
+        </p>
+
+        <p v-if="deleteError" class="banner banner--bad">{{ deleteError }}</p>
+
+        <div class="sheet__actions">
+          <button class="sheet__btn" :disabled="deleteBusy" @click="cancelDelete">Keep it</button>
+          <button
+            class="sheet__btn sheet__btn--danger"
+            :disabled="deleteBusy"
+            @click="confirmDelete"
+          >
+            {{ deleteBusy ? 'Deleting…' : deleting.timetreeUid ? 'Remove invoice' : 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div v-if="linking" class="sheet" @click.self="closeLink">
       <div class="sheet__card" role="dialog" aria-modal="true" aria-labelledby="link-title">
@@ -128,13 +168,14 @@ import { useRoute } from 'vue-router'
 import {
   listInvoices,
   linkInvoiceToEvent,
-  setInvoicePaid,
+  deleteInvoice,
+  setInvoiceSettled,
   todayISO,
   unlinkedEventsOn,
 } from '../stores/invoices.js'
 import { rupiah } from '@bycarolinecls/shared/format'
 import ActionMenu from '../components/ui/ActionMenu.vue'
-import BaseSelect from '../components/ui/BaseSelect.vue'
+import BaseSelect from '@bycarolinecls/shared/ui/BaseSelect.vue'
 import InvoicePreview from '../components/InvoicePreview.vue'
 import {
   buildInvoicePdfBlob,
@@ -209,7 +250,7 @@ const busyLabel = ref('')
  * and outstanding - read as two lists rather than as four v-ifs.
  */
 function actionsFor(inv) {
-  const items = inv.paid
+  const items = inv.settled
     ? [
         {
           label: 'View original invoice',
@@ -217,11 +258,19 @@ function actionsFor(inv) {
           onSelect: () => openPdf(inv, false),
         },
         { label: 'View paid invoice', icon: 'fa-receipt', onSelect: () => openPdf(inv, true) },
-        { label: 'Mark as unpaid', icon: 'fa-rotate-left', onSelect: () => togglePaid(inv, false) },
+        {
+          label: 'Mark as unpaid',
+          icon: 'fa-rotate-left',
+          onSelect: () => toggleSettled(inv, false),
+        },
       ]
     : [
         { label: 'View invoice', icon: 'fa-file-invoice', onSelect: () => openPdf(inv, false) },
-        { label: 'Mark as paid', icon: 'fa-circle-check', onSelect: () => togglePaid(inv, true) },
+        {
+          label: 'Mark as paid',
+          icon: 'fa-circle-check',
+          onSelect: () => toggleSettled(inv, true),
+        },
       ]
 
   if (!inv.timetreeUid) {
@@ -231,6 +280,14 @@ function actionsFor(inv) {
       onSelect: () => openLink(inv),
     })
   }
+
+  // Last, and set apart, because it is the one that cannot be undone.
+  items.push({
+    label: 'Delete invoice',
+    icon: 'fa-trash',
+    tone: 'danger',
+    onSelect: () => askDelete(inv),
+  })
   return items
 }
 
@@ -266,25 +323,63 @@ async function openPdf(inv, paid) {
 }
 
 /** Settle an invoice, or put it back to the 50% deposit. */
-async function togglePaid(inv, paid) {
+async function toggleSettled(inv, settled) {
   if (busyId.value) return
   busyId.value = inv.id
-  busyLabel.value = paid ? 'Marking paid…' : 'Updating…'
+  busyLabel.value = settled ? 'Marking paid…' : 'Updating…'
   rebuildError.value = ''
-  const when = inv.paidDate || todayISO()
+  const when = inv.settledDate || todayISO()
   try {
-    await setInvoicePaid(inv.id, paid, when)
+    await setInvoiceSettled(inv.id, settled, when)
     // Patched in place rather than re-reading the whole collection: the list
     // is sorted and filtered, and a full reload would jump the row away from
     // under the finger that just tapped it.
-    inv.paid = paid
-    inv.paidDate = when
+    inv.settled = settled
+    inv.settledDate = when
   } catch (err) {
     rebuildError.value = `Could not update that invoice: ${err.message}`
   } finally {
     busyId.value = ''
   }
 }
+
+/* ---------- deleting ---------- */
+
+const deleting = ref(null)
+const deleteBusy = ref(false)
+const deleteError = ref('')
+
+function askDelete(inv) {
+  deleting.value = inv
+  deleteError.value = ''
+}
+
+function cancelDelete() {
+  deleting.value = null
+  deleteError.value = ''
+}
+
+async function confirmDelete() {
+  const inv = deleting.value
+  if (!inv || deleteBusy.value) return
+  deleteBusy.value = true
+  deleteError.value = ''
+  try {
+    const what = await deleteInvoice(inv.id)
+    invoices.value = invoices.value.filter((i) => i.id !== inv.id)
+    deleting.value = null
+    notice.value =
+      what === 'cleared'
+        ? `Invoice removed. The ${inv.clientName || 'booking'} appointment is still in the calendar.`
+        : 'Invoice deleted.'
+  } catch (err) {
+    deleteError.value = `Could not delete that invoice: ${err.message}`
+  } finally {
+    deleteBusy.value = false
+  }
+}
+
+const notice = ref('')
 
 onMounted(async () => {
   try {
@@ -542,6 +637,53 @@ function formatDate(d) {
   background: #fdf0ef;
   border: 1px solid #f0cfcb;
   color: #99312a;
+}
+
+.banner--ok {
+  background: #eef3ee;
+  border: 1px solid #cddccd;
+  color: #36583c;
+}
+
+.sheet__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.sheet__btn {
+  min-height: 42px;
+  padding: 10px 18px;
+  border: 1px solid var(--field-border);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.sheet__btn:hover:not(:disabled) {
+  background: #f5f3ee;
+}
+
+/* Filled, not outlined. This is the button that does the irreversible thing,
+   and it should not look like the one beside it that does nothing. */
+.sheet__btn--danger {
+  border-color: #a3382f;
+  background: #a3382f;
+  color: #fff;
+}
+
+.sheet__btn--danger:hover:not(:disabled) {
+  background: #8d2f27;
+}
+
+.sheet__btn:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .empty {

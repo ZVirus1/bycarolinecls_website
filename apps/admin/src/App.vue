@@ -58,7 +58,7 @@
 </template>
 
 <script>
-import logo from './assets/bycarolinecls.png'
+import logo from './assets/bycarolinecls.svg'
 import '@fortawesome/fontawesome-free/css/all.css'
 import LoginGate from './components/LoginGate.vue'
 import { isAuthenticated, isAuthReady, currentUser, signOut } from './stores/auth.js'

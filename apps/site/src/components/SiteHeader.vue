@@ -58,7 +58,7 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import SocialIcon from './SocialIcon.vue'
 import FlagIcon from './FlagIcon.vue'
-import logo from '../assets/logo.png'
+import logo from '../assets/logo.svg'
 import { nav, socials } from '../content/site.js'
 import { useI18n } from '../i18n/index.js'
 

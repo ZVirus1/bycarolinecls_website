@@ -44,7 +44,9 @@ export async function nextInvoiceNumber(now = new Date()) {
 }
 
 export async function listInvoices() {
-  const snap = await getDocs(query(collection(db, 'appointments'), orderBy('appointmentDate', 'desc')))
+  const snap = await getDocs(
+    query(collection(db, 'appointments'), orderBy('appointmentDate', 'desc')),
+  )
 
   return snap.docs
     .map((d) => ({ id: d.id, ...d.data() }))
@@ -52,7 +54,10 @@ export async function listInvoices() {
     .map((a) => ({
       ...a,
       total: invoiceTotal(a),
-      serviceSummary: (a.services ?? []).map((s) => s.description).filter(Boolean).join(', '),
+      serviceSummary: (a.services ?? [])
+        .map((s) => s.description)
+        .filter(Boolean)
+        .join(', '),
     }))
 }
 
@@ -93,10 +98,42 @@ export async function linkInvoiceToEvent(invoiceId, eventId) {
   const { source, timetreeUid, appointmentDate, appointmentTime, createdAt, ...invoiceFields } =
     invoiceSnap.data()
 
-  await setDoc(eventRef, { ...invoiceFields, hasInvoice: true, updatedAt: new Date() }, { merge: true })
+  await setDoc(
+    eventRef,
+    { ...invoiceFields, hasInvoice: true, updatedAt: new Date() },
+    { merge: true },
+  )
   await deleteDoc(invoiceRef)
 
   return eventId
+}
+
+/**
+ * Mark an invoice settled, or put it back to half-paid.
+ *
+ * `paidDate` is stored as a plain YYYY-MM-DD string rather than a timestamp:
+ * it is printed on the invoice as a calendar date, and a timestamp would be
+ * read back in whatever timezone the browser happens to be in, which can move
+ * it by a day.
+ */
+export async function setInvoicePaid(id, paid, paidDate = todayISO()) {
+  await setDoc(
+    doc(db, 'appointments', id),
+    {
+      paid,
+      // Written either way. Unmarking leaves the date on the record so that
+      // re-marking offers the one it had rather than silently moving it to
+      // today, and nothing reads paidDate unless `paid` is true.
+      paidDate,
+      updatedAt: new Date(),
+    },
+    { merge: true },
+  )
+}
+
+/** Today where the user is standing, as YYYY-MM-DD. */
+export function todayISO(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 /** Bookings on a date that came from TimeTree and have no invoice yet. */
@@ -105,7 +142,5 @@ export async function unlinkedEventsOn(date) {
   const snap = await getDocs(
     query(collection(db, 'appointments'), where('appointmentDate', '==', date)),
   )
-  return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
-    .filter((a) => !a.hasInvoice)
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((a) => !a.hasInvoice)
 }

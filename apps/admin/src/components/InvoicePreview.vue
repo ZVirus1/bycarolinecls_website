@@ -25,7 +25,16 @@
         :style="{ transform: `scale(${zoom})`, transformOrigin: 'left top' }"
       >
         <div class="page-pad" id="invoicePage">
-          <div class="inv-title">INVOICE</div>
+          <div class="inv-head">
+            <!-- Only on a settled invoice. Solid ink rather than a green tick:
+                 the page is monochrome throughout, and a stamp in a colour that
+                 appears nowhere else reads as clip art. -->
+            <div v-if="paid" class="paid-mark">
+              <span class="paid-mark__word">PAID</span>
+              <span class="paid-mark__date">{{ displaySettledDate }}</span>
+            </div>
+            <div class="inv-title">INVOICE</div>
+          </div>
 
           <div class="top-meta">
             <div class="meta-box">
@@ -74,11 +83,16 @@
                 <td>Subtotal</td>
                 <td class="total" id="vSubtotal">{{ displaySubtotal }}</td>
               </tr>
+              <!-- Same three rows either way. A settled invoice reads as the
+                   same document with the numbers moved on, not as a different
+                   layout, so nothing here shifts when `paid` flips. -->
               <tr>
                 <td>
                   <div class="two-lines">
-                    <span>Paid 50%</span>
-                    <span class="sub" id="vPaidDate">{{ displayPaidDate }}</span>
+                    <span>{{ paid ? 'Paid in Full' : 'Paid 50%' }}</span>
+                    <span class="sub" id="vPaidDate">{{
+                      paid ? displaySettledDate : displayPaidDate
+                    }}</span>
                   </div>
                 </td>
                 <td class="total" id="vPaid">{{ displayPaid }}</td>
@@ -113,13 +127,17 @@
 
 <script>
 import { rupiah, dmy, longDate, escapeHtml } from '@bycarolinecls/shared'
-import footerLogo from '../assets/bycarolinecls.png'
+import footerLogo from '../assets/bycarolinecls.svg'
 
 export default {
   name: 'InvoicePreview',
   props: {
     formData: Object,
     items: Array,
+    /** Draw the settled version: paid in full, nothing outstanding. */
+    paid: Boolean,
+    /** When the balance was settled. Defaults to today. YYYY-MM-DD or Date. */
+    paidDate: [String, Date],
   },
   data() {
     return {
@@ -229,16 +247,28 @@ export default {
     },
     displayPaid() {
       const subtotal = this.calculateSubtotal()
-      return rupiah(subtotal / 2)
+      return rupiah(this.paid ? subtotal : subtotal / 2)
     },
     displayBalance() {
       const subtotal = this.calculateSubtotal()
-      return rupiah(subtotal / 2)
+      // Written out rather than rupiah(0), which renders a dash for zero. On a
+      // settled invoice the whole point of the line is that the figure is nil,
+      // and a dash there reads as "not filled in".
+      return this.paid ? 'Rp 0,-' : rupiah(subtotal / 2)
+    },
+    /** The day the balance was settled - the deposit date is displayPaidDate. */
+    displaySettledDate() {
+      return dmy(this.paidDate ? new Date(this.paidDate) : new Date())
     },
     displayPaidDate() {
       const date = this.formData.invoiceDate ? new Date(this.formData.invoiceDate) : new Date()
       return dmy(date)
     },
+    // Caroline's own details, and they do not change. They sit here as real
+    // defaults - the bank and the account name always have - because the
+    // environment variables that can override them are set per deployment, and
+    // a build that happens to be missing one must not print an invoice with a
+    // blank where the account number goes.
     displayBank() {
       return this.formData.bank || 'BCA'
     },
@@ -246,7 +276,7 @@ export default {
       return this.formData.accountName || 'Caroline'
     },
     displayAccountNo() {
-      return this.formData.accountNo || ''
+      return this.formData.accountNo || '7865440651'
     },
   },
 }
@@ -332,6 +362,45 @@ export default {
   text-align: center;
 }
 
+/* The title keeps its own right-hand alignment; the PAID block is pushed to
+   the far left by its own auto margin, so an unpaid invoice renders exactly as
+   it did before this row existed.
+   The 60px of air under the title moved from the title onto this row. Left on
+   the title it counted towards the flex line's height, which put the bottom of
+   the PAID block 10px above BILLED TO instead of 70. */
+.inv-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 24px;
+  margin-bottom: 60px;
+}
+
+.paid-mark {
+  margin-right: auto;
+}
+
+.paid-mark__word {
+  display: block;
+  background: #111;
+  color: #f5f5ef;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  /* The tracking adds a trailing gap after the D; the padding compensates so
+     the word looks centred in its block. */
+  padding: 9px 12px 9px 18px;
+}
+
+.paid-mark__date {
+  display: block;
+  margin-top: 7px;
+  font-size: 12px;
+  letter-spacing: 1.4px;
+  color: #6b665e;
+  text-align: center;
+}
+
 .inv-title {
   font-family: 'Roxborough CF', serif;
   font-size: 50px;
@@ -339,7 +408,8 @@ export default {
   letter-spacing: 3px;
   text-align: right;
   margin-top: 6px;
-  margin-bottom: 60px;
+  /* The space below belongs to .inv-head now - see the note there. */
+  margin-bottom: 0;
   color: #000;
 }
 
@@ -357,8 +427,12 @@ export default {
   margin-top: 0;
   margin-bottom: 6px;
 }
+/* 15px, which is what the items table and the totals are set in. This block
+   used to be 13.5px while the dates in the column beside it inherited the
+   16px body size, so the client's own name was the smallest type on the page
+   and sat next to the largest. One size for every value, one for every label. */
 .meta-box p {
-  font-size: 13.5px;
+  font-size: 15px;
   color: #222;
   margin: 2px 0;
   line-height: 1.4;
@@ -367,6 +441,7 @@ export default {
   display: flex;
   justify-content: space-between;
   gap: 12px;
+  font-size: 15px;
 }
 .meta-line .k {
   font-weight: 700;

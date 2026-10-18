@@ -38,7 +38,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import logo from '../assets/bycarolinecls.png'
+import logo from '../assets/bycarolinecls.svg'
 import { signIn, friendlyAuthError } from '../stores/auth.js'
 
 const email = ref('')

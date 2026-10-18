@@ -81,7 +81,7 @@
 import { computed, onMounted } from 'vue'
 import InstagramGrid from '../components/InstagramGrid.vue'
 import SocialIcon from '../components/SocialIcon.vue'
-import logo from '../assets/logo.png'
+import logo from '../assets/logo.svg'
 import { business, heroImages, instagramUrl } from '../content/site.js'
 import { publicServices } from '@bycarolinecls/shared/services'
 import { useInstagramFeed } from '../lib/instagram.js'

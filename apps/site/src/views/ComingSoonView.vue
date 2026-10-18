@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import logo from '../assets/logo.png'
+import logo from '../assets/logo.svg'
 import { computed } from 'vue'
 import { business, socials } from '../content/site.js'
 import { useI18n } from '../i18n/index.js'

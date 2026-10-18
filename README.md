@@ -394,6 +394,16 @@ Firebase credentials.
 `cp .env.example .env.local`, fill in from the Firebase console. `.env.*` is
 gitignored apart from the example.
 
+The file lives at the **repo root**, not inside `apps/admin`, so `vite.config.js`
+there sets `envDir` to point up at it. Without that the admin builds with no
+Firebase config at all and `/admin` renders a white page - `firebase.js` throws
+on import rather than failing quietly later. Cloudflare's own environment
+variables still win over the file: Vite applies `process.env` after it.
+
+Keep `.env.local` in step with the Cloudflare Pages variables. A `wrangler pages
+deploy` of a locally built `dist/` uses the file, a git push uses Cloudflare's,
+and if the two disagree the same commit deploys two different invoices.
+
 ---
 
 ## 8. Running locally

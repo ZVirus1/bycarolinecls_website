@@ -7,6 +7,13 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   base: '/admin/',
+  // The Firebase config lives in .env.local at the REPO root, not in this app
+  // folder, and Vite looks next to the config file unless told otherwise. Left
+  // at the default, a local build inlined nothing, firebase.js threw on import
+  // for want of an apiKey, and /admin rendered a white page. Cloudflare's own
+  // environment variables still win over the file: Vite applies process.env
+  // last.
+  envDir: fileURLToPath(new URL('../..', import.meta.url)),
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

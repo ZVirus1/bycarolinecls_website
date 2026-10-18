@@ -43,6 +43,7 @@
             <th>Booking date</th>
             <th>Services</th>
             <th class="num">Total</th>
+            <th>Status</th>
             <th><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
@@ -59,30 +60,17 @@
             </td>
             <td class="services" :title="inv.serviceSummary">{{ inv.serviceSummary || '-' }}</td>
             <td class="num">{{ rupiah(inv.total) }}</td>
+            <td>
+              <span class="pill" :class="inv.paid ? 'pill--paid' : 'pill--due'">{{
+                inv.paid ? 'Paid' : '50% paid'
+              }}</span>
+              <span v-if="inv.paid && inv.paidDate" class="sub">{{
+                formatDate(inv.paidDate)
+              }}</span>
+            </td>
             <td class="actions">
-              <a
-                v-if="inv.pdfUrl"
-                :href="inv.pdfUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="link-btn"
-                >View</a
-              >
-              <a v-if="inv.pdfUrl" :href="inv.pdfUrl" :download="fileName(inv)" class="link-btn"
-                >Download</a
-              >
-              <button v-if="!inv.timetreeUid" class="link-btn" @click="openLink(inv)">Link</button>
-              <!-- No stored PDF: the record still holds everything the invoice
-                   was made of, so it can be drawn again from that rather than
-                   telling Caroline the invoice is gone. -->
-              <button
-                v-if="!inv.pdfUrl"
-                class="link-btn"
-                :disabled="rebuilding === inv.id"
-                @click="rebuild(inv)"
-              >
-                {{ rebuilding === inv.id ? 'Rebuilding…' : 'Rebuild PDF' }}
-              </button>
+              <span v-if="busyId === inv.id" class="working">{{ busyLabel }}</span>
+              <ActionMenu v-else :items="actionsFor(inv)" />
             </td>
           </tr>
         </tbody>
@@ -93,7 +81,12 @@
          laid-out page at full size; `display: none` would have no box to
          photograph, and `visibility: hidden` would still take up the column. -->
     <div v-if="rebuildProps" class="offscreen" aria-hidden="true">
-      <InvoicePreview :form-data="rebuildProps.formData" :items="rebuildProps.items" />
+      <InvoicePreview
+        :form-data="rebuildProps.formData"
+        :items="rebuildProps.items"
+        :paid="rebuildProps.paid"
+        :paid-date="rebuildProps.paidDate"
+      />
     </div>
 
     <p v-if="rebuildError" class="banner banner--bad">{{ rebuildError }}</p>
@@ -132,8 +125,15 @@
 <script setup>
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { listInvoices, linkInvoiceToEvent, unlinkedEventsOn } from '../stores/invoices.js'
+import {
+  listInvoices,
+  linkInvoiceToEvent,
+  setInvoicePaid,
+  todayISO,
+  unlinkedEventsOn,
+} from '../stores/invoices.js'
 import { rupiah } from '@bycarolinecls/shared/format'
+import ActionMenu from '../components/ui/ActionMenu.vue'
 import BaseSelect from '../components/ui/BaseSelect.vue'
 import InvoicePreview from '../components/InvoicePreview.vue'
 import {
@@ -197,34 +197,92 @@ async function confirmLink(target) {
 }
 
 const rebuildProps = ref(null)
-const rebuilding = ref('')
 const rebuildError = ref('')
+// One row at a time, and the row says what it is doing rather than the page.
+const busyId = ref('')
+const busyLabel = ref('')
 
 /**
- * Draw the invoice again from the saved record.
+ * What the Actions button offers for one invoice.
  *
- * Needed because the PDF is no longer guaranteed to reach Storage - see the
- * note on uploadPdf in InvoiceView. The record is the invoice; the PDF is a
- * rendering of it, and can be made again at any time.
+ * Built per row rather than held in the template so the two shapes - settled
+ * and outstanding - read as two lists rather than as four v-ifs.
  */
-async function rebuild(inv) {
-  if (rebuilding.value) return
-  rebuilding.value = inv.id
+function actionsFor(inv) {
+  const items = inv.paid
+    ? [
+        {
+          label: 'View original invoice',
+          icon: 'fa-file-invoice',
+          onSelect: () => openPdf(inv, false),
+        },
+        { label: 'View paid invoice', icon: 'fa-receipt', onSelect: () => openPdf(inv, true) },
+        { label: 'Mark as unpaid', icon: 'fa-rotate-left', onSelect: () => togglePaid(inv, false) },
+      ]
+    : [
+        { label: 'View invoice', icon: 'fa-file-invoice', onSelect: () => openPdf(inv, false) },
+        { label: 'Mark as paid', icon: 'fa-circle-check', onSelect: () => togglePaid(inv, true) },
+      ]
+
+  if (!inv.timetreeUid) {
+    items.push({
+      label: 'Link to calendar event',
+      icon: 'fa-link',
+      onSelect: () => openLink(inv),
+    })
+  }
+  return items
+}
+
+/**
+ * Draw the invoice from the saved record and show it.
+ *
+ * Always redrawn, never fetched: the stored copy in Firebase Storage is an
+ * archive, it is the unpaid version only, and while the project's billing
+ * account is closed every request for one comes back 402. The record holds
+ * everything the invoice was made of, so the PDF can be made again at any
+ * time - which is also what makes a paid version possible at all.
+ */
+async function openPdf(inv, paid) {
+  if (busyId.value) return
+  busyId.value = inv.id
+  busyLabel.value = paid ? 'Building paid…' : 'Building…'
   rebuildError.value = ''
   // Opened on the click, before any await, or iOS Safari blocks it.
   const viewer = window.open('', '_blank')
   try {
-    rebuildProps.value = invoiceToPreviewProps(inv)
+    rebuildProps.value = { ...invoiceToPreviewProps(inv), paid }
     await nextTick()
     const paper = document.querySelector('.offscreen #paper')
     const blob = await buildInvoicePdfBlob(paper)
-    showPdfBlob(viewer, blob, invoiceFileName(inv))
+    showPdfBlob(viewer, blob, invoiceFileName(inv, { paid }))
   } catch (err) {
     if (viewer && !viewer.closed) viewer.close()
-    rebuildError.value = `Could not rebuild that PDF: ${err.message}`
+    rebuildError.value = `Could not build that PDF: ${err.message}`
   } finally {
     rebuildProps.value = null
-    rebuilding.value = ''
+    busyId.value = ''
+  }
+}
+
+/** Settle an invoice, or put it back to the 50% deposit. */
+async function togglePaid(inv, paid) {
+  if (busyId.value) return
+  busyId.value = inv.id
+  busyLabel.value = paid ? 'Marking paid…' : 'Updating…'
+  rebuildError.value = ''
+  const when = inv.paidDate || todayISO()
+  try {
+    await setInvoicePaid(inv.id, paid, when)
+    // Patched in place rather than re-reading the whole collection: the list
+    // is sorted and filtered, and a full reload would jump the row away from
+    // under the finger that just tapped it.
+    inv.paid = paid
+    inv.paidDate = when
+  } catch (err) {
+    rebuildError.value = `Could not update that invoice: ${err.message}`
+  } finally {
+    busyId.value = ''
   }
 }
 
@@ -263,11 +321,6 @@ function formatDate(d) {
   return isNaN(parsed)
     ? d
     : parsed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
-function fileName(inv) {
-  const who = (inv.clientName || 'Client').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '')
-  return `Bycarolinecls-${inv.invoiceNumber || 'Invoice'}-${who}.pdf`
 }
 </script>
 
@@ -375,7 +428,9 @@ function fileName(inv) {
 .tbl {
   width: 100%;
   border-collapse: collapse;
-  min-width: 860px;
+  /* 940, not 860: Status is a seventh column. Below this the wrapper scrolls
+     sideways rather than letting the names and services wrap to three lines. */
+  min-width: 940px;
 }
 
 .tbl th {
@@ -441,20 +496,40 @@ function fileName(inv) {
   white-space: nowrap;
 }
 
-.link-btn {
-  min-height: 40px;
-  font-size: 12.5px;
-  color: #1d1d1d;
-  text-decoration: none;
-  border: 1px solid #e0dcd4;
-  border-radius: 6px;
-  padding: 5px 10px;
-  margin-right: 6px;
+/* Status pills. Deliberately quiet: the table is already a wall of text and
+   two saturated badges per row would shout over the names and the money. The
+   settled one is the one that reads at a glance, so it is the one with the
+   fill. */
+.pill {
   display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.link-btn:hover {
-  background: #f5f3ee;
+.pill--paid {
+  background: #e4ece4;
+  border: 1px solid #c6d8c6;
+  color: #36583c;
+}
+
+.pill--due {
+  background: #f4f1e9;
+  border: 1px solid #e3ded0;
+  color: #7d786f;
+}
+
+/* Replaces the Actions button while that row is working, so the row keeps its
+   width and the table does not reflow under the finger that tapped it. */
+.working {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  font-size: 12.5px;
+  color: #8a857c;
+  white-space: nowrap;
 }
 
 .banner {

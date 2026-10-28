@@ -20,17 +20,22 @@ import html2canvas from 'html2canvas'
  */
 const CAPTURE_DPI = 300
 const CSS_DPI = 96
+const CAPTURE_SCALE = CAPTURE_DPI / CSS_DPI
 
 /**
- * Fallback capture scales, tried in order.
+ * How many pixels we are willing to ask for in one canvas.
  *
- * A 300 dpi A4 canvas is 8.7 megapixels. Safari on iOS refuses to allocate a
- * canvas past roughly 16.7 megapixels and, worse, hands back a blank one rather
- * than throwing, so each attempt is checked for actual content before it is
- * accepted. An older phone that cannot manage the first scale still gets an
- * invoice, just a less fine one.
+ * A whole A4 page at 300 dpi is 8.7 megapixels. Safari on iOS will not always
+ * allocate one that big - and when it refuses it hands back a blank canvas
+ * rather than throwing - so the page is captured in horizontal bands instead
+ * whenever the single shot fails. Bands keep the resolution; dropping the
+ * scale, which is what this used to do, quietly gave a phone a worse invoice
+ * than a laptop got from the same button.
  */
-const CAPTURE_SCALES = [CAPTURE_DPI / CSS_DPI, 2.5, 2]
+const MAX_CANVAS_PIXELS = 4.2e6
+
+/** Last resort, when even a band will not come back. 192 dpi, but an invoice. */
+const FALLBACK_SCALE = 2
 
 /**
  * Screenshot the A4 page and wrap it in a PDF.
@@ -47,14 +52,22 @@ export async function buildInvoicePdfBlob(paperEl) {
   // itself on the next render even if something here throws.
   const original = {
     transform: paperEl.style.transform,
+    transition: paperEl.style.transition,
     boxShadow: paperEl.style.boxShadow,
     border: paperEl.style.border,
   }
+  // Transition first, and it matters: the preview animates its own scale over
+  // 300ms, so clearing the transform without this left every measurement below
+  // - the page's size, and the size each image is rasterised at - reading
+  // whatever the animation happened to be passing through at the time.
+  paperEl.style.transition = 'none'
   paperEl.style.transform = 'none'
   // Shadow and border would otherwise print as a grey halo down two edges,
   // which is most obvious on iOS.
   paperEl.style.boxShadow = 'none'
   paperEl.style.border = 'none'
+
+  let restoreImages = () => {}
 
   try {
     // Webfonts first: html2canvas paints whatever is laid out at the moment it
@@ -62,79 +75,195 @@ export async function buildInvoicePdfBlob(paperEl) {
     if (document.fonts?.ready) await document.fonts.ready
     await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 60)))
 
-    const canvas = await captureAtBestScale(paperEl)
+    restoreImages = await rasteriseImages(paperEl)
+
+    const bands = await capturePage(paperEl)
 
     const pdf = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
     const pageW = pdf.internal.pageSize.getWidth()
     const pageH = pdf.internal.pageSize.getHeight()
 
-    // Quality 0.98, not the 0.92 this used to carry. A page of hard black
-    // edges on flat cream is the worst case for JPEG, and at 0.92 every letter
-    // picked up a faint grey halo; 0.98 keeps 4:4:4 colour and costs about
-    // 80 KB on a page this size. Measured on a real invoice: the whole PDF is
-    // 340 KB at 300 dpi and 0.98.
-    //
-    // Not PNG, which would be lossless and is the obvious answer: jsPDF
-    // re-encodes a PNG into the PDF rather than passing the original stream
-    // through, and the same page came out at 25 MB.
-    const imgData = canvas.toDataURL('image/jpeg', 0.98)
+    const widthPx = bands[0].width
+    const heightPx = bands.reduce((total, band) => total + band.height, 0)
 
-    const imgH = (canvas.height * pageW) / canvas.width
+    const imgH = (heightPx * pageW) / widthPx
     const scale = Math.min(1, pageH / imgH)
     const finalWidth = pageW * scale
     const finalHeight = imgH * scale
 
-    pdf.addImage(
-      imgData,
-      'JPEG',
-      (pageW - finalWidth) / 2,
-      (pageH - finalHeight) / 2,
-      finalWidth,
-      finalHeight,
-      undefined,
-      // No downsampling on the way in - the whole point of the capture above.
-      'NONE',
-    )
+    let y = (pageH - finalHeight) / 2
+    const x = (pageW - finalWidth) / 2
+
+    bands.forEach((band, index) => {
+      const bandHeight = (band.height / heightPx) * finalHeight
+
+      // Quality 0.98, not the 0.92 this used to carry. A page of hard black
+      // edges on flat cream is the worst case for JPEG, and at 0.92 every
+      // letter picked up a faint grey halo; 0.98 keeps 4:4:4 colour and costs
+      // about 80 KB on a page this size. Measured on a real invoice: the whole
+      // PDF is 340 KB at 300 dpi and 0.98.
+      //
+      // Not PNG, which would be lossless and is the obvious answer: jsPDF
+      // re-encodes a PNG into the PDF rather than passing the original stream
+      // through, and the same page came out at 25 MB.
+      const imgData = band.toDataURL('image/jpeg', 0.98)
+
+      pdf.addImage(
+        imgData,
+        'JPEG',
+        x,
+        y,
+        finalWidth,
+        // A quarter point of overlap into the band below, which the band below
+        // then paints over. Without it two bands that meet on an exact
+        // boundary can still show a hairline where the viewer antialiases the
+        // join. The last band has nothing under it to bleed into.
+        index === bands.length - 1 ? bandHeight : bandHeight + 0.25,
+        undefined,
+        // No downsampling on the way in - the whole point of the capture above.
+        'NONE',
+      )
+      y += bandHeight
+
+      // Let the phone have the memory back before the next band is encoded.
+      band.width = 0
+      band.height = 0
+    })
 
     const blob = pdf.output('blob')
     if (!blob || blob.size === 0) throw new Error('Generated PDF is empty')
     return blob
   } finally {
+    restoreImages()
     paperEl.style.transform = original.transform
+    paperEl.style.transition = original.transition
     paperEl.style.boxShadow = original.boxShadow
     paperEl.style.border = original.border
   }
 }
 
 /**
- * Capture at the finest scale this device will actually give us.
+ * Swap every image on the page for a bitmap of exactly the size it is about to
+ * be printed at, and give back the undo.
  *
- * Steps down rather than failing: a blank or refused canvas on an older iPhone
- * should cost sharpness, never the invoice.
+ * This is here for one bug, and it is worth the detail. html2canvas copies an
+ * image across with `drawImage(img, 0, 0, naturalWidth, naturalHeight, ...)` -
+ * the natural size being the source rectangle to read out of it. For an SVG,
+ * WebKit reports a natural size of whatever the picture is being DISPLAYED at,
+ * not the size the file declares. So on an iPhone the footer logo - a 756x325
+ * drawing shown 233px wide - was copied with a source rectangle of 233x99,
+ * which reads the top left corner of the artwork and nothing else: the first
+ * stroke of the C, stretched across the whole space, which is the diagonal
+ * line that turned up in the corner of every invoice made on a phone. Chrome
+ * reports 756x325 for the same picture, so the bug was invisible on a laptop.
+ *
+ * A bitmap has no such ambiguity anywhere - its natural size is its pixel
+ * count - so each image is rasterised at capture resolution and put back
+ * afterwards. Drawing the SVG into a canvas is a path WebKit gets right.
  */
-async function captureAtBestScale(paperEl) {
-  let lastError = null
-  for (const scale of CAPTURE_SCALES) {
+async function rasteriseImages(root) {
+  const restore = []
+  const undo = () => restore.forEach(([img, src]) => img.setAttribute('src', src))
+
+  for (const img of root.querySelectorAll('img')) {
+    const rect = img.getBoundingClientRect()
+    if (!rect.width || !rect.height) continue
     try {
-      const canvas = await html2canvas(paperEl, {
-        scale,
-        backgroundColor: '#f5f5ef',
-        logging: false,
-        useCORS: true,
-      })
-      if (canvas?.width > 0 && canvas.height > 0 && !isBlank(canvas)) return canvas
-      lastError = new Error(`Capture at ${scale}x came back empty`)
-    } catch (err) {
-      lastError = err
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(rect.width * CAPTURE_SCALE))
+      canvas.height = Math.max(1, Math.round(rect.height * CAPTURE_SCALE))
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+      const src = img.getAttribute('src')
+      const data = canvas.toDataURL('image/png')
+      restore.push([img, src])
+      img.setAttribute('src', data)
+      if (img.decode) await img.decode().catch(() => {})
+    } catch {
+      // A picture we cannot read is left exactly as it was; the capture below
+      // is still worth having.
     }
   }
-  throw lastError ?? new Error('Could not capture the invoice')
+  return undo
+}
+
+/**
+ * Capture the page at 300 dpi, in as few pieces as this device allows.
+ *
+ * Returns the pieces top to bottom - one of them on anything with memory to
+ * spare.
+ */
+async function capturePage(paperEl) {
+  // Checked for ink, not just for a canvas: a phone that will not allocate one
+  // this big hands back a blank one rather than throwing, and a blank page is
+  // worse than a slow one.
+  const whole = await tryCapture(paperEl, CAPTURE_SCALE)
+  if (whole && !isBlank(whole)) return [whole]
+
+  const bands = await captureInBands(paperEl, CAPTURE_SCALE)
+  if (bands) return bands
+
+  const small = await tryCapture(paperEl, FALLBACK_SCALE)
+  if (small && !isBlank(small)) return [small]
+
+  throw new Error('Could not capture the invoice')
+}
+
+/** One html2canvas run, or null if it threw or gave back nothing at all. */
+async function tryCapture(paperEl, scale, crop) {
+  try {
+    const canvas = await html2canvas(paperEl, {
+      scale,
+      backgroundColor: '#f5f5ef',
+      logging: false,
+      useCORS: true,
+      ...crop,
+    })
+    if (canvas?.width > 0 && canvas.height > 0) return canvas
+  } catch (err) {
+    console.warn(`Invoice capture at ${scale}x failed:`, err)
+  }
+  return null
+}
+
+/**
+ * The same page, in horizontal strips, each small enough to allocate.
+ *
+ * Band edges are chosen in device pixels and converted back, so every strip is
+ * a whole number of pixels tall and the strips add up to the page exactly.
+ * null if any strip fails, or if the whole page comes back empty - a blank
+ * strip on its own is allowed, because an invoice for one service has a lot of
+ * empty paper in the middle of it.
+ */
+async function captureInBands(paperEl, scale) {
+  const rect = paperEl.getBoundingClientRect()
+  const widthPx = Math.floor(rect.width * scale)
+  const heightPx = Math.floor(rect.height * scale)
+  const count = Math.max(2, Math.ceil((widthPx * heightPx) / MAX_CANVAS_PIXELS))
+  const bandPx = Math.floor(heightPx / count)
+
+  const bands = []
+  for (let i = 0; i < count; i += 1) {
+    const thisBandPx = i === count - 1 ? heightPx - bandPx * i : bandPx
+    // x and y are measured from the element's own top left corner, not from
+    // the document's - html2canvas adds the element's position itself.
+    const band = await tryCapture(paperEl, scale, {
+      x: 0,
+      y: (bandPx * i) / scale,
+      width: rect.width,
+      height: thisBandPx / scale,
+    })
+    if (!band) return null
+    bands.push(band)
+  }
+
+  if (bands.every((band) => isBlank(band))) return null
+  return bands
 }
 
 /**
  * True if nothing was drawn.
  *
- * The whole page squeezed into 64x64 and checked for any variation at all.
+ * The whole image squeezed into 64x64 and checked for any variation at all.
  * Sampling scanlines instead - which this used to do - needs a line that is
  * guaranteed to have ink on it, and an invoice has wide bands of empty cream
  * whose position moves the moment anything on the page is restyled.
@@ -168,19 +297,39 @@ function isBlank(canvas) {
 }
 
 /**
- * invoice_INV-2026-0007_Cindy.pdf - the name a download lands under.
+ * Bycarolinecls-INV-2026-0007-Cindy-Halim-2026-10-18.pdf - the name a download
+ * lands under, and the name that turns up in a WhatsApp thread.
  *
- * A settled invoice gets _PAID on the end, because the two versions of the
- * same invoice are otherwise the same file name, and the second one to be
- * saved would quietly overwrite the first in a downloads folder.
+ * The shop name leads so the file is recognisable among whatever else is in a
+ * downloads folder; the invoice number, the client and the date of the invoice
+ * follow, in that order, because that is the order anyone looking for one of
+ * these would think of them in.
+ *
+ * A settled invoice gets PAID on the end, because the two versions of the same
+ * invoice are otherwise the same file name, and the second one to be saved
+ * would quietly overwrite the first.
  */
 export function invoiceFileName(invoice = {}, { paid = false } = {}) {
-  const who = String(invoice.clientName || 'Client')
+  const parts = ['Bycarolinecls']
+
+  if (invoice.invoiceNumber) parts.push(invoice.invoiceNumber)
+  const who = clean(invoice.clientName)
+  if (who) parts.push(who)
+  const when = clean(invoice.invoiceDate || invoice.appointmentDate)
+  if (when) parts.push(when)
+  if (paid) parts.push('PAID')
+
+  return `${parts.join('-')}.pdf`
+}
+
+/** Spaces to hyphens, and nothing left that a file system could object to. */
+function clean(value) {
+  return String(value || '')
     .trim()
     .replace(/\s+/g, '-')
     .replace(/[^a-zA-Z0-9-]/g, '')
-  const number = invoice.invoiceNumber || invoice.appointmentDate || 'invoice'
-  return `invoice_${number}${who ? '_' + who : ''}${paid ? '_PAID' : ''}.pdf`
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '')
 }
 
 /**
@@ -212,6 +361,63 @@ export function invoiceToPreviewProps(invoice = {}) {
     // and only the date travels with the record.
     paidDate: invoice.settledDate || invoice.invoiceDate || invoice.appointmentDate || '',
   }
+}
+
+/**
+ * True when this browser can hand a file to the system's own share sheet -
+ * the one with Save to Files, WhatsApp and AirDrop on it.
+ *
+ * Synchronous, so a click handler can decide what to do before it awaits
+ * anything. On a phone this is the whole answer to saving and sending an
+ * invoice; on a desktop browser it is false and the file is downloaded.
+ */
+export function canSharePdf() {
+  try {
+    const probe = new File([new Blob([], { type: 'application/pdf' })], 'invoice.pdf', {
+      type: 'application/pdf',
+    })
+    return Boolean(navigator.canShare?.({ files: [probe] }))
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Put a finished PDF where the person asked for it.
+ *
+ * On a phone that is the share sheet, which is how a file reaches WhatsApp or
+ * the Files app; everywhere else it is a download. Must be called straight
+ * from a tap - iOS only opens the share sheet while the tap is still fresh,
+ * which is why the PDF is built first and this waits behind a button.
+ *
+ * Returns 'shared', 'cancelled' or 'downloaded'.
+ */
+export async function deliverPdf(blob, fileName = 'invoice.pdf') {
+  if (canSharePdf()) {
+    try {
+      await navigator.share({
+        files: [new File([blob], fileName, { type: 'application/pdf' })],
+      })
+      return 'shared'
+    } catch (err) {
+      // The sheet was opened and dismissed: that is an answer, not a failure.
+      if (err?.name === 'AbortError') return 'cancelled'
+      console.warn('Share sheet refused the invoice, downloading instead:', err)
+    }
+  }
+
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  link.rel = 'noopener'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  // Long enough for the save to have started, which is all the browser needs
+  // the URL for.
+  setTimeout(() => URL.revokeObjectURL(url), 60000)
+  return 'downloaded'
 }
 
 /**

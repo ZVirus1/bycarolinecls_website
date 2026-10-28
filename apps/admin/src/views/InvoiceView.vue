@@ -1,19 +1,7 @@
 <template>
   <div class="app">
-    <!-- Mobile Preview Toggle -->
-    <div class="mobile-preview-toggle" v-if="isMobile">
-      <button
-        class="toggle-btn"
-        :class="{ active: showPreview }"
-        @click="showPreview = !showPreview"
-      >
-        <i class="fas" :class="showPreview ? 'fa-edit' : 'fa-eye'"></i>
-        {{ showPreview ? ' Edit Form' : ' Preview' }}
-      </button>
-    </div>
-
     <!-- ============ LEFT: FORM ============ -->
-    <div class="form-section" :class="{ 'hidden-on-mobile': isMobile && showPreview }">
+    <div class="form-section">
       <InvoiceForm
         :form-data="formData"
         :items="items"
@@ -28,10 +16,27 @@
         @update:linked-event-id="linkedEventId = $event"
         @generate="generateInvoice"
       />
+
+      <!-- The finished PDF, waiting for a tap.
+           It waits on purpose: a phone only opens its share sheet while the tap
+           that asked for it is still fresh, and building the invoice takes
+           longer than that. So the PDF is made first and handed over from a
+           button, which is also the one place on a phone that leads to Files
+           and to WhatsApp. -->
+      <div v-if="ready" class="ready">
+        <div class="ready__text">
+          <strong>{{ ready.invoiceNumber }} is ready</strong>
+          <span class="ready__file">{{ ready.fileName }}</span>
+        </div>
+        <button class="ready__btn" type="button" @click="savePdf">
+          <i class="fas" :class="canShare ? 'fa-share-from-square' : 'fa-download'"></i>
+          {{ canShare ? 'Save or share' : 'Download' }}
+        </button>
+      </div>
     </div>
 
     <!-- ============ RIGHT: PREVIEW PAPER ============ -->
-    <div class="preview-section" :class="{ 'hidden-on-mobile': isMobile && !showPreview }">
+    <div class="preview-section">
       <div class="preview-title"><i class="fas fa-eye"></i> Preview</div>
       <InvoicePreview :form-data="formData" :items="items" />
     </div>
@@ -57,7 +62,13 @@ import {
   where,
 } from '../stores/firebase.js'
 import { nextInvoiceNumber } from '../stores/invoices.js'
-import { buildInvoicePdfBlob, invoiceFileName, showPdfBlob } from '../lib/invoicePdf.js'
+import {
+  buildInvoicePdfBlob,
+  canSharePdf,
+  deliverPdf,
+  invoiceFileName,
+  showPdfBlob,
+} from '../lib/invoicePdf.js'
 
 export default {
   name: 'InvoiceView',
@@ -90,13 +101,12 @@ export default {
       busy: false,
       statusMessage: '',
       isStatusSuccess: true,
-      showPreview: false,
-      isMobile: false,
+      /** The finished PDF: { blob, fileName, invoiceNumber }. */
+      ready: null,
+      canShare: canSharePdf(),
     }
   },
   mounted() {
-    this.checkMobile()
-    window.addEventListener('resize', this.checkMobile)
     this.loadCalendarEvents()
   },
   watch: {
@@ -104,9 +114,6 @@ export default {
       this.linkedEventId = ''
       this.loadCalendarEvents()
     },
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.checkMobile)
   },
   methods: {
     /** Bookings already on the chosen appointment date, so an invoice can
@@ -130,9 +137,6 @@ export default {
       }
     },
 
-    checkMobile() {
-      this.isMobile = window.innerWidth < 768
-    },
     updateFormData(newData) {
       if (JSON.stringify(this.formData) !== JSON.stringify({ ...this.formData, ...newData })) {
         this.formData = { ...this.formData, ...newData }
@@ -170,8 +174,11 @@ export default {
       if (this.busy) return
       this.busy = true
 
-      // Opened synchronously: iOS Safari blocks window.open once we have awaited.
-      const viewer = window.open('', '_blank')
+      // Opened synchronously: iOS Safari blocks window.open once we have
+      // awaited. Not opened at all where the share sheet is the better answer,
+      // which is every phone - a blob URL in a new tab is the thing that made
+      // saving an invoice on a phone so awkward in the first place.
+      const viewer = this.canShare ? null : window.open('', '_blank')
       let createdId = null
 
       try {
@@ -183,13 +190,16 @@ export default {
         // Reserved before the write so the number is unique even if two tabs save at once.
         const invoiceNumber = await nextInvoiceNumber()
 
-        // Into the tab before the record is written. Whatever happens next,
+        const fileName = invoiceFileName({
+          invoiceNumber,
+          clientName: this.formData.name,
+          invoiceDate: this.formData.invoiceDate,
+        })
+
+        // Handed over before the record is written. Whatever happens next,
         // Caroline has the invoice she asked for.
-        showPdfBlob(
-          viewer,
-          pdfBlob,
-          invoiceFileName({ invoiceNumber, clientName: this.formData.name }),
-        )
+        this.ready = { blob: pdfBlob, fileName, invoiceNumber }
+        if (viewer) showPdfBlob(viewer, pdfBlob, fileName)
 
         const invoiceData = {
           invoiceNumber,
@@ -229,9 +239,9 @@ export default {
         this.showStatus(
           stored
             ? `Invoice ${invoiceNumber} generated.`
-            : `Invoice ${invoiceNumber} generated. It is saved and open in the other tab, but the ` +
-                `permanent copy could not be stored - Firebase Storage is turning writes away. ` +
-                `Download it from that tab to keep it.`,
+            : `Invoice ${invoiceNumber} generated. The booking is saved, but the archive copy ` +
+                `could not be stored - Firebase Storage is turning writes away. Save the PDF ` +
+                `below to keep it.`,
           true,
         )
         this.linkedEventId = ''
@@ -280,23 +290,23 @@ export default {
       }
     },
 
-    /**
-     * The preview is the source of the PDF, so on a phone - where the preview
-     * is hidden behind a toggle - it has to be on screen and laid out before
-     * the capture runs.
-     */
+    /** The preview is the source of the PDF, and it is always on the page. */
     async generatePDFBlob() {
-      const previousShowPreview = this.showPreview
+      return buildInvoicePdfBlob(document.getElementById('paper'))
+    },
+
+    /**
+     * Hand the finished PDF to the phone's share sheet, or save it.
+     *
+     * Called straight from the tap, with nothing awaited in front of it, which
+     * is the condition iOS puts on opening the sheet at all.
+     */
+    async savePdf() {
+      if (!this.ready) return
       try {
-        if (this.isMobile) {
-          this.showPreview = true
-          await this.$nextTick()
-        }
-        return await buildInvoicePdfBlob(document.getElementById('paper'))
-      } finally {
-        if (this.isMobile) {
-          this.showPreview = previousShowPreview
-        }
+        await deliverPdf(this.ready.blob, this.ready.fileName)
+      } catch (err) {
+        this.showStatus('Could not save that PDF: ' + err.message, false)
       }
     },
 
@@ -352,10 +362,6 @@ export default {
   min-width: 0;
 }
 
-.mobile-preview-toggle {
-  display: none;
-}
-
 .preview-title {
   display: none;
   font-size: 20px;
@@ -370,60 +376,84 @@ export default {
   color: #666;
 }
 
-.toggle-btn {
-  width: 100%;
-  min-height: 40px;
-  padding: 12px 16px;
-  background: var(--btn-bg);
-  color: var(--btn-fg);
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
+/* ---------- the finished PDF ---------- */
+
+.ready {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #ddd8c6;
+  border-left: 4px solid #1d1d1d;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.ready__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ready__text strong {
+  font-size: 15px;
+}
+
+/* The name the file will be saved under, shown because it is the thing you
+   will be looking for in Files or in a chat thread an hour later. It wraps
+   rather than truncates - a name you cannot read in full is no use. */
+.ready__file {
+  font-size: 12px;
+  color: #6b665e;
+  word-break: break-all;
+}
+
+.ready__btn {
+  flex: 0 0 auto;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-height: 44px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.toggle-btn.active {
+.ready__btn:hover {
   background: var(--btn-bg-hover);
 }
 
-.hidden-on-mobile {
-  display: none;
-}
-
-/* Enhanced Responsive Design */
 @media (max-width: 1200px) {
   .app {
-    grid-template-columns: 460px minmax(0, 1fr);
+    grid-template-columns: 480px minmax(0, 1fr);
     gap: 20px;
   }
 }
 
+/* One column from here down - which is a half-screen window as much as it is a
+   phone. Two columns below about 1000px gives the form a track too narrow for
+   a row of invoice-item fields and the preview a page it has to shrink to 45%
+   to show, so neither half is usable. Stacked, the form gets the full width
+   and the preview sits under it at a readable size. */
 @media (max-width: 1024px) {
-  .app {
-    grid-template-columns: 380px minmax(0, 1fr);
-    gap: 16px;
-  }
-}
-
-/* Mobile-first approach for smaller screens */
-@media (max-width: 768px) {
   .app {
     margin: 16px auto;
     padding: 0 12px;
     gap: 20px;
-    grid-template-columns: 1fr;
     display: flex;
     flex-direction: column;
-  }
-
-  .mobile-preview-toggle {
-    display: block;
-    margin-bottom: 0;
   }
 
   .preview-title {
@@ -434,15 +464,6 @@ export default {
   .preview-section {
     display: block;
     width: 100%;
-  }
-
-  .hidden-on-mobile {
-    display: none;
-  }
-
-  .toggle-btn {
-    padding: 12px 16px;
-    font-size: 16px;
   }
 }
 
@@ -455,6 +476,14 @@ export default {
 
   .preview-title {
     font-size: 18px;
+  }
+
+  .ready {
+    padding: 14px;
+  }
+
+  .ready__btn {
+    width: 100%;
   }
 }
 

@@ -92,6 +92,20 @@
     <p v-if="rebuildError" class="banner banner--bad">{{ rebuildError }}</p>
     <p v-if="notice" class="banner banner--ok">{{ notice }}</p>
 
+    <!-- A phone cannot usefully be sent to a blob URL in a new tab, and it
+         only opens its share sheet while the tap that asked for one is still
+         fresh - which a PDF takes too long to build to manage. So on a phone
+         the rebuilt invoice waits here for a second tap. -->
+    <div v-if="ready" class="ready">
+      <div class="ready__text">
+        <strong>{{ ready.title }}</strong>
+        <span class="ready__file">{{ ready.fileName }}</span>
+      </div>
+      <button class="ready__btn" type="button" @click="savePdf">
+        <i class="fas fa-share-from-square" aria-hidden="true"></i> Save or share
+      </button>
+    </div>
+
     <div v-if="deleting" class="sheet" @click.self="cancelDelete">
       <div class="sheet__card" role="dialog" aria-modal="true" aria-labelledby="del-title">
         <button class="sheet__close" aria-label="Close" @click="cancelDelete">
@@ -179,6 +193,8 @@ import BaseSelect from '@bycarolinecls/shared/ui/BaseSelect.vue'
 import InvoicePreview from '../components/InvoicePreview.vue'
 import {
   buildInvoicePdfBlob,
+  canSharePdf,
+  deliverPdf,
   invoiceFileName,
   invoiceToPreviewProps,
   showPdfBlob,
@@ -239,6 +255,9 @@ async function confirmLink(target) {
 
 const rebuildProps = ref(null)
 const rebuildError = ref('')
+/** A rebuilt PDF a phone has yet to be given: { blob, fileName, title }. */
+const ready = ref(null)
+const canShare = canSharePdf()
 // One row at a time, and the row says what it is doing rather than the page.
 const busyId = ref('')
 const busyLabel = ref('')
@@ -305,20 +324,41 @@ async function openPdf(inv, paid) {
   busyId.value = inv.id
   busyLabel.value = paid ? 'Building paid…' : 'Building…'
   rebuildError.value = ''
-  // Opened on the click, before any await, or iOS Safari blocks it.
-  const viewer = window.open('', '_blank')
+  ready.value = null
+  // Opened on the click, before any await, or iOS Safari blocks it. Skipped
+  // where the share sheet is the better way out - see the panel at the top.
+  const viewer = canShare ? null : window.open('', '_blank')
   try {
     rebuildProps.value = { ...invoiceToPreviewProps(inv), paid }
     await nextTick()
     const paper = document.querySelector('.offscreen #paper')
     const blob = await buildInvoicePdfBlob(paper)
-    showPdfBlob(viewer, blob, invoiceFileName(inv, { paid }))
+    const fileName = invoiceFileName(inv, { paid })
+    if (viewer) showPdfBlob(viewer, blob, fileName)
+    else
+      ready.value = {
+        blob,
+        fileName,
+        title: `${inv.invoiceNumber || inv.clientName || 'Invoice'} — ${
+          paid ? 'paid copy' : 'original'
+        }`,
+      }
   } catch (err) {
     if (viewer && !viewer.closed) viewer.close()
     rebuildError.value = `Could not build that PDF: ${err.message}`
   } finally {
     rebuildProps.value = null
     busyId.value = ''
+  }
+}
+
+/** Hand a rebuilt PDF to the share sheet, straight from the tap. */
+async function savePdf() {
+  if (!ready.value) return
+  try {
+    await deliverPdf(ready.value.blob, ready.value.fileName)
+  } catch (err) {
+    rebuildError.value = `Could not save that PDF: ${err.message}`
   }
 }
 
@@ -614,6 +654,62 @@ function formatDate(d) {
   background: #f4f1e9;
   border: 1px solid #e3ded0;
   color: #7d786f;
+}
+
+/* ---------- a rebuilt PDF, waiting to be handed over ---------- */
+
+.ready {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid #ddd8c6;
+  border-left: 4px solid #1d1d1d;
+  border-radius: 12px;
+}
+
+.ready__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ready__text strong {
+  font-size: 14.5px;
+}
+
+.ready__file {
+  font-size: 12px;
+  color: #6b665e;
+  word-break: break-all;
+}
+
+.ready__btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 11px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .ready__btn {
+    width: 100%;
+  }
 }
 
 /* Replaces the Actions button while that row is working, so the row keeps its

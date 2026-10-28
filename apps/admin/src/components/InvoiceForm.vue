@@ -286,25 +286,45 @@ select option[value='custom'] {
   gap: 12px; /* Changed from 8px to 12px */
 }
 
+/* minmax(0, 1fr), not 1fr. A grid track sized `1fr` still refuses to go below
+   its content's minimum width, and an <input>'s minimum width is its default
+   size of about twenty characters - so two of them plus the quantity box and
+   the bin came to roughly 480px whatever the column around them was doing, and
+   the row hung out past the right-hand edge of the card. */
 .item-row {
   display: grid;
-  grid-template-columns: 1fr 80px 1fr auto;
+  grid-template-columns: minmax(0, 1.3fr) 76px minmax(0, 1fr) auto;
   gap: 8px;
   /* stretch, not center: otherwise the bin button is shorter than the fields */
   align-items: stretch;
   margin-bottom: 8px; /* Added space after Remove button */
 }
 
-/* Update mobile responsive */
+/* And the same again for the fields themselves, which are grid items in their
+   own right. */
+.item-row > *,
+.item-row input {
+  min-width: 0;
+}
+
+/* Two lines once four fields across stops being readable: the service on its
+   own line, then quantity, price and the bin under it. A single column - which
+   is what this used to do - put the bin on a line of its own as a full-width
+   button, which reads as something far more important than it is. */
 @media (max-width: 768px) {
   .items {
-    gap: 10px; /* Slightly smaller gap on mobile */
+    gap: 14px;
   }
 
   .item-row {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    margin-bottom: 6px; /* Smaller margin on mobile */
+    grid-template-columns: 84px minmax(0, 1fr) auto;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .item-row > :first-child,
+  .item-row .d-text {
+    grid-column: 1 / -1;
   }
 }
 
@@ -408,14 +428,9 @@ select option[value='custom'] {
     --fp-fs: 16px;
   }
 
-  .item-row {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-
   .item-row .remove {
-    padding: 8px 12px;
-    font-size: 13px;
+    padding: 8px 14px;
+    font-size: 14px;
   }
 
   .btn {

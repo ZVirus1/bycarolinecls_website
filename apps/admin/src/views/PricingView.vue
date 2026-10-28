@@ -42,7 +42,7 @@
                   aria-label="Move up"
                   @click="move(i, -1)"
                 >
-                  ↑
+                  <i class="fas fa-chevron-up" aria-hidden="true"></i>
                 </button>
                 <button
                   class="icon-btn"
@@ -50,7 +50,7 @@
                   aria-label="Move down"
                   @click="move(i, 1)"
                 >
-                  ↓
+                  <i class="fas fa-chevron-down" aria-hidden="true"></i>
                 </button>
               </td>
               <td class="c-name" data-label="Service">
@@ -77,7 +77,7 @@
               </td>
               <td class="c-del">
                 <button class="icon-btn danger" aria-label="Remove service" @click="remove(i)">
-                  ✕
+                  <i class="fas fa-trash-can" aria-hidden="true"></i>
                 </button>
               </td>
             </tr>
@@ -300,14 +300,23 @@ async function save() {
 
 .icon-btn {
   font: inherit;
+  /* Grid, so the glyph sits in the middle of the square however tall the
+     icon's own line box happens to be. */
+  display: grid;
+  place-items: center;
   border: 1px solid #e0dcd4;
   background: #fff;
   border-radius: 6px;
   width: 26px;
   height: 26px;
+  padding: 0;
+  font-size: 11px;
   cursor: pointer;
   color: #4a463f;
   line-height: 1;
+}
+.icon-btn:hover:not(:disabled) {
+  background: #f5f3ee;
 }
 .icon-btn:disabled {
   opacity: 0.3;
@@ -440,7 +449,7 @@ async function save() {
   .icon-btn {
     width: 34px;
     height: 34px;
-    font-size: 14px;
+    font-size: 13px;
   }
 }
 </style>

@@ -1,10 +1,34 @@
 <template>
   <div class="card paper-wrap" ref="paperWrapper">
     <div class="preview-controls" v-if="isMobile">
-      <button class="zoom-btn" @click="zoomOut">🔍 -</button>
-      <span class="zoom-level">{{ Math.round(zoom * 100) }}%</span>
-      <button class="zoom-btn" @click="zoomIn">🔍 +</button>
-      <button class="reset-btn" @click="resetZoom">Reset</button>
+      <!-- One segmented control rather than three loose buttons: out, the
+           reading, and in are one thing you operate, and the reading sits
+           between the two keys that change it. -->
+      <div class="zoom">
+        <button
+          type="button"
+          class="zoom__btn"
+          aria-label="Zoom out"
+          :disabled="zoom <= 0.3"
+          @click="zoomOut"
+        >
+          <i class="fas fa-magnifying-glass-minus" aria-hidden="true"></i>
+        </button>
+        <span class="zoom__level" aria-live="polite">{{ Math.round(zoom * 100) }}%</span>
+        <button
+          type="button"
+          class="zoom__btn"
+          aria-label="Zoom in"
+          :disabled="zoom >= 2"
+          @click="zoomIn"
+        >
+          <i class="fas fa-magnifying-glass-plus" aria-hidden="true"></i>
+        </button>
+      </div>
+      <button type="button" class="zoom__reset" @click="resetZoom">
+        <i class="fas fa-rotate-left" aria-hidden="true"></i>
+        <span>Reset</span>
+      </button>
     </div>
 
     <!-- A transform does not change layout size, so the box is sized to the
@@ -337,29 +361,93 @@ export default {
 .preview-controls {
   display: none;
   width: 100%;
-  padding: 12px;
-  background: #f8f8f8;
-  border-radius: 8px;
+  padding: 10px 12px;
+  background: #f7f6f1;
+  border: 1px solid #ebe7dc;
+  border-radius: 10px;
   margin-bottom: 16px;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   justify-content: center;
 }
 
-.zoom-btn,
-.reset-btn {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
+/* The three keys share one outline, divided rather than separated, so the
+   group reads as a single control the way a zoom control normally does. */
+.zoom {
+  display: flex;
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid var(--field-border);
+  border-radius: 9px;
+  overflow: hidden;
 }
 
-.zoom-level {
+.zoom__btn {
+  display: grid;
+  place-items: center;
+  /* 40px square: the smallest target worth putting under a thumb. */
+  width: 42px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.zoom__btn:hover:not(:disabled) {
+  background: #f4f2ec;
+}
+
+.zoom__btn:active:not(:disabled) {
+  background: #ece8db;
+}
+
+.zoom__btn:disabled {
+  color: #c2bcb1;
+  cursor: default;
+}
+
+.zoom__level {
+  display: grid;
+  place-items: center;
+  min-width: 62px;
+  padding: 0 4px;
+  border-left: 1px solid #ebe7dc;
+  border-right: 1px solid #ebe7dc;
+  font-size: 13px;
   font-weight: 600;
-  min-width: 60px;
-  text-align: center;
+  /* So the page does not jog sideways between 60% and 100%. */
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.zoom__reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--field-border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.zoom__reset:hover {
+  background: #f4f2ec;
+}
+
+.zoom__reset i {
+  font-size: 12px;
+  color: var(--ink-soft, #6b665e);
 }
 
 /* The title keeps its own right-hand alignment; the PAID block is pushed to

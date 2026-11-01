@@ -41,7 +41,6 @@
 
     <!-- ============ RIGHT: PREVIEW PAPER ============ -->
     <div class="preview-section">
-      <div class="preview-title">Invoice Preview</div>
       <InvoicePreview
         :form-data="formData"
         :items="items"
@@ -383,16 +382,6 @@ export default {
   min-width: 0;
 }
 
-/* The other half of the pair: the same heading as the form's own, so the two
-   sections of a stacked page are titled the same way. */
-.preview-title {
-  display: none;
-  font-size: 20px;
-  font-weight: 600;
-  color: #111;
-  margin-bottom: 16px;
-}
-
 /* ---------- the finished PDF ---------- */
 
 .ready {
@@ -473,10 +462,6 @@ export default {
     flex-direction: column;
   }
 
-  .preview-title {
-    display: block;
-  }
-
   .form-section,
   .preview-section {
     display: block;
@@ -489,10 +474,6 @@ export default {
     margin: 12px auto;
     padding: 0 8px;
     gap: 16px;
-  }
-
-  .preview-title {
-    font-size: 18px;
   }
 
   .ready {
@@ -509,10 +490,6 @@ export default {
     margin: 8px auto;
     padding: 0 6px;
     gap: 12px;
-  }
-
-  .preview-title {
-    font-size: 16px;
   }
 }
 </style>

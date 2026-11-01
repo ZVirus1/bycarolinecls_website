@@ -41,7 +41,7 @@
 
     <!-- ============ RIGHT: PREVIEW PAPER ============ -->
     <div class="preview-section">
-      <div class="preview-title"><i class="fas fa-eye" aria-hidden="true"></i> Preview</div>
+      <div class="preview-title">Invoice Preview</div>
       <InvoicePreview
         :form-data="formData"
         :items="items"
@@ -383,22 +383,14 @@ export default {
   min-width: 0;
 }
 
+/* The other half of the pair: the same heading as the form's own, so the two
+   sections of a stacked page are titled the same way. */
 .preview-title {
   display: none;
   font-size: 20px;
   font-weight: 600;
   color: #111;
   margin-bottom: 16px;
-  align-items: center;
-  gap: 8px;
-}
-
-.preview-title i {
-  /* A mark beside the word, not a second heading: it sits at the size the
-     other icons in the admin do, in the same grey, and scales with whatever
-     size the heading itself is at. */
-  font-size: 0.72em;
-  color: #8a857c;
 }
 
 /* ---------- the finished PDF ---------- */
@@ -482,7 +474,7 @@ export default {
   }
 
   .preview-title {
-    display: flex;
+    display: block;
   }
 
   .form-section,

@@ -3,7 +3,6 @@
     <form class="login-card" @submit.prevent="submit">
       <img :src="logo" alt="" class="login-logo" />
       <h1 class="login-title">Bycarolinecls</h1>
-      <p class="login-sub">Admin sign in</p>
 
       <label class="login-label" for="email">Email</label>
       <input
@@ -90,14 +89,10 @@ async function submit() {
   font-size: 22px;
   font-weight: 600;
   text-align: center;
-  margin: 14px 0 2px;
+  /* The gap the strapline under it used to carry, now that the name stands on
+     its own above the fields. */
+  margin: 14px 0 24px;
   letter-spacing: 0.02em;
-}
-.login-sub {
-  text-align: center;
-  color: #8a857c;
-  font-size: 13px;
-  margin: 0 0 24px;
 }
 .login-label {
   font-size: 12px;

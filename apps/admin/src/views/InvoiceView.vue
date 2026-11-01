@@ -13,7 +13,11 @@
         :calendar-events="calendarEvents"
         :linked-event-id="linkedEventId"
         :busy="busy"
+        :settled="settled"
+        :settled-date="settledDate"
         @update:linked-event-id="linkedEventId = $event"
+        @update:settled="settled = $event"
+        @update:settled-date="settledDate = $event"
         @generate="generateInvoice"
       />
 
@@ -37,8 +41,13 @@
 
     <!-- ============ RIGHT: PREVIEW PAPER ============ -->
     <div class="preview-section">
-      <div class="preview-title"><i class="fas fa-eye"></i> Preview</div>
-      <InvoicePreview :form-data="formData" :items="items" />
+      <div class="preview-title"><i class="fas fa-eye" aria-hidden="true"></i> Preview</div>
+      <InvoicePreview
+        :form-data="formData"
+        :items="items"
+        :paid="settled"
+        :paid-date="settledDate"
+      />
     </div>
   </div>
 </template>
@@ -61,7 +70,7 @@ import {
   query,
   where,
 } from '../stores/firebase.js'
-import { nextInvoiceNumber } from '../stores/invoices.js'
+import { nextInvoiceNumber, todayISO } from '../stores/invoices.js'
 import {
   buildInvoicePdfBlob,
   canSharePdf,
@@ -98,6 +107,10 @@ export default {
       items: [{ description: '', quantity: 1, total: '', isPredefined: false }],
       calendarEvents: [],
       linkedEventId: '',
+      /** Paid in full rather than the usual 50% deposit. Drawn on the preview,
+       *  so the PDF - which is a picture of the preview - follows it too. */
+      settled: false,
+      settledDate: todayISO(),
       busy: false,
       statusMessage: '',
       isStatusSuccess: true,
@@ -190,11 +203,14 @@ export default {
         // Reserved before the write so the number is unique even if two tabs save at once.
         const invoiceNumber = await nextInvoiceNumber()
 
-        const fileName = invoiceFileName({
-          invoiceNumber,
-          clientName: this.formData.name,
-          invoiceDate: this.formData.invoiceDate,
-        })
+        const fileName = invoiceFileName(
+          {
+            invoiceNumber,
+            clientName: this.formData.name,
+            invoiceDate: this.formData.invoiceDate,
+          },
+          { paid: this.settled },
+        )
 
         // Handed over before the record is written. Whatever happens next,
         // Caroline has the invoice she asked for.
@@ -211,8 +227,13 @@ export default {
           invoiceDate: this.formData.invoiceDate,
           services: this.getServicesData(),
           subtotal: this.calculateSubtotal(),
-          paid: this.calculateSubtotal() / 2,
-          balance: this.calculateSubtotal() / 2,
+          // `paid` is an AMOUNT, not a flag - the deposit, or the whole lot on
+          // an invoice settled on the spot. Whether it is settled is `settled`,
+          // which is the field the invoice list reads.
+          paid: this.settled ? this.calculateSubtotal() : this.calculateSubtotal() / 2,
+          balance: this.settled ? 0 : this.calculateSubtotal() / 2,
+          settled: this.settled,
+          settledDate: this.settledDate,
           bank: this.formData.bank,
           accountName: this.formData.accountName,
           accountNo: this.formData.accountNo,
@@ -373,7 +394,11 @@ export default {
 }
 
 .preview-title i {
-  color: #666;
+  /* A mark beside the word, not a second heading: it sits at the size the
+     other icons in the admin do, in the same grey, and scales with whatever
+     size the heading itself is at. */
+  font-size: 0.72em;
+  color: #8a857c;
 }
 
 /* ---------- the finished PDF ---------- */

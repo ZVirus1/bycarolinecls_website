@@ -95,7 +95,7 @@ function pick(value, close) {
 .opt__label {
   font-family: var(--fp-font, var(--display, inherit));
   font-size: var(--fp-fs, 15.5px);
-  letter-spacing: 0.01em;
+  letter-spacing: var(--fp-ls, 0.01em);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -123,6 +123,15 @@ export default {
   --field-border: #ddd8c6;
   --field-radius: 8px;
   --page-w: 1400px;
+  --body-font:
+    Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+    sans-serif;
+  /* The shared date, time and service controls are built for the public site,
+     where their text is set in the display serif with a little tracking. The
+     admin is a plain sans-serif tool, so they are pinned to the same font and
+     the same tracking as the text fields they sit between. */
+  --fp-font: var(--body-font);
+  --fp-ls: normal;
 }
 
 body {
@@ -134,16 +143,7 @@ body {
      pages. Pin it so every page renders at the size it was authored at. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    'Noto Sans',
-    sans-serif;
+  font-family: var(--body-font);
   line-height: 1.35;
 }
 

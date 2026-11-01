@@ -72,6 +72,42 @@
       empty-text="No event for this appointment date"
     />
 
+    <label style="margin-top: 18px">Payment status</label>
+    <!-- Two halves of one control rather than a tick box: the invoice is always
+         one of these two documents, and the one it is now is the one that is
+         filled in. Both states are written on the record, so the list and the
+         generator always say the same thing about an invoice. -->
+    <div class="pay" role="group" aria-label="Payment status">
+      <button
+        type="button"
+        class="pay__opt"
+        :class="{ 'is-on': !settled }"
+        :aria-pressed="String(!settled)"
+        @click="$emit('update:settled', false)"
+      >
+        <i class="fas fa-hourglass-half" aria-hidden="true"></i>
+        <span>Deposit 50%</span>
+      </button>
+      <button
+        type="button"
+        class="pay__opt"
+        :class="{ 'is-on': settled }"
+        :aria-pressed="String(settled)"
+        @click="$emit('update:settled', true)"
+      >
+        <i class="fas fa-circle-check" aria-hidden="true"></i>
+        <span>Paid in full</span>
+      </button>
+    </div>
+
+    <template v-if="settled">
+      <label>Date settled</label>
+      <BaseDate
+        :model-value="settledDate"
+        @update:model-value="$emit('update:settled-date', $event)"
+      />
+    </template>
+
     <button class="btn" type="button" :disabled="busy" @click="$emit('generate')">
       <i class="fas fa-file-pdf"></i> {{ busy ? 'Generating…' : 'Generate Invoice' }}
     </button>
@@ -98,6 +134,10 @@ export default {
     calendarEvents: { type: Array, default: () => [] },
     linkedEventId: { type: String, default: '' },
     busy: Boolean,
+    /** Paid in full, rather than the 50% deposit. */
+    settled: Boolean,
+    /** The day the balance was settled, YYYY-MM-DD. */
+    settledDate: { type: String, default: '' },
   },
   data() {
     return {
@@ -345,6 +385,47 @@ select option[value='custom'] {
   background: #fdf5f5;
   color: #b61c1c;
 }
+/* One outline around both halves, so they read as a single switch between two
+   states rather than as two buttons that happen to sit together. */
+.pay {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 6px;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.pay__opt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 0;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  color: #6f6a62;
+  cursor: pointer;
+}
+
+.pay__opt + .pay__opt {
+  border-left: 1px solid var(--field-border);
+}
+
+.pay__opt:hover:not(.is-on) {
+  background: #faf9f6;
+}
+
+.pay__opt.is-on {
+  background: var(--btn-bg);
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .hint {
   font-size: 12px;
   color: #8a857c;

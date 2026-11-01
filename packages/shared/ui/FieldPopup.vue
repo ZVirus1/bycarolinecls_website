@@ -233,7 +233,7 @@ defineExpose({ close })
   font: inherit;
   font-family: var(--fp-font, var(--display, inherit));
   font-size: var(--fp-fs, 15.5px);
-  letter-spacing: 0.01em;
+  letter-spacing: var(--fp-ls, 0.01em);
   color: inherit;
   padding: var(--fp-pad, 10px 12px);
   /* The button supplies the gap on this side. */
@@ -278,12 +278,13 @@ defineExpose({ close })
 }
 
 /* The display face, so a service name reads the same here as it does in the
-   list on the homepage. Only the public site defines --display; in the admin
-   this falls through to the body font. */
+   list on the homepage. Only the public site defines --display; the admin sets
+   --fp-font and --fp-ls to its own body font and tracking instead, so a
+   dropdown there is set exactly like the text field beside it. */
 .fp__value {
   font-family: var(--fp-font, var(--display, inherit));
   font-size: var(--fp-fs, 15.5px);
-  letter-spacing: 0.01em;
+  letter-spacing: var(--fp-ls, 0.01em);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

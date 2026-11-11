@@ -297,32 +297,45 @@ function isBlank(canvas) {
 }
 
 /**
- * Bycarolinecls-INV-2026-0007-Cindy-Halim-2026-10-18.pdf - the name a download
- * lands under, and the name that turns up in a WhatsApp thread.
+ * INV-2026-0007_Cindy_2026-10-18.pdf - the name a download lands under, and the
+ * name that turns up in a WhatsApp thread.
  *
- * The shop name leads so the file is recognisable among whatever else is in a
- * downloads folder; the invoice number, the client and the date of the invoice
- * follow, in that order, because that is the order anyone looking for one of
- * these would think of them in.
+ * Three parts, in the order anyone looking for one of these thinks of them in:
+ * which invoice, who for, when. First name only - the number already tells two
+ * invoices for the same family apart, and a long name pushed the date off the
+ * end of the line in a file list. The date is kept the way it is stored, so a
+ * folder of invoices sorts into the order they were written.
  *
  * A settled invoice gets PAID on the end, because the two versions of the same
  * invoice are otherwise the same file name, and the second one to be saved
  * would quietly overwrite the first.
  */
 export function invoiceFileName(invoice = {}, { paid = false } = {}) {
-  const parts = ['Bycarolinecls']
+  // Underscores between the parts, so the hyphens inside the invoice number
+  // and the date stay readable as part of the thing they belong to.
+  const parts = [clean(invoice.invoiceNumber) || 'INV']
 
-  if (invoice.invoiceNumber) parts.push(invoice.invoiceNumber)
-  const who = clean(invoice.clientName)
+  const who = capitalise(
+    clean(
+      String(invoice.clientName || '')
+        .trim()
+        .split(/\s+/)[0],
+    ),
+  )
   if (who) parts.push(who)
   const when = clean(invoice.invoiceDate || invoice.appointmentDate)
   if (when) parts.push(when)
   if (paid) parts.push('PAID')
 
-  return `${parts.join('-')}.pdf`
+  return `${parts.join('_')}.pdf`
 }
 
 /** Spaces to hyphens, and nothing left that a file system could object to. */
+/** A name typed in a hurry still reads as a name in a list of files. */
+function capitalise(value) {
+  return value ? value[0].toUpperCase() + value.slice(1) : value
+}
+
 function clean(value) {
   return String(value || '')
     .trim()

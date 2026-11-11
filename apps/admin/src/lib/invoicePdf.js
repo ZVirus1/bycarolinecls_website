@@ -297,23 +297,22 @@ function isBlank(canvas) {
 }
 
 /**
- * INV-2026-0007_Cindy_2026-10-18.pdf - the name a download lands under, and the
- * name that turns up in a WhatsApp thread.
+ * INV_Cindy_2026-10-18.pdf - the name a download lands under, and the name that
+ * turns up in a WhatsApp thread.
  *
- * Three parts, in the order anyone looking for one of these thinks of them in:
- * which invoice, who for, when. First name only - the number already tells two
- * invoices for the same family apart, and a long name pushed the date off the
- * end of the line in a file list. The date is kept the way it is stored, so a
- * folder of invoices sorts into the order they were written.
+ * Three parts: what it is, who it is for, and when. First name only, since a
+ * long one pushed the date off the end of the line in a file list, and the
+ * date is kept the way it is stored so a folder of invoices sorts into the
+ * order they were written.
  *
  * A settled invoice gets PAID on the end, because the two versions of the same
  * invoice are otherwise the same file name, and the second one to be saved
  * would quietly overwrite the first.
  */
 export function invoiceFileName(invoice = {}, { paid = false } = {}) {
-  // Underscores between the parts, so the hyphens inside the invoice number
-  // and the date stay readable as part of the thing they belong to.
-  const parts = [clean(invoice.invoiceNumber) || 'INV']
+  // Underscores between the parts, so the hyphens inside the date stay
+  // readable as part of the date.
+  const parts = ['INV']
 
   const who = capitalise(
     clean(

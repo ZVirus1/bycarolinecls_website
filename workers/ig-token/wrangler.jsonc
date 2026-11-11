@@ -1,0 +1,11 @@
+{
+  "name": "bycarolinecls-ig-token",
+  "main": "index.js",
+  "compatibility_date": "2026-08-01",
+  // Once a day, a few minutes past the hour. The token it looks after lasts
+  // sixty days and is replaced every seven, so a run can be missed for weeks
+  // on end without anything expiring.
+  "triggers": { "crons": ["17 3 * * *"] },
+  "kv_namespaces": [{ "binding": "IG_TOKEN", "id": "54081efa83974ba9a82381176b0c2546" }],
+  "observability": { "enabled": true }
+}
